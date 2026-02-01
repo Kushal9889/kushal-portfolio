@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Github, Linkedin, Star, ExternalLink, FileText, Briefcase, Code, Award, User } from "lucide-react";
+import { Download, Github, Linkedin, Star, ExternalLink, FileText, Briefcase, Code, Award, User, Cloud, Cpu, Database, Palette, Users, Zap } from "lucide-react";
 import { ProjectCard } from "../components/ProjectCard";
+import { CertificationCard } from "../components/CertificationCard";
+import { SkillCard } from "../components/SkillCard";
+import { PersonalNote } from "../components/PersonalNote";
 
 const sections = [
   { id: "experience", name: "Professional Experience", icon: Briefcase, color: "#60a5fa" },
@@ -13,7 +16,174 @@ const sections = [
   { id: "certifications", name: "Certifications", icon: Award, color: "#ef4444" }
 ];
 
-// Sample project data with media arrays
+// Enhanced skills data organized by categories
+const skillsData = [
+  {
+    category: "Cloud Platforms",
+    icon: Cloud,
+    color: "#60a5fa",
+    skills: [
+      { name: "AWS", theoretical: 90, practical: 85, years: "2+", description: "EC2, S3, Lambda, RDS, VPC, CloudFormation" },
+      { name: "Google Cloud Platform", theoretical: 80, practical: 70, years: "1+", description: "Compute Engine, Cloud Functions, BigQuery" },
+      { name: "Microsoft Azure", theoretical: 70, practical: 60, years: "1", description: "App Service, Azure Functions, Cosmos DB" },
+      { name: "Docker", theoretical: 85, practical: 85, years: "2+", description: "Containerization, Multi-stage builds, Orchestration" },
+      { name: "Kubernetes", theoretical: 75, practical: 65, years: "1+", description: "Pod management, Services, Ingress, Helm" },
+      { name: "Terraform", theoretical: 80, practical: 80, years: "1+", description: "Infrastructure as Code, Multi-cloud deployments" }
+    ]
+  },
+  {
+    category: "Programming Languages",
+    icon: Code,
+    color: "#10b981",
+    skills: [
+      { name: "Python", theoretical: 95, practical: 95, years: "4+", description: "Django, FastAPI, Data Science, ML/AI" },
+      { name: "JavaScript", theoretical: 85, practical: 85, years: "3+", description: "ES6+, Node.js, React, Vue.js" },
+      { name: "TypeScript", theoretical: 80, practical: 80, years: "2+", description: "Type safety, Advanced types, Decorators" },
+      { name: "Go", theoretical: 75, practical: 65, years: "1+", description: "Concurrency, Microservices, CLI tools" },
+      { name: "Java", theoretical: 80, practical: 70, years: "2+", description: "Spring Boot, Maven, Enterprise applications" },
+      { name: "C++", theoretical: 70, practical: 60, years: "2+", description: "System programming, Performance optimization" }
+    ]
+  },
+  {
+    category: "AI/ML & Data",
+    icon: Cpu,
+    color: "#a78bfa",
+    skills: [
+      { name: "PyTorch", theoretical: 85, practical: 85, years: "2+", description: "Neural networks, Computer vision, NLP" },
+      { name: "TensorFlow", theoretical: 80, practical: 70, years: "1+", description: "Deep learning, Model deployment, TensorBoard" },
+      { name: "Scikit-learn", theoretical: 85, practical: 80, years: "2+", description: "Classical ML, Feature engineering, Pipelines" },
+      { name: "Pandas", theoretical: 90, practical: 90, years: "3+", description: "Data manipulation, Analysis, ETL processes" },
+      { name: "NumPy", theoretical: 85, practical: 85, years: "3+", description: "Numerical computing, Array operations" },
+      { name: "Hugging Face", theoretical: 80, practical: 75, years: "1+", description: "Transformers, Model fine-tuning, Datasets" }
+    ]
+  },
+  {
+    category: "AI Native Tools",
+    icon: Zap,
+    color: "#06b6d4",
+    skills: [
+      { name: "Amazon Q", theoretical: 85, practical: 80, years: "1+", description: "AI-powered coding assistant, Code generation" },
+      { name: "Cursor", theoretical: 90, practical: 85, years: "1+", description: "AI-first code editor, Intelligent completions" },
+      { name: "GitHub Copilot", theoretical: 85, practical: 85, years: "1+", description: "AI pair programming, Code suggestions" },
+      { name: "n8n", theoretical: 75, practical: 70, years: "6m", description: "Workflow automation, API integrations" },
+      { name: "Zapier", theoretical: 80, practical: 75, years: "1+", description: "No-code automation, App connections" },
+      { name: "ChatGPT API", theoretical: 85, practical: 80, years: "1+", description: "LLM integration, Conversational AI" },
+      { name: "Claude API", theoretical: 80, practical: 75, years: "6m", description: "Advanced reasoning, Code analysis" },
+      { name: "Midjourney", theoretical: 70, practical: 65, years: "6m", description: "AI image generation, Creative workflows" }
+    ]
+  },
+  {
+    category: "Databases & Storage",
+    icon: Database,
+    color: "#f59e0b",
+    skills: [
+      { name: "PostgreSQL", theoretical: 85, practical: 85, years: "2+", description: "Advanced queries, Indexing, Performance tuning" },
+      { name: "MongoDB", theoretical: 80, practical: 75, years: "1+", description: "Document design, Aggregation, Sharding" },
+      { name: "Redis", theoretical: 80, practical: 80, years: "1+", description: "Caching, Pub/Sub, Data structures" },
+      { name: "Elasticsearch", theoretical: 75, practical: 65, years: "1+", description: "Search, Analytics, Log aggregation" },
+      { name: "DynamoDB", theoretical: 70, practical: 60, years: "1", description: "NoSQL design, Scaling, Cost optimization" }
+    ]
+  },
+  {
+    category: "Frontend & Design",
+    icon: Palette,
+    color: "#ef4444",
+    skills: [
+      { name: "React", theoretical: 90, practical: 90, years: "3+", description: "Hooks, Context, Performance optimization" },
+      { name: "Next.js", theoretical: 85, practical: 80, years: "2+", description: "SSR, SSG, API routes, Performance" },
+      { name: "Vue.js", theoretical: 75, practical: 65, years: "1+", description: "Composition API, Vuex, Component design" },
+      { name: "Tailwind CSS", theoretical: 85, practical: 85, years: "2+", description: "Utility-first, Responsive design, Custom themes" },
+      { name: "D3.js", theoretical: 80, practical: 70, years: "1+", description: "Data visualization, Interactive charts" },
+      { name: "Figma", theoretical: 65, practical: 60, years: "1", description: "UI/UX design, Prototyping, Design systems" }
+    ]
+  },
+  {
+    category: "Soft Skills & Leadership",
+    icon: Users,
+    color: "#8b5cf6",
+    skills: [
+      { name: "Technical Leadership", theoretical: 80, practical: 80, years: "2+", description: "Team mentoring, Architecture decisions" },
+      { name: "Project Management", theoretical: 75, practical: 75, years: "2+", description: "Agile, Scrum, Timeline management" },
+      { name: "Communication", theoretical: 85, practical: 85, years: "4+", description: "Technical writing, Presentations, Stakeholder management" },
+      { name: "Problem Solving", theoretical: 90, practical: 90, years: "4+", description: "Analytical thinking, Debugging, System design" },
+      { name: "Mentoring", theoretical: 75, practical: 75, years: "1+", description: "Code reviews, Knowledge sharing, Team growth" }
+    ]
+  }
+];
+const certificationsData = [
+  {
+    name: "AWS Solutions Architect Associate",
+    organization: "Amazon Web Services",
+    organizationLogo: "/certifications/aws-logo.png",
+    color: "#FF9900",
+    status: "Active",
+    issueDate: "March 2024",
+    description: "Comprehensive certification covering AWS cloud architecture, security, and best practices. Gained expertise in designing scalable, highly available, and fault-tolerant systems on AWS.",
+    keyLearnings: [
+      "Designed and deployed scalable applications on AWS cloud infrastructure",
+      "Implemented security best practices and compliance frameworks",
+      "Optimized costs through proper resource selection and management",
+      "Architected fault-tolerant systems with disaster recovery strategies",
+      "Mastered AWS services including EC2, S3, RDS, Lambda, and VPC"
+    ],
+    skillsGained: ["AWS Architecture", "Cloud Security", "Cost Optimization", "Auto Scaling", "Load Balancing", "VPC Design", "IAM Policies", "CloudFormation"],
+    verificationUrl: "https://aws.amazon.com/verification/your-cert-id"
+  },
+  {
+    name: "Google Cloud Professional Cloud Architect",
+    organization: "Google Cloud",
+    organizationLogo: "/certifications/gcp-logo.png",
+    color: "#4285F4",
+    status: "In Progress",
+    issueDate: "Expected Dec 2024",
+    description: "Advanced certification focusing on Google Cloud Platform architecture, design patterns, and enterprise-grade solutions. Currently preparing for the certification exam.",
+    keyLearnings: [
+      "Designing GCP solutions for business requirements",
+      "Managing and provisioning cloud solution infrastructure",
+      "Designing for security and compliance in GCP",
+      "Analyzing and optimizing technical and business processes",
+      "Implementing GCP services for data processing and machine learning"
+    ],
+    skillsGained: ["GCP Architecture", "Kubernetes", "BigQuery", "Cloud Functions", "Pub/Sub", "Cloud Storage", "Networking"],
+    verificationUrl: "https://cloud.google.com/certification/cloud-architect"
+  },
+  {
+    name: "Azure Fundamentals AZ-900",
+    organization: "Microsoft",
+    organizationLogo: "/certifications/azure-logo.png",
+    color: "#0078D4",
+    status: "Active",
+    issueDate: "January 2024",
+    description: "Foundational certification covering Microsoft Azure cloud concepts, core services, security, privacy, compliance, and pricing models.",
+    keyLearnings: [
+      "Understanding of cloud computing concepts and Azure services",
+      "Knowledge of Azure security, privacy, and compliance features",
+      "Familiarity with Azure pricing and support models",
+      "Hands-on experience with Azure portal and basic services",
+      "Understanding of Azure governance and management tools"
+    ],
+    skillsGained: ["Azure Basics", "Cloud Concepts", "Azure Security", "Resource Management", "Azure Pricing", "Compliance"],
+    verificationUrl: "https://docs.microsoft.com/en-us/learn/certifications/azure-fundamentals"
+  },
+  {
+    name: "Machine Learning Specialization",
+    organization: "Coursera (Stanford)",
+    organizationLogo: "/certifications/coursera-logo.png",
+    color: "#0056D3",
+    status: "Completed",
+    issueDate: "September 2023",
+    description: "Comprehensive specialization covering machine learning algorithms, neural networks, and practical implementation using Python and TensorFlow.",
+    keyLearnings: [
+      "Implemented supervised and unsupervised learning algorithms",
+      "Built and trained neural networks using TensorFlow",
+      "Applied machine learning to real-world problems and datasets",
+      "Understanding of deep learning and advanced ML techniques",
+      "Practical experience with feature engineering and model evaluation"
+    ],
+    skillsGained: ["Machine Learning", "Neural Networks", "TensorFlow", "Python", "Data Analysis", "Deep Learning", "Model Evaluation"],
+    verificationUrl: "https://coursera.org/verify/specialization/your-cert-id"
+  }
+];
 const projectsData = [
   {
     name: "SolarBuddy Platform",
@@ -430,87 +600,78 @@ export default function Portfolio() {
             })}
           </div>
           
-          {/* Enhanced Control Panel */}
+          {/* Simplified Control Panel */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap'
+            gap: '1rem'
           }}>
-            {/* Auto-rotation status */}
+            {/* Status & Counter */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '1rem',
               padding: '0.5rem 1rem',
-              background: isUserSelected ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-              border: `1px solid ${isUserSelected ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+              background: 'rgba(31, 41, 55, 0.6)',
               borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              color: isUserSelected ? '#fca5a5' : '#6ee7b7'
+              border: '1px solid rgba(96, 165, 250, 0.2)'
             }}>
               <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: isUserSelected ? '#ef4444' : '#10b981',
-                animation: isUserSelected ? 'none' : 'pulse 2s infinite'
-              }} />
-              {isUserSelected ? 'Manual Mode' : 'Auto-Rotating'}
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: isUserSelected ? '#ef4444' : '#10b981',
+                  animation: isUserSelected ? 'none' : 'pulse 2s infinite'
+                }} />
+                <span style={{
+                  fontSize: '0.8rem',
+                  color: '#d1d5db',
+                  fontWeight: '500'
+                }}>
+                  {isUserSelected ? 'Manual' : 'Auto'}
+                </span>
+              </div>
+              
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#9ca3af',
+                fontWeight: '500'
+              }}>
+                {sections.findIndex(s => s.id === activeSection) + 1}/{sections.length}
+              </div>
             </div>
             
-            {/* Reset button with enhanced design */}
+            {/* Resume Auto Button */}
             {isUserSelected && (
               <button
                 onClick={() => setIsUserSelected(false)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
                   borderRadius: '0.5rem',
                   color: '#10b981',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))';
-                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.2))';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))';
-                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))';
                 }}
               >
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  border: '2px solid currentColor',
-                  borderRadius: '50%',
-                  borderTopColor: 'transparent',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                Resume Auto-Rotation
+                Resume Auto
               </button>
             )}
-            
-            {/* Section counter */}
-            <div style={{
-              padding: '0.5rem 1rem',
-              background: 'rgba(96, 165, 250, 0.1)',
-              border: '1px solid rgba(96, 165, 250, 0.2)',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              color: '#93c5fd',
-              fontWeight: '500'
-            }}>
-              {sections.findIndex(s => s.id === activeSection) + 1} of {sections.length}
-            </div>
           </div>
         </div>
       </div>
@@ -562,6 +723,9 @@ export default function Portfolio() {
           filter: drop-shadow(0 8px 25px rgba(96, 165, 250, 0.3));
         }
       `}</style>
+      
+      {/* Personal Note Component */}
+      <PersonalNote section={activeSection} />
     </main>
   );
 }
@@ -824,77 +988,48 @@ function SectionContent({ sectionId }) {
     
     skills: (
       <div>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '3rem', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center' }}>
           Technical <span className="gradient-text">Skills</span>
         </h2>
+        
+        {/* Global Legend */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '2rem',
+          marginBottom: '3rem',
+          padding: '1rem 2rem',
+          background: 'rgba(31, 41, 55, 0.5)',
+          borderRadius: '1rem',
+          border: '1px solid rgba(96, 165, 250, 0.2)',
+          maxWidth: '600px',
+          margin: '0 auto 3rem auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '40px',
+              height: '8px',
+              background: 'linear-gradient(90deg, rgba(96, 165, 250, 0.4), rgba(96, 165, 250, 0.6))',
+              borderRadius: '4px',
+              border: '1px solid rgba(96, 165, 250, 0.3)'
+            }} />
+            <span style={{ color: '#d1d5db', fontSize: '0.9rem', fontWeight: '500' }}>Theoretical Knowledge</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '40px',
+              height: '8px',
+              background: 'linear-gradient(90deg, #60a5fa, #3b82f6)',
+              borderRadius: '4px',
+              boxShadow: '0 0 8px rgba(96, 165, 250, 0.4)'
+            }} />
+            <span style={{ color: '#d1d5db', fontSize: '0.9rem', fontWeight: '500' }}>Practical Experience</span>
+          </div>
+        </div>
+        
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          {[
-            { 
-              category: "Cloud Platforms", 
-              skills: [
-                { name: "AWS", level: 90, years: "2+" },
-                { name: "Google Cloud", level: 75, years: "1+" },
-                { name: "Azure", level: 60, years: "1" }
-              ], 
-              color: "#60a5fa" 
-            },
-            { 
-              category: "AI/ML Frameworks", 
-              skills: [
-                { name: "PyTorch", level: 85, years: "2+" },
-                { name: "TensorFlow", level: 70, years: "1+" },
-                { name: "HuggingFace", level: 80, years: "1+" }
-              ], 
-              color: "#10b981" 
-            },
-            { 
-              category: "Programming Languages", 
-              skills: [
-                { name: "Python", level: 95, years: "4+" },
-                { name: "JavaScript/TypeScript", level: 85, years: "2+" },
-                { name: "Go", level: 70, years: "1+" }
-              ], 
-              color: "#a78bfa" 
-            },
-            { 
-              category: "Databases & Storage", 
-              skills: [
-                { name: "PostgreSQL", level: 80, years: "2+" },
-                { name: "MongoDB", level: 75, years: "1+" },
-                { name: "Redis", level: 85, years: "1+" }
-              ], 
-              color: "#f59e0b" 
-            }
-          ].map(group => (
-            <div key={group.category} className="card" style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem', color: group.color, textAlign: 'center' }}>
-                {group.category}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {group.skills.map(skill => (
-                  <div key={skill.name}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: '500' }}>{skill.name}</span>
-                      <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>{skill.years} years</span>
-                    </div>
-                    <div style={{ width: '100%', height: '6px', background: '#374151', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div 
-                        style={{ 
-                          width: `${skill.level}%`, 
-                          height: '100%', 
-                          background: group.color, 
-                          borderRadius: '3px',
-                          transition: 'width 1s ease-out'
-                        }} 
-                      />
-                    </div>
-                    <div style={{ textAlign: 'right', fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                      {skill.level}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {skillsData.map((skillCategory, i) => (
+            <SkillCard key={i} skillCategory={skillCategory} />
           ))}
         </div>
       </div>
@@ -905,49 +1040,9 @@ function SectionContent({ sectionId }) {
         <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '3rem', textAlign: 'center' }}>
           <span className="gradient-text">Certifications</span> & Credentials
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          {[
-            { name: "AWS Solutions Architect Associate", issuer: "Amazon Web Services", color: "#FF9900", status: "Active", year: "2024" },
-            { name: "Google Cloud Professional Cloud Architect", issuer: "Google Cloud", color: "#4285F4", status: "In Progress", year: "2024" },
-            { name: "Azure Fundamentals AZ-900", issuer: "Microsoft", color: "#0078D4", status: "Active", year: "2024" },
-            { name: "Machine Learning Specialization", issuer: "Coursera", color: "#0056D3", status: "Completed", year: "2023" }
-          ].map(cert => (
-            <div key={cert.name} className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ 
-                width: '80px', 
-                height: '80px', 
-                margin: '0 auto 1.5rem',
-                background: `${cert.color}20`,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: `2px solid ${cert.color}40`
-              }}>
-                <Award style={{ width: '40px', height: '40px', color: cert.color }} />
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.3' }}>
-                {cert.name}
-              </h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                {cert.issuer}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ 
-                  padding: '0.25rem 0.75rem', 
-                  background: `${cert.color}20`, 
-                  color: cert.color, 
-                  fontSize: '0.75rem', 
-                  borderRadius: '9999px',
-                  fontWeight: '600'
-                }}>
-                  {cert.status}
-                </span>
-                <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-                  {cert.year}
-                </span>
-              </div>
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+          {certificationsData.map((certification, i) => (
+            <CertificationCard key={i} certification={certification} />
           ))}
         </div>
       </div>
