@@ -9,11 +9,11 @@ import { SkillCard } from "../components/SkillCard";
 import { PersonalNote } from "../components/PersonalNote";
 
 const sections = [
-  { id: "experience", name: "Professional Experience", icon: Briefcase, color: "#60a5fa" },
-  { id: "research", name: "Research", icon: FileText, color: "#10b981" },
-  { id: "projects", name: "Projects", icon: Code, color: "#a78bfa" },
-  { id: "skills", name: "Skills", icon: User, color: "#f59e0b" },
-  { id: "certifications", name: "Certifications", icon: Award, color: "#ef4444" }
+  { id: "projects", name: "Projects", icon: "🚀", color: "#a78bfa" },
+  { id: "skills", name: "Skills", icon: "⚡", color: "#f59e0b" },
+  { id: "certifications", name: "Certifications", icon: "🏆", color: "#ef4444" },
+  { id: "experience", name: "Experience", icon: "💼", color: "#60a5fa" },
+  { id: "research", name: "Research", icon: "🧠", color: "#10b981" }
 ];
 
 // Enhanced skills data organized by categories
@@ -269,7 +269,7 @@ export default function Portfolio() {
   const [activeSection, setActiveSection] = useState("experience");
   const [isUserSelected, setIsUserSelected] = useState(false);
 
-  // Auto-rotation every 2 seconds unless user has selected
+  // Auto-rotation every 3 seconds with smooth transitions
   useEffect(() => {
     if (!isUserSelected) {
       const interval = setInterval(() => {
@@ -278,7 +278,7 @@ export default function Portfolio() {
           const nextIndex = (currentIndex + 1) % sections.length;
           return sections[nextIndex].id;
         });
-      }, 2000);
+      }, 3000); // Increased to 3 seconds for smoother experience
       return () => clearInterval(interval);
     }
   }, [isUserSelected]);
@@ -465,185 +465,192 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* STICKY SECTION TABS - Enhanced UI/UX */}
-      <div style={{ 
+      {/* ELITE TOP 0.01% STICKY NAVIGATION */}
+      <div id="main-navigation" style={{ 
         position: 'sticky',
         top: 0,
-        background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(31, 41, 55, 0.98))', 
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(96, 165, 250, 0.2)',
-        borderBottom: '1px solid rgba(96, 165, 250, 0.2)',
-        padding: '1.5rem 0',
-        zIndex: 50,
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+        background: 'linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(17, 24, 39, 0.98))', 
+        backdropFilter: 'blur(40px) saturate(180%)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '2rem 0',
+        zIndex: 100,
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        overflow: 'hidden',
+        position: 'relative'
       }}>
-        <div className="container">
-          {/* Section Navigation */}
+        {/* Ambient Background Effects */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
+            linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%)
+          `,
+          animation: 'ambientFlow 15s ease-in-out infinite'
+        }} />
+        
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+          {/* Elite Section Navigation */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center',
-            gap: '0.25rem',
-            flexWrap: 'wrap',
-            marginBottom: '1rem'
+            marginBottom: '1.5rem'
           }}>
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              padding: '1rem',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03))',
+              borderRadius: '2.5rem',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(20px)',
+              width: '80%',
+              overflow: 'hidden',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.1), inset 0 -2px 4px rgba(0, 0, 0, 0.1)'
+            }}>
             {sections.map((section, index) => {
               const isActive = activeSection === section.id;
-              const isNext = sections[(sections.findIndex(s => s.id === activeSection) + 1) % sections.length]?.id === section.id;
               
               return (
                 <button
                   key={section.id}
                   onClick={() => handleSectionClick(section.id)}
+                  className="elite-nav-button"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    padding: '1rem 1.75rem',
+                    padding: '1rem 1.5rem',
                     background: isActive 
                       ? `linear-gradient(135deg, ${section.color}25, ${section.color}15)` 
-                      : 'rgba(31, 41, 55, 0.6)',
-                    border: isActive 
-                      ? `2px solid ${section.color}` 
-                      : '2px solid rgba(75, 85, 99, 0.3)',
-                    borderRadius: '1rem',
-                    color: isActive ? section.color : '#9ca3af',
-                    fontSize: '0.95rem',
-                    fontWeight: isActive ? '700' : '500',
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '1.25rem',
+                    color: isActive ? section.color : '#cbd5e1',
+                    fontSize: '0.9rem',
+                    fontWeight: isActive ? '600' : '500',
                     cursor: 'pointer',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                     position: 'relative',
                     overflow: 'hidden',
-                    minWidth: '160px',
+                    flex: '1',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    transform: isActive ? 'translateY(-2px) scale(1.05)' : 'translateY(0) scale(1)',
-                    boxShadow: isActive 
-                      ? `0 8px 25px ${section.color}40, 0 0 0 1px ${section.color}20` 
-                      : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.target.style.background = `rgba(${section.color === '#60a5fa' ? '96, 165, 250' : section.color === '#10b981' ? '16, 185, 129' : section.color === '#a78bfa' ? '167, 139, 250' : section.color === '#f59e0b' ? '245, 158, 11' : '239, 68, 68'}, 0.1)`;
-                      e.target.style.borderColor = `${section.color}60`;
-                      e.target.style.color = section.color;
-                      e.target.style.transform = 'translateY(-1px) scale(1.02)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.target.style.background = 'rgba(31, 41, 55, 0.6)';
-                      e.target.style.borderColor = 'rgba(75, 85, 99, 0.3)';
-                      e.target.style.color = '#9ca3af';
-                      e.target.style.transform = 'translateY(0) scale(1)';
-                    }
+                    letterSpacing: '0.025em',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  {/* Icon with enhanced styling */}
+                  {/* Hover Glow Effect */}
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '6px',
-                    background: isActive ? `${section.color}20` : 'transparent',
-                    transition: 'all 0.3s ease'
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: `linear-gradient(135deg, ${section.color}15, transparent)`,
+                    opacity: isActive ? 1 : 0,
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                  }} />
+                  
+                  {/* Icon */}
+                  <div style={{
+                    fontSize: '1.2rem',
+                    filter: isActive ? `drop-shadow(0 0 8px ${section.color}60)` : 'none',
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}>
-                    <section.icon style={{ 
-                      width: '18px', 
-                      height: '18px',
-                      filter: isActive ? 'drop-shadow(0 0 4px currentColor)' : 'none'
-                    }} />
+                    {section.icon}
                   </div>
                   
-                  {/* Section name with better typography */}
+                  {/* Section Name */}
                   <span style={{
-                    letterSpacing: '0.025em',
-                    textShadow: isActive ? `0 0 8px ${section.color}40` : 'none'
+                    textShadow: isActive 
+                      ? `0 0 20px ${section.color}40, inset 0 1px 2px rgba(0, 0, 0, 0.3)` 
+                      : 'inset 0 1px 2px rgba(0, 0, 0, 0.2)',
+                    fontSize: '0.9rem',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px'
                   }}>
                     {section.name}
                   </span>
                   
-                  {/* Progress indicator for auto-rotation */}
+                  {/* Active Progress Indicator */}
                   {!isUserSelected && isActive && (
                     <div style={{
                       position: 'absolute',
                       bottom: 0,
                       left: 0,
-                      height: '3px',
-                      background: `linear-gradient(90deg, ${section.color}, ${section.color}80)`,
-                      borderRadius: '0 0 1rem 1rem',
-                      animation: 'progress 2s linear',
+                      height: '2px',
+                      background: `linear-gradient(90deg, transparent, ${section.color}, transparent)`,
+                      borderRadius: '1px',
+                      animation: 'progressFlow 3s linear infinite',
                       width: '100%',
-                      boxShadow: `0 0 8px ${section.color}60`
-                    }} />
-                  )}
-                  
-                  {/* Next indicator */}
-                  {!isUserSelected && isNext && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: '8px',
-                      transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      background: section.color,
-                      opacity: 0.6,
-                      animation: 'pulse 1s infinite'
+                      boxShadow: `0 0 12px ${section.color}60`
                     }} />
                   )}
                 </button>
               );
             })}
+            </div>
           </div>
           
-          {/* Simplified Control Panel */}
+          {/* Elite Control Panel */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            gap: '1rem'
+            gap: '2rem'
           }}>
-            {/* Status & Counter */}
+            {/* Status Indicator */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '1rem',
-              padding: '0.5rem 1rem',
-              background: 'rgba(31, 41, 55, 0.6)',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(96, 165, 250, 0.2)'
+              padding: '0.75rem 1.5rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)'
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.75rem'
               }}>
                 <div style={{
-                  width: '6px',
-                  height: '6px',
+                  width: '8px',
+                  height: '8px',
                   borderRadius: '50%',
-                  background: isUserSelected ? '#ef4444' : '#10b981',
+                  background: isUserSelected 
+                    ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
+                    : 'linear-gradient(135deg, #10b981, #059669)',
+                  boxShadow: isUserSelected 
+                    ? '0 0 12px rgba(239, 68, 68, 0.6)' 
+                    : '0 0 12px rgba(16, 185, 129, 0.6)',
                   animation: isUserSelected ? 'none' : 'pulse 2s infinite'
                 }} />
                 <span style={{
-                  fontSize: '0.8rem',
-                  color: '#d1d5db',
-                  fontWeight: '500'
+                  fontSize: '0.875rem',
+                  color: '#e2e8f0',
+                  fontWeight: '500',
+                  letterSpacing: '0.025em'
                 }}>
-                  {isUserSelected ? 'Manual' : 'Auto'}
+                  {isUserSelected ? 'Manual Control' : 'Auto Sequence'}
                 </span>
               </div>
               
               <div style={{
-                fontSize: '0.8rem',
-                color: '#9ca3af',
-                fontWeight: '500'
+                fontSize: '0.875rem',
+                color: '#94a3b8',
+                fontWeight: '500',
+                padding: '0.25rem 0.75rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '0.5rem'
               }}>
-                {sections.findIndex(s => s.id === activeSection) + 1}/{sections.length}
+                {sections.findIndex(s => s.id === activeSection) + 1} / {sections.length}
               </div>
             </div>
             
@@ -652,21 +659,17 @@ export default function Portfolio() {
               <button
                 onClick={() => setIsUserSelected(false)}
                 style={{
-                  padding: '0.5rem 1rem',
+                  padding: '0.75rem 1.5rem',
                   background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))',
                   border: '1px solid rgba(16, 185, 129, 0.4)',
-                  borderRadius: '0.5rem',
+                  borderRadius: '1rem',
                   color: '#10b981',
-                  fontSize: '0.8rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.2))';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))';
+                  transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                  backdropFilter: 'blur(20px)',
+                  letterSpacing: '0.025em'
                 }}
               >
                 Resume Auto
@@ -726,6 +729,147 @@ export default function Portfolio() {
       
       {/* Personal Note Component */}
       <PersonalNote section={activeSection} />
+      
+      {/* ELITE TOP 0.01% FOOTER */}
+      <footer>
+        {/* Floating Particles */}
+        <div className="footer-particles">
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+        </div>
+        
+        {/* Footer Content */}
+        <div className="footer-content">
+          {/* Brand Section */}
+          <div className="footer-brand">
+            <div className="footer-logo">KUSHAL GADDAMWAR</div>
+            <p className="footer-tagline">
+              Crafting the future of software engineering through innovative AI solutions and scalable cloud architectures.
+            </p>
+            <div className="social-constellation">
+              <a href="https://github.com/yourusername" className="social-orb" target="_blank" rel="noopener noreferrer">
+                <Github size={20} />
+              </a>
+              <a href="https://linkedin.com/in/yourusername" className="social-orb" target="_blank" rel="noopener noreferrer">
+                <Linkedin size={20} />
+              </a>
+              <a href="mailto:your.email@example.com" className="social-orb">
+                <span style={{fontSize: '16px'}}>@</span>
+              </a>
+              <a href="/resume.pdf" className="social-orb" target="_blank">
+                <Download size={18} />
+              </a>
+            </div>
+          </div>
+          
+          {/* Quick Links */}
+          <div className="footer-section">
+            <h4 className="footer-section-title">Quick Links</h4>
+            <button 
+              onClick={() => {
+                setActiveSection('experience');
+                setIsUserSelected(true);
+                document.getElementById('main-navigation')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="footer-link" 
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Experience
+            </button>
+            <button 
+              onClick={() => {
+                setActiveSection('research');
+                setIsUserSelected(true);
+                document.getElementById('main-navigation')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="footer-link" 
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Research
+            </button>
+            <button 
+              onClick={() => {
+                setActiveSection('projects');
+                setIsUserSelected(true);
+                document.getElementById('main-navigation')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="footer-link" 
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Projects
+            </button>
+            <button 
+              onClick={() => {
+                setActiveSection('skills');
+                setIsUserSelected(true);
+                document.getElementById('main-navigation')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="footer-link" 
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Skills
+            </button>
+            <button 
+              onClick={() => {
+                setActiveSection('certifications');
+                setIsUserSelected(true);
+                document.getElementById('main-navigation')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="footer-link" 
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Certifications
+            </button>
+          </div>
+          
+          {/* Technologies */}
+          <div className="footer-section">
+            <h4 className="footer-section-title">Technologies</h4>
+            <a href="#" className="footer-link">AWS Cloud</a>
+            <a href="#" className="footer-link">Machine Learning</a>
+            <a href="#" className="footer-link">React & Next.js</a>
+            <a href="#" className="footer-link">Python & Node.js</a>
+            <a href="#" className="footer-link">Docker & Kubernetes</a>
+          </div>
+          
+          {/* Connect */}
+          <div className="footer-section">
+            <h4 className="footer-section-title">Connect</h4>
+            <a href="mailto:your.email@example.com" className="footer-link">Email</a>
+            <a href="https://linkedin.com/in/yourusername" className="footer-link" target="_blank">LinkedIn</a>
+            <a href="https://github.com/yourusername" className="footer-link" target="_blank">GitHub</a>
+            <a href="/resume.pdf" className="footer-link" target="_blank">Resume</a>
+            <a href="#" className="footer-link">Portfolio</a>
+          </div>
+        </div>
+        
+        {/* Footer Bottom */}
+        <div className="footer-bottom">
+          <div className="footer-bottom-content">
+            <div className="footer-copyright">
+              <span>© 2024 Kushal Gaddamwar</span>
+              <span>•</span>
+              <span>Made with</span>
+              <span className="footer-heart">♥</span>
+              <span>in Boston</span>
+            </div>
+            <div className="footer-tech">
+              <div className="tech-orb" title="Next.js">N</div>
+              <div className="tech-orb" title="React">R</div>
+              <div className="tech-orb" title="TypeScript">T</div>
+              <div className="tech-orb" title="AWS">A</div>
+              <div className="tech-orb" title="Python">P</div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
@@ -745,7 +889,7 @@ function SectionContent({ sectionId }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '2rem' }}>🏢</div>
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                <h3 className="card-heading" style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem', position: 'relative' }}>
                   IMG Systems
                 </h3>
                 <p style={{ color: '#60a5fa', fontWeight: '600' }}>Software Development Engineer Intern</p>
@@ -805,7 +949,7 @@ function SectionContent({ sectionId }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '2rem' }}>🌱</div>
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                <h3 className="card-heading" style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem', position: 'relative' }}>
                   Growaza Pvt. Ltd.
                 </h3>
                 <p style={{ color: '#60a5fa', fontWeight: '600' }}>Associate Software Development Engineer Intern</p>
@@ -876,7 +1020,7 @@ function SectionContent({ sectionId }) {
                 <FileText style={{ width: '30px', height: '30px', color: '#10b981' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.3' }}>
+                <h3 className="card-heading" style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.3', position: 'relative' }}>
                   Planning for Contextual Bug Detection and Automated Search in Software Systems
                 </h3>
                 <p style={{ color: '#10b981', marginBottom: '0.5rem', fontWeight: '600' }}>First Author | June 2024 | Published</p>
@@ -934,7 +1078,7 @@ function SectionContent({ sectionId }) {
                 <FileText style={{ width: '30px', height: '30px', color: '#10b981' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.3' }}>
+                <h3 className="card-heading" style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', lineHeight: '1.3', position: 'relative' }}>
                   Cyber-Physical Systems and the Future of Urban Living
                 </h3>
                 <p style={{ color: '#10b981', marginBottom: '0.5rem', fontWeight: '600' }}>Co-Author | March 2024 | Book Chapter</p>

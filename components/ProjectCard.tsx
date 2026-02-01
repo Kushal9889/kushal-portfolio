@@ -8,11 +8,13 @@ export function ProjectCard({ project }) {
   const [showDetails, setShowDetails] = useState(false);
   const [detailMediaIndex, setDetailMediaIndex] = useState(0);
 
-  const nextMedia = () => {
+  const nextMedia = (e) => {
+    e.stopPropagation();
     setCurrentMediaIndex((prev) => (prev + 1) % project.media.length);
   };
 
-  const prevMedia = () => {
+  const prevMedia = (e) => {
+    e.stopPropagation();
     setCurrentMediaIndex((prev) => (prev - 1 + project.media.length) % project.media.length);
   };
 
@@ -29,7 +31,24 @@ export function ProjectCard({ project }) {
 
   return (
     <>
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+      <div 
+        className="card" 
+        style={{ 
+          padding: '0', 
+          overflow: 'hidden', 
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => setShowDetails(true)}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-4px)';
+          e.target.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '';
+        }}
+      >
         {/* Media Carousel */}
         <div style={{ position: 'relative', aspectRatio: '16/9', background: '#1f2937' }}>
           {currentMedia.type === 'video' ? (
@@ -149,7 +168,7 @@ export function ProjectCard({ project }) {
         {/* Project Details */}
         <div style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+            <h3 className="card-heading" style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, position: 'relative' }}>
               {project.name}
             </h3>
             <a 
@@ -167,6 +186,7 @@ export function ProjectCard({ project }) {
                 color: '#9ca3af',
                 textDecoration: 'none'
               }}
+              onClick={(e) => e.stopPropagation()}
             >
               <Github style={{ width: '16px', height: '16px' }} />
             </a>
@@ -187,13 +207,24 @@ export function ProjectCard({ project }) {
               </span>
             ))}
           </div>
-          <button 
-            className="btn-primary" 
-            style={{ width: '100%' }}
-            onClick={() => setShowDetails(true)}
-          >
-            View Details
-          </button>
+          <div style={{
+            position: 'absolute',
+            bottom: '1rem',
+            right: '1rem',
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.5rem',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            backdropFilter: 'blur(10px)'
+          }}>
+            Click to View Details
+            <ChevronRight style={{ width: '16px', height: '16px' }} />
+          </div>
         </div>
       </div>
 

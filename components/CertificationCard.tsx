@@ -12,7 +12,24 @@ export function CertificationCard({ certification }) {
 
   return (
     <>
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+      <div 
+        className="card" 
+        style={{ 
+          padding: '0', 
+          overflow: 'hidden',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => setShowDetails(true)}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-4px)';
+          e.target.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '';
+        }}
+      >
         {/* Organization Logo */}
         <div style={{ 
           position: 'relative', 
@@ -38,11 +55,12 @@ export function CertificationCard({ certification }) {
         {/* Certification Details */}
         <div style={{ padding: '1.5rem' }}>
           <div style={{ marginBottom: '1rem' }}>
-            <h3 style={{ 
+            <h3 className="card-heading" style={{ 
               fontSize: '1.1rem', 
               fontWeight: 'bold', 
               margin: '0 0 0.5rem 0',
-              lineHeight: '1.3'
+              lineHeight: '1.3',
+              position: 'relative'
             }}>
               {certification.name}
             </h3>
@@ -114,13 +132,25 @@ export function CertificationCard({ certification }) {
             </div>
           </div>
 
-          <button 
-            className="btn-primary" 
-            style={{ width: '100%', fontSize: '0.9rem' }}
-            onClick={() => setShowDetails(true)}
-          >
+          <div style={{
+            position: 'absolute',
+            bottom: '1rem',
+            right: '1rem',
+            background: `${certification.color}20`,
+            color: certification.color,
+            padding: '0.5rem 1rem',
+            borderRadius: '0.5rem',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            border: `1px solid ${certification.color}40`,
+            backdropFilter: 'blur(10px)'
+          }}>
             View Details
-          </button>
+            <Award style={{ width: '16px', height: '16px' }} />
+          </div>
         </div>
       </div>
 

@@ -11,7 +11,24 @@ export function SkillCard({ skillCategory }) {
 
   return (
     <>
-      <div className="card" style={{ padding: '2rem', position: 'relative' }}>
+      <div 
+        className="card" 
+        style={{ 
+          padding: '2rem', 
+          position: 'relative',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => setShowDetails(true)}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-4px)';
+          e.target.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '';
+        }}
+      >
         {/* Category Icon */}
         <div style={{
           display: 'flex',
@@ -28,12 +45,13 @@ export function SkillCard({ skillCategory }) {
         </div>
 
         {/* Category Title */}
-        <h3 style={{
+        <h3 className="card-heading" style={{
           fontSize: '1.25rem',
           fontWeight: 'bold',
           marginBottom: '1rem',
           color: skillCategory.color,
-          textAlign: 'center'
+          textAlign: 'center',
+          position: 'relative'
         }}>
           {skillCategory.category}
         </h3>
@@ -70,37 +88,26 @@ export function SkillCard({ skillCategory }) {
           </div>
         </div>
 
-        {/* View All Button */}
-        <button
-          onClick={() => setShowDetails(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            width: '100%',
-            padding: '0.75rem',
-            background: `linear-gradient(135deg, ${skillCategory.color}20, ${skillCategory.color}10)`,
-            border: `1px solid ${skillCategory.color}40`,
-            borderRadius: '0.5rem',
-            color: skillCategory.color,
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = `linear-gradient(135deg, ${skillCategory.color}30, ${skillCategory.color}20)`;
-            e.target.style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = `linear-gradient(135deg, ${skillCategory.color}20, ${skillCategory.color}10)`;
-            e.target.style.transform = 'translateY(0)';
-          }}
-        >
-          View All {skillCategory.category}
+        {/* View Skills Indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          right: '1rem',
+          background: `${skillCategory.color}20`,
+          color: skillCategory.color,
+          padding: '0.5rem 1rem',
+          borderRadius: '0.5rem',
+          fontSize: '0.875rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          border: `1px solid ${skillCategory.color}40`,
+          backdropFilter: 'blur(10px)'
+        }}>
+          View Skills
           <ChevronRight style={{ width: '16px', height: '16px' }} />
-        </button>
+        </div>
       </div>
 
       {/* Skills Details Popup */}
@@ -190,11 +197,13 @@ export function SkillCard({ skillCategory }) {
             <div style={{ padding: '2rem' }}>
               <div style={{ display: 'grid', gap: '1rem' }}>
                 {skillCategory.skills.map(skill => (
-                  <div key={skill.name} style={{
+                  <div key={skill.name} className="individual-skill-card" style={{
                     padding: '1rem',
                     background: 'rgba(31, 41, 55, 0.5)',
                     borderRadius: '0.5rem',
-                    border: `1px solid ${skillCategory.color}20`
+                    border: `1px solid ${skillCategory.color}20`,
+                    transition: 'all 0.3s var(--spring-ultra)',
+                    cursor: 'pointer'
                   }}>
                     <div style={{
                       display: 'flex',
@@ -202,10 +211,13 @@ export function SkillCard({ skillCategory }) {
                       justifyContent: 'space-between',
                       marginBottom: '0.5rem'
                     }}>
-                      <span style={{
+                      <span className="skill-name" style={{
                         fontWeight: '600',
                         color: 'white',
-                        fontSize: '1rem'
+                        fontSize: '1rem',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s var(--spring-ultra)'
                       }}>
                         {skill.name}
                       </span>
@@ -230,7 +242,7 @@ export function SkillCard({ skillCategory }) {
                         border: '1px solid rgba(75, 85, 99, 0.3)'
                       }}>
                         {/* Theoretical Bar (Background) */}
-                        <div style={{
+                        <div className="knowledge-bar" style={{
                           position: 'absolute',
                           top: 0,
                           left: 0,
@@ -238,12 +250,12 @@ export function SkillCard({ skillCategory }) {
                           height: '100%',
                           background: `linear-gradient(90deg, ${skillCategory.color}40, ${skillCategory.color}60)`,
                           borderRadius: '6px',
-                          transition: 'width 1s ease-out',
+                          transition: 'all 1s ease-out',
                           border: `1px solid ${skillCategory.color}30`
                         }} />
                         
                         {/* Practical Bar (Foreground) */}
-                        <div style={{
+                        <div className="hands-on-bar" style={{
                           position: 'absolute',
                           top: 0,
                           left: 0,
@@ -251,7 +263,7 @@ export function SkillCard({ skillCategory }) {
                           height: '100%',
                           background: `linear-gradient(90deg, ${skillCategory.color}, ${skillCategory.color}DD)`,
                           borderRadius: '6px',
-                          transition: 'width 1.2s ease-out',
+                          transition: 'all 1.2s ease-out',
                           boxShadow: `0 0 12px ${skillCategory.color}50`
                         }} />
                       </div>
@@ -264,7 +276,12 @@ export function SkillCard({ skillCategory }) {
                         fontSize: '0.8rem'
                       }}>
                         <span style={{ color: `${skillCategory.color}80` }}>Knowledge: {skill.theoretical}%</span>
-                        <span style={{ color: skillCategory.color, fontWeight: '600' }}>Applied: {skill.practical}%</span>
+                        <span className="hands-on-highlight" style={{ 
+                          color: '#ffffff', 
+                          fontWeight: '700',
+                          position: 'relative',
+                          cursor: 'pointer'
+                        }}>Hands-on: {skill.practical}%</span>
                       </div>
                     </div>
                     
