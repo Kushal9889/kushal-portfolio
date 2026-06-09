@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.env
+.env.local
+.DS_Store
+*.log
+next-env.d.ts
+
+# Build cache, churns on every compile
+tsconfig.tsbuildinfo
+
+# Working notes: audits, decision records, research maps. Useful while building,
+# not part of what ships.
+docs/
