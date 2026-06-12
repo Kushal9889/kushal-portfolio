@@ -1,0 +1,64 @@
+{
+  "note": "Edit this file to add credentials or mark components complete. The page, the agent corpus and llms.txt all read from it. A component with a url is treated as earned; set url to null for one not yet completed.",
+  "certifications": [
+    {
+      "id": "nvidia-ncp-aai",
+      "name": "NVIDIA-Certified Professional: Agentic AI",
+      "short": "NCP-AAI",
+      "issuer": "NVIDIA",
+      "year": 2026,
+      "url": "https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url",
+      "kind": "proctored-exam",
+      "featured": true,
+      "why": "Proctored professional exam from the vendor whose inference stack the field runs on."
+    },
+    {
+      "id": "aws-cloud-technical-essentials",
+      "name": "AWS Cloud Technical Essentials",
+      "issuer": "Amazon Web Services",
+      "year": 2026,
+      "url": "https://www.coursera.org/account/accomplishments/verify/4L1ZWS6VK2L8",
+      "kind": "course",
+      "featured": false
+    },
+    {
+      "id": "google-cloud-fundamentals",
+      "name": "Google Cloud Fundamentals: Core Infrastructure",
+      "issuer": "Google Cloud",
+      "year": 2025,
+      "url": "https://www.coursera.org/account/accomplishments/verify/T3SB0BFWGHI8",
+      "kind": "course",
+      "featured": false
+    },
+    {
+      "id": "ibm-rag-agentic-ai",
+      "name": "IBM RAG and Agentic AI Professional Certificate",
+      "issuer": "IBM",
+      "year": 2026,
+      "url": null,
+      "kind": "program",
+      "featured": false,
+      "components": [
+        {
+          "name": "Develop Generative AI Applications: Get Started",
+          "url": "https://www.coursera.org/account/accomplishments/verify/YDOJ7MYNJPRF"
+        },
+        {
+          "name": "Build RAG Applications: Get Started",
+          "url": "https://www.coursera.org/account/accomplishments/verify/D6YEX1E4M9GC"
+        },
+        {
+          "name": "Vector Databases for RAG: An Introduction",
+          "url": "https://www.coursera.org/account/accomplishments/verify/9S7Z4CGK7EB5"
+        },
+        { "name": "Advanced RAG with Vector Databases and Retrievers", "url": null },
+        { "name": "Build Multimodal Generative AI Applications", "url": null },
+        { "name": "Fundamentals of Building AI Agents", "url": null },
+        { "name": "Agentic AI with LangChain and LangGraph", "url": null },
+        { "name": "Agentic AI with LangGraph, CrewAI, AutoGen and BeeAI", "url": null },
+        { "name": "Build AI Agents using MCP", "url": null },
+        { "name": "RAG and Agentic AI Capstone Project", "url": null }
+      ]
+    }
+  ]
+}

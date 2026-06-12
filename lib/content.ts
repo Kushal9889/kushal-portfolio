@@ -1,0 +1,188 @@
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { join } from "node:path";
+
+const CONTENT_DIR = join(process.cwd(), "content");
+
+export type Metric = { value: string; label: string };
+
+export type Section = {
+  /** The `##` heading, verbatim. Doubles as the chunk id for retrieval. */
+  title: string;
+  body: string;
+  /** `facts` for the resume corpus, or the note filename for authored depth. */
+  source: string;
+  /** Quantified outcomes, lifted out of the prose so they survive a scan. */
+  metrics: Metric[];
+  /** Technologies, lifted out for the same reason: a reader scans for these. */
+  stack: string[];
+  /** "Role: ... " line. Rendered as the section heading, so it is kept out of the
+   *  prose to avoid printing it twice, and folded back into the retrieval text. */
+  role: string;
+};
+
+export type Profile = Record<string, string>;
+
+/**
+ * Frontmatter is a flat key/value block, so a YAML parser would be a dependency
+ * for one regex. Values may be quoted to protect a leading `+` or `#`.
+ */
+function parseFrontmatter(raw: string): { profile: Profile; body: string } {
+  const match = raw.match(/^---\n([\s\S]*?)\n---\n/);
+  if (!match) return { profile: {}, body: raw };
+
+  const profile: Profile = {};
+  for (const line of match[1].split("\n")) {
+    const kv = line.match(/^([A-Za-z][\w-]*):\s*(.*)$/);
+    if (kv) profile[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+  }
+  return { profile, body: raw.slice(match[0].length) };
+}
+
+/**
+ * Split on `##` headings. Header-aware chunking beats fixed-size windows here
+ * because the corpus is authored prose with meaningful headings: a chunk ends up
+ * being one coherent topic rather than an arbitrary 1000 characters that can cut
+ * a sentence, or worse, separate a claim from the number that supports it.
+ */
+function splitSections(body: string, source: string): Section[] {
+  return body
+    .split(/^## /m)
+    .slice(1)
+    .map((block) => {
+      const nl = block.indexOf("\n");
+      const rest = block.slice(nl + 1);
+
+      // `@metric value | label` lines are pulled out of the body. Keeping them
+      // in the corpus rather than in a component means the page and the agent
+      // read the same numbers, which is the only way they cannot disagree.
+      const metrics: Metric[] = [];
+      let stack: string[] = [];
+      let role = "";
+
+      // Line-oriented directives are pulled out before the prose is assembled.
+      // Stack and Role wrap in the source, so a continuation line is any line
+      // that follows without a blank line between; matching only the first would
+      // truncate the list and leave the remainder stranded as a paragraph.
+      const kept: string[] = [];
+      const lines = rest.split("\n");
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        const metric = line.match(/^@metric\s+(.+?)\s*\|\s*(.+)$/);
+        if (metric) {
+          metrics.push({ value: metric[1].trim(), label: metric[2].trim() });
+          continue;
+        }
+
+        const directive = line.match(/^(Stack|Role):\s*(.+)$/);
+        if (directive) {
+          let value = directive[2];
+          while (i + 1 < lines.length && lines[i + 1].trim() && !/^(@|\w+:)/.test(lines[i + 1])) {
+            value += " " + lines[++i].trim();
+          }
+          if (directive[1] === "Role") {
+            role = value.trim();
+          } else {
+            stack = value
+              .replace(/\.$/, "")
+              .split(/,\s*(?![^(]*\))/)
+              .map((t) => t.trim())
+              .filter(Boolean);
+          }
+          continue;
+        }
+
+        kept.push(line);
+      }
+
+      const body = kept.join("\n");
+
+      return { title: block.slice(0, nl).trim(), body: body.trim(), source, metrics, stack, role };
+    })
+    .filter((s) => s.body.length > 0);
+}
+
+let cache: { profile: Profile; sections: Section[] } | null = null;
+
+export function loadContent() {
+  if (cache) return cache;
+
+  const raw = readFileSync(join(CONTENT_DIR, "facts.md"), "utf8");
+  const { profile, body } = parseFrontmatter(raw);
+  const sections = splitSections(body, "facts");
+
+  // Authored engineering notes. Optional: the site is complete without them,
+  // they just give the agent depth on "how do you think" questions that a
+  // resume structurally cannot answer.
+  const notesDir = join(CONTENT_DIR, "notes");
+  if (existsSync(notesDir)) {
+    for (const file of readdirSync(notesDir).filter((f) => f.endsWith(".md"))) {
+      const note = readFileSync(join(notesDir, file), "utf8");
+      const parsed = parseFrontmatter(note);
+      sections.push(...splitSections(parsed.body, file.replace(/\.md$/, "")));
+    }
+  }
+
+  cache = { profile, sections };
+  return cache;
+}
+
+export function section(title: string): Section {
+  const found = loadContent().sections.find((s) => s.title === title);
+  if (!found) {
+    // Loud on purpose. A missing section means the page and the corpus have
+    // drifted, which is the failure that put contradictory facts on the last site.
+    throw new Error(`content: no section titled "${title}" in facts.md`);
+  }
+  return found;
+}
+
+export type Certification = {
+  id: string;
+  name: string;
+  short?: string;
+  issuer: string;
+  year: number;
+  url: string | null;
+  kind: string;
+  featured: boolean;
+  why?: string;
+  components?: { name: string; url: string | null }[];
+};
+
+/**
+ * Progress through a multi-course program, derived from which components carry a
+ * verification link rather than from a separate counter. A hand-kept number and
+ * a list of links are two sources for one fact, and they drift the first time
+ * only one of them gets updated.
+ */
+export function progress(c: Certification) {
+  if (!c.components) return null;
+  return { earned: c.components.filter((x) => x.url).length, total: c.components.length };
+}
+
+export function loadCertifications(): Certification[] {
+  const raw = readFileSync(join(CONTENT_DIR, "certifications.json"), "utf8");
+  return JSON.parse(raw).certifications;
+}
+
+/** Every external URL the site renders, for the link checker. */
+export function allLinks(): string[] {
+  const { profile, sections } = loadContent();
+  const found = new Set<string>();
+
+  for (const value of Object.values(profile)) {
+    if (value.startsWith("http")) found.add(value);
+  }
+  for (const s of sections) {
+    for (const m of s.body.matchAll(/https?:\/\/[^\s)<>"']+/g)) {
+      found.add(m[0].replace(/[.,]$/, ""));
+    }
+  }
+  for (const c of loadCertifications()) {
+    if (c.url) found.add(c.url);
+    for (const comp of c.components ?? []) if (comp.url) found.add(comp.url);
+  }
+  return [...found];
+}

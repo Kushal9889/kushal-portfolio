@@ -1,0 +1,277 @@
+---
+name: Kushal Gaddamwar
+role: Agentic AI Engineer
+tagline: I engineer the systems around LLMs. Not the prompts inside them.
+location: Boston, MA
+email: kushal7887pd@gmail.com
+phone: "+1 (857) 328-4611"
+linkedin: https://linkedin.com/in/kushal-gaddamwar
+github: https://github.com/Kushal9889
+site: https://kushalgaddamwar.vercel.app
+available: January 2027, earlier for the right team
+lastVerified: 2026-08-09
+---
+
+## Who he is
+
+**Kushal Gaddamwar builds agentic AI systems that run in production.** He is an AI Engineer at Boston
+University's Questrom Computational Lab and an M.S. Computer Science candidate at BU, graduating
+December 2026.
+
+The work he does is context engineering: deciding what a model sees on every inference call.
+Retrieval, memory, tool surface, evaluation. Most of the difficulty in agentic systems is not the
+prompt, it is everything around the prompt.
+
+He is not a researcher and not an ML training engineer. He has never trained a model and does not
+claim to. He builds systems that stay correct under load.
+
+## What he is good at
+
+**Finding the place a system is wrong before it fails loudly.**
+
+Two examples. At Questrom he traced answer quality problems to retrieval rather than generation,
+which is where they usually are and rarely where people look first. In LangChain's deepagents SDK
+he found a code path that reported success while discarding an error, and wrote it up precisely
+enough that a maintainer shipped the fix in three days.
+
+Both are the same skill: reading a system closely enough to see where it contradicts itself.
+
+## What he does not do
+
+Model training. He has no PyTorch or TensorFlow training experience and does not present himself as
+an ML engineer.
+
+Data science and statistical modeling.
+
+Pure backend work with no AI layer. He can do it, having done it at IMG Systems and Growaza, but it
+is not what he is optimising his career for.
+
+## Boston University, Questrom Computational Lab
+
+Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
+
+@metric 14 | tools on one LangGraph agent
+@metric BM25 + vector | hybrid retrieval, Cohere reranked
+@metric LLM-as-a-Judge | hallucination and retrieval scoring
+
+He architected a document intelligence assistant for an enterprise consulting client, on Azure,
+**owned from ingestion through deployment.**
+
+The constraint: consultants needed answers grounded in a large private document corpus, where a
+wrong answer delivered confidently is worse than no answer.
+
+What he built. A LangGraph agent exposing 14 tools covering document question answering,
+cross-document comparison, and template-driven generation. Hybrid retrieval fusing BM25 keyword
+search with vector search, plus LLM-based query rewriting and Cohere re-ranking. LLM-as-a-Judge
+evaluations measuring hallucination rate and retrieval quality. PII and entity redaction guardrails
+applied across ingested documents. Header-aware chunking, Markdown-header splitting plus recursive
+splitting, with SHA-256 deduplication and Azure Blob Storage metadata. Streaming FastAPI endpoints
+over Server-Sent Events with a React single-page app. A Cosmos DB Gremlin knowledge graph linking
+clients, projects, and technologies.
+
+Stack: Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React, Cosmos DB Gremlin, Cohere.
+
+The trade-off worth asking about: hybrid retrieval costs more per query than dense-only. Dense
+embeddings compress meaning and lose surface form, so they miss exact terms, and in a consulting
+corpus the exact terms are client names, project codes, and document titles. The cost was worth it.
+
+## IMG Systems
+
+Role: Software Engineering Intern. August 2024 to April 2025. Remote.
+
+@metric +20% | extraction accuracy
+@metric 95% | schema accuracy, up from 75-78%
+@metric 5,000+ | profiles parsed per month
+@metric -25% | REST API latency
+
+**He extended a Python document-parsing pipeline built on Apache Tika, raising extraction accuracy 20
+percent** across more than 5,000 candidate profiles a month and cutting recruiter screening time 15
+percent.
+
+He enforced structured-output validation with Pydantic against a JSON Schema, reaching 95 percent
+schema accuracy and reducing manual review across a six-person team. Before the validation layer,
+schema conformance sat around 75 to 78 percent.
+
+He containerized Python microservices backed by PostgreSQL and Redis with Docker, trimming REST API
+latency 25 percent, and automated CI/CD through GitHub Actions for zero-downtime releases.
+
+Honest scope: this was an internship extending existing systems, not a greenfield build. He owned
+the pipeline extension, the schema layer, and the CI/CD setup independently.
+
+**The mistake he made here, and it is a good interview answer: his first Pydantic schemas were too
+strict.** Documents that were merely unusual got rejected alongside documents that were genuinely
+malformed. He fixed it with fallback field validators and logging on the rejection path, which
+turned silent data loss into a visible signal.
+
+## Growaza
+
+Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
+
+@metric -30% | API response time
+@metric +22% | engagement, 1,000+ daily users
+@metric 2,000+ | SKUs tracked live
+
+**He cut API response time 30 percent using in-memory caching and asynchronous request handling,**
+lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform.
+
+He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, and secured REST endpoints
+with JWT and role-based access control across admin, manager, and staff levels. Deployed on AWS EC2
+and S3.
+
+Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
+
+## BU Life AI
+
+A multi-agent campus assistant for Boston University students. January 2026 to present. Live.
+
+@metric -70% | redundant LLM calls
+@metric 3 | specialised agents, isolated state
+@metric 1024-dim | NV-Embed over pgvector
+
+Live: [bulife-ai.netlify.app](https://bulife-ai.netlify.app/)
+Source: [github.com/Kushal9889/BU-Life-AI](https://github.com/Kushal9889/BU-Life-AI)
+
+The constraint: students ask heterogeneous questions across housing, dining, events, and campus
+resources. One agent with a single long context prompt mixes tool namespaces across those domains,
+which causes retrieval contamination and reasoning drift over a session.
+
+**The decision: a LangGraph supervisor node classifies intent and routes to one of three specialised
+ReAct agents**, for places, resources, and events. Each agent owns its own LangGraph thread, so
+concurrent users never share state. The cost is orchestration complexity. What it buys is state
+isolation and a 70 percent reduction in redundant LLM calls.
+
+Retrieval combines BM25 lexical search with NVIDIA NV-Embed 1024-dimension vectors over pgvector,
+merged through an EnsembleRetriever. The retriever is initialised once at startup as a singleton,
+so there is no per-request re-ingestion cost.
+
+Stack: LangGraph, FastAPI, Next.js, TypeScript, pgvector, Neon Postgres, NVIDIA NIM, LangSmith
+
+Tokens stream over Server-Sent Events. The frontend is on Netlify and the backend on Render.
+
+What breaks at 10x: the Render free tier is the first bottleneck, CPU throttling and cold starts.
+Neon connection limits are second. The fix is a paid tier with persistent workers and PgBouncer
+pooling. He has not needed it yet and has not pretended otherwise.
+
+## Open source, LangChain deepagents
+
+He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK.
+
+@metric 3 days | filed to merged by a maintainer
+@metric 4 | code paths shown to disagree
+@metric credited | by name in the merged PR
+
+Issue: [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
+Merged fix: [langchain-ai/deepagents#4925](https://github.com/langchain-ai/deepagents/pull/4925)
+
+`CompositeBackend.ls("/")` and `als("/")` aggregated results at the root and discarded errors from
+the default backend, returning a successful-looking listing containing only virtual route
+directories. A caller whose backend had failed would see a healthy but nearly empty filesystem.
+
+**What made the report land was not spotting a crash, because there was no crash.** It was showing that
+the behaviour contradicted the codebase's own documented invariant, quoted from `_merge_glob_results`:
+a backend error must not be swallowed as a partial success. The routed branch already checked for
+errors. The grep root merge already returned default backend errors first. Only this path did not.
+He also traced the precedent, the same bug class as issue #3105, fixed for sandbox backends in #3359.
+
+Filed 19 July 2026. Mason Daugherty, a LangChain maintainer, merged the fix on 22 July 2026. The
+merged pull request credits him by name: Kushal Gaddamwar (@Kushal9889) reported the issue and
+provided reproduction steps.
+
+**Three days from report to merged fix.** He could not open the pull request himself because deepagents
+restricts merges to organisation contributors.
+
+## Certifications
+
+NVIDIA-Certified Professional: Agentic AI, known as NCP-AAI, earned 2026. This is the one that
+matters: a proctored professional exam from the vendor whose inference stack the field runs on,
+covering agent design, orchestration, and deployment. Verifiable on Credly.
+https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url
+
+AWS Cloud Technical Essentials, Amazon Web Services, completed January 2026.
+https://www.coursera.org/account/accomplishments/verify/4L1ZWS6VK2L8
+
+Google Cloud Fundamentals: Core Infrastructure, Google Cloud, 2025.
+https://www.coursera.org/account/accomplishments/verify/T3SB0BFWGHI8
+
+IBM RAG and Agentic AI Professional Certificate, a ten-course program. Three courses are complete
+and individually verifiable: Develop Generative AI Applications, Build RAG Applications, and Vector
+Databases for RAG. The remaining seven cover advanced retrievers, multimodal generative AI, building
+AI agents, agentic AI with LangChain and LangGraph, agentic AI with CrewAI, AutoGen and BeeAI,
+building agents with the Model Context Protocol, and a capstone project.
+
+## Education
+
+Boston University, M.S. Computer Science. September 2025 to December 2026 expected. Boston, MA.
+Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems.
+
+IIIT Design and Manufacturing Jabalpur, B.Tech Computer Science and Engineering. October 2020 to
+June 2024. India.
+
+## Publications
+
+IEEE ICAICCIT 2024, first author. Deep Learning for Contextual Bug Detection and Automated Fixes in
+Software Systems.
+[Read the paper and code](https://github.com/Kushal9889/Deep-Learning-for-Contextual-Bug-Detection-and-Automated-Fixes-in-Software-Systems)
+
+IGI Global 2024, co-author. Cyber-Physical Systems: Security and Optimization Strategies.
+[Read the chapter and code](https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities)
+
+## Skills
+
+Languages: Python, SQL, TypeScript, JavaScript, C++.
+
+Agentic AI: multi-agent orchestration, ReAct, tool calling, function calling, structured outputs,
+context engineering, prompt engineering, Model Context Protocol.
+
+Frameworks: LangChain, LangGraph, LangSmith, LlamaIndex, NVIDIA NIM.
+
+Retrieval: RAG, agentic RAG, hybrid search, BM25, reranking, embeddings, semantic search, chunking
+strategies, pgvector, ChromaDB, Azure AI Search, NV-Embed.
+
+Evaluation and reliability: LLM-as-a-Judge, guardrails, grounding, hallucination reduction, PII
+redaction, LLM observability, tracing.
+
+Backend and MLOps: FastAPI, REST, microservices, async Python, Pydantic, Docker, GitHub Actions,
+CI/CD, model deployment, low-latency inference, Server-Sent Events.
+
+Databases: PostgreSQL, MySQL, MongoDB, Redis, Neo4j, Cosmos DB.
+
+Cloud: AWS EC2, S3, Lambda, API Gateway. Microsoft Azure. Google Cloud Platform.
+
+Frontend: React, Redux, Next.js.
+
+## Achievements
+
+JEE Mains 2020: 99.1 percentile of 1.2 million candidates, top 0.9 percent nationally.
+
+CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
+
+Co-founded BITBYTE, a 70-plus member coding community at IIIT-DM Jabalpur. Mentees reached Google
+Kickstart top 200, Google Summer of Code, and three internships.
+
+Advisory Committee Head, Tarang Fest 2023. Coordinated programming across 13 colleges and 250-plus
+students, raised $12,000 from more than 25 sponsors.
+
+## Availability
+
+Full-time from January 2027, or earlier for the right team. Open to remote, hybrid, and on-site
+across the United States. Based in Boston.
+
+Target roles: Agentic AI Engineer, Applied AI Engineer, LLM Engineer, AI Platform Engineer, Context
+Engineer.
+
+## Work authorisation
+
+F-1 student visa. OPT-eligible on graduation in December 2026, with the three-year STEM extension
+available. That is roughly three years of work authorisation before H-1B sponsorship is required.
+
+This is answered only when asked. It is not raised otherwise.
+
+## This site
+
+The page you are reading is the work sample. The agent answering questions runs a LangGraph graph
+with four nodes, hybrid BM25 and dense retrieval over this file and his engineering notes, a policy
+layer, and per-answer cost accounting. Every latency number shown was measured on the request you
+are looking at, not configured.
+
+Source: https://github.com/Kushal9889/kushal-portfolio
