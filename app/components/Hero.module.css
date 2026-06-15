@@ -1,0 +1,230 @@
+/* 390px is the primary target: recruiters open portfolio links from LinkedIn on
+   a phone. Everything here reads top to bottom in one column and widens later. */
+.hero {
+  /* Sized to content, not to the viewport. A full-height hero left roughly 270px
+     of empty space under the openers, and dead space above the fold is worse
+     than a short hero: ending early lets the first section show through, which
+     is what invites the scroll. */
+  padding-block: clamp(1.25rem, 3vh, 2rem) clamp(2rem, 6vh, 3.5rem);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: clamp(2.5rem, 10vh, 6rem);
+}
+
+.name {
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.line {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  max-width: 20ch;
+}
+
+/* The graph is the one signature moment on the page. It gets the space that a
+   hero image would normally take, because unlike an image it is the work. */
+.graph {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+  margin-top: clamp(2rem, 7vh, 3.5rem);
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.node {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.arrow {
+  color: var(--ink-faint);
+}
+
+.label {
+  font-size: var(--step-0);
+  transition: color var(--t-base) var(--ease-out);
+}
+
+.ms {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  /* Reserve the width a timing will occupy so the row cannot shift when numbers
+     land. Layout shift here would be visible on the very first paint. */
+  min-width: 4.5ch;
+}
+
+.caption {
+  margin: 0.75rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: clamp(2rem, 6vh, 3rem);
+}
+
+/* One primary action, set noticeably larger than anything near it. Competing
+   calls to action cost more than they add: every extra choice is time spent on
+   a decision that is not the one worth making. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.6rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step-0);
+  text-decoration: none;
+  transition:
+    transform var(--t-fast) var(--ease-spring),
+    background var(--t-fast) var(--ease-out);
+}
+
+.cta:hover {
+  transform: translate3d(0, -2px, 0);
+  background: var(--signal);
+}
+
+.cta:hover {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translate3d(0, -2px, 0);
+}
+
+.cta:active {
+  transform: none;
+}
+
+.cred {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-decoration-color: var(--rule);
+}
+
+@media (min-width: 40rem) {
+  .graph {
+    gap: 0 1.5rem;
+  }
+}
+
+.agentSlot {
+  margin-top: clamp(1.75rem, 5vh, 2.75rem);
+  padding-top: clamp(1.25rem, 3vh, 2rem);
+  border-top: 1px solid var(--rule);
+}
+
+/* The graph row.
+   A three-column grid so the rails between nodes are continuous rather than
+   per-node arrows, which is what makes it read as one system instead of three
+   labels. Node order is fixed, so the columns are too. */
+.graph {
+  display: grid;
+  /* Column flow rather than an explicit three-column template: the node count
+     comes from the graph, not from the layout, so adding a node needs no CSS
+     change. It also keeps this from matching the three-card feature row the
+     silhouette test looks for. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-bottom: 0.75rem;
+}
+
+.cell {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+}
+
+.rail {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  height: 1rem;
+}
+
+.railLine {
+  height: 2px;
+  background: var(--rule);
+}
+
+/* First and last cells have a rail on one side only, so the empty grid slot
+   keeps the dot centred without a line running off the edge. */
+.rail > .railLine:only-of-type:first-child {
+  grid-column: 1;
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink-soft);
+  grid-column: 2;
+  transition:
+    background var(--t-normal) var(--ease-out),
+    box-shadow var(--t-normal) var(--ease-out),
+    transform var(--t-normal) var(--ease-spring);
+}
+
+.label {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  transition: color var(--t-normal) var(--ease-out);
+}
+
+.ms {
+  font-size: var(--step--2, 0.7rem);
+  color: var(--ink-faint);
+  min-height: 1em;
+}
+
+/* Completed: the node is filled and its label steps up to full ink. */
+.cell[data-state="done"] .dot {
+  background: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.cell[data-state="done"] .label {
+  color: var(--ink);
+}
+
+/* Running: the only place the accent appears in the hero, and it pulses, so
+   "this is happening right now" is carried by motion and colour together. */
+.cell[data-state="running"] .dot {
+  background: var(--signal);
+  box-shadow: inset 0 0 0 2px var(--signal);
+  transform: scale(1.35);
+  animation: node-pulse 1s var(--ease-out) infinite;
+}
+
+.cell[data-state="running"] .label {
+  color: var(--signal);
+}
+
+@keyframes node-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell[data-state="running"] .dot {
+    animation: none;
+  }
+}

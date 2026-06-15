@@ -1,0 +1,186 @@
+.section {
+  padding-block: clamp(3rem, 10vh, 6rem);
+  border-bottom: 1px solid var(--rule);
+}
+
+.head {
+  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+/* The section numeral, stacked above its heading at display size and held
+   light. It is the page's position marker: scanning the left edge gives a
+   reader depth without reading a word, and stacking keeps it working at every
+   width rather than only above a breakpoint. */
+.index {
+  display: block;
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink-faint);
+  margin-bottom: 0.2rem;
+}
+
+.title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  font-size: var(--step-2);
+}
+
+.subhead {
+  font-size: var(--step-0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.75rem;
+}
+
+.role {
+  padding-block: clamp(1.5rem, 4vh, 2.5rem);
+  border-top: 1px solid var(--rule);
+}
+
+.role:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.roleHead {
+  margin-bottom: 1.25rem;
+}
+
+/* The job title leads. It is the line a recruiter is actually looking for, so
+   it is set at heading scale rather than as a caption under the employer. */
+.roleName {
+  font-size: var(--step-2);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.roleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.9rem;
+  margin: 0.3rem 0 0;
+}
+
+.company {
+  font-size: var(--step-0);
+  color: var(--ink);
+}
+
+/* Technologies as a scannable row rather than a sentence. Set in mono so they
+   read as names of things, with a rule between rather than a comma. */
+.stack {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.stack li + li {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.9rem;
+}
+
+
+.split {
+  display: grid;
+  gap: clamp(2rem, 5vh, 3rem);
+  margin-top: clamp(2rem, 5vh, 3rem);
+  padding-top: clamp(2rem, 5vh, 3rem);
+  border-top: 1px solid var(--rule);
+}
+
+.links {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: var(--step-1);
+}
+
+.footer {
+  padding-block: clamp(2.5rem, 8vh, 4rem);
+  color: var(--ink-soft);
+}
+
+.footerNote {
+  font-size: var(--step--1);
+  font-family: var(--font-mono), monospace;
+  max-width: var(--measure);
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 62rem) {
+.split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.agentIntro {
+  margin: 0 0 1.5rem;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+/* Defined in globals so the scroll timeline can reference the root scroller. */
+.progress {
+  composes: progress from global;
+}
+
+/* Section-level differentiation.
+ *
+ * Five sections rendered identically read as one long document, which is the
+ * failure this addresses. Each now carries a treatment matched to what it holds
+ * rather than a repeated template: evidence sits on a recessed ground, the
+ * closing section is set larger because it is the last thing read.
+ */
+
+/* Proof sits on a recessed ground. It is the densest section and the one a
+   reader scans rather than reads, so separating it from the prose around it
+   makes it scannable as a block. */
+.section[data-tone="sunk"] {
+  background: var(--paper-sunk);
+}
+
+/* The closing section is set up a step. Peak-end: the last thing read carries
+   disproportionate weight in what a reader remembers. */
+.section[data-weight="closing"] .title {
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+}
+
+.section[data-weight="closing"] .links {
+  /* Steps up on a wide screen, holds at body size on a phone: the email address
+     is a single unbreakable token and at step-2 it is wider than 375px. */
+  font-size: clamp(var(--step-0), 0.7rem + 1.6vw, var(--step-2));
+  gap: 1.25rem 2rem;
+}
+
+.links a {
+  overflow-wrap: anywhere;
+}
+
+/* The open-source section leads with the artifact rather than prose, so its
+   heading sits tighter to the diff below it. */
+.section[data-lead="artifact"] .title {
+  margin-bottom: clamp(1rem, 2.5vh, 1.5rem);
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
