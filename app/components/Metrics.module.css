@@ -1,0 +1,49 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 1.25rem 2rem;
+  margin: 0 0 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* The jump that makes these readable at a glance. Around 2.4x the body size and
+   a heavier weight, so a scanning eye stops here before it stops anywhere else
+   in the section. */
+.value {
+  /* Its own step rather than reusing a heading size. A figure that matches the
+     section title competes with it; the number has to win that contest, because
+     it is the thing worth stopping for. Lands near 2.3x body. */
+  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.2rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  /* Long values like "BM25 + vector" are labels, not figures, so they step down
+     rather than overflow their cell. */
+  overflow-wrap: anywhere;
+  hyphens: none;
+}
+
+/* Phrases sit between a figure and the body: still emphasised, no longer
+   competing with the numbers beside them. */
+.phrase {
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 300;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  max-width: 22ch;
+}

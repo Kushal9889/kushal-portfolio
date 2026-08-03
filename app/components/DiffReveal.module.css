@@ -1,0 +1,102 @@
+.stage {
+  margin-block: clamp(1rem, 4vh, 2rem);
+}
+
+.sticky {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin: 0;
+}
+
+.path {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.code {
+  margin: 0;
+  display: grid;
+  font-size: clamp(0.68rem, 0.5rem + 1.1vw, 0.85rem);
+  line-height: 1.75;
+  overflow-x: auto;
+}
+
+.line {
+  white-space: pre;
+  color: var(--ink-soft);
+  padding-inline: 0.5rem;
+}
+
+.bad {
+  color: var(--ink);
+  background: var(--signal-wash);
+  box-shadow: inset 2px 0 0 var(--signal);
+}
+
+.good {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.verdict,
+.credit {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+
+/*
+ * Staged reveal, driven by each element's own position in the viewport.
+ *
+ * An earlier version used one tall sticky track with a named view-timeline. It
+ * animated correctly but the sticky layer failed to paint under compositing, so
+ * this drives each element from its own view() timeline instead: no sticky, no
+ * shared timeline, no scroll listener, and the same sequencing because the
+ * elements are stacked and enter in order.
+ *
+ * Safari does not support animation-timeline yet, so everything above is already
+ * in its resolved, readable state and this block only adds the choreography.
+ * animation-duration is deliberately absent: scroll position drives progress and
+ * any duration would be ignored.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .verdict,
+    .fix,
+    .credit {
+      animation: settle linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 60%;
+    }
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The repository the fix landed in, marked so the source is recognisable before
+   the name is read. */
+.repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
