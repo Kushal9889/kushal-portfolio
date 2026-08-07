@@ -1,0 +1,78 @@
+.wrap {
+  margin-block: clamp(1rem, 3vh, 2rem);
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.edge {
+  stroke: var(--rule);
+  transition: stroke var(--t-fast) var(--ease-out);
+}
+
+/* Lit only while a node is held. The accent means "active right now" here for
+   the same reason it does on the agent, so it never appears at rest. */
+.edgeLit {
+  stroke: var(--signal);
+}
+
+.node {
+  cursor: pointer;
+  transition: opacity var(--t-normal) var(--ease-out);
+}
+
+.node:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* Unconnected nodes recede rather than disappear: removing them would redraw the
+   graph on every hover and lose the shape the visitor is reading. */
+.dim {
+  opacity: 0.32;
+}
+
+.dot {
+  fill: var(--ink);
+  transition:
+    r var(--t-fast) var(--ease-spring),
+    fill var(--t-fast) var(--ease-out);
+}
+
+.dotLit {
+  fill: var(--signal);
+}
+
+.label {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  fill: var(--ink-soft);
+  text-anchor: middle;
+  letter-spacing: 0.02em;
+}
+
+.readout {
+  margin: 0.75rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  min-height: 2.6em;
+  max-width: var(--measure);
+}
+
+.readout strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge,
+  .node,
+  .dot {
+    transition: none;
+  }
+}
