@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Types first: everything below assumes the code compiles.
+      - run: npm run typecheck
+
+      # No colour outside the token file. Once components carry their own hex
+      # values the palette stops being a system.
+      - run: npm run lint:tokens
+
+      # Every rendered claim resolves to a line in the corpus, and the em-dash
+      # rate stays on the human side of the line.
+      - run: npm run verify:facts
+
+      # The index is a build artifact. Regenerating it here proves it can be
+      # rebuilt from the corpus alone, and without a key it falls back to
+      # keyword-only rather than failing.
+      - run: npm run build:index
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+
+      - run: npm run build
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Separate job: a credential host being briefly unreachable should not
+      # block a deploy, but it should be visible.
+      - run: npm run verify:links
+        continue-on-error: true
