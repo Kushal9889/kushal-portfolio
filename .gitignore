@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 # Working notes: audits, decision records, research maps. Useful while building,
 # not part of what ships.
 docs/
+
+# Local editor/preview config
+.claude/
