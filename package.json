@@ -21,7 +21,12 @@
     "prewarm": "tsx scripts/prewarm.ts",
     "decision-matrix": "tsx scripts/decision-matrix.ts",
     "audit": "tsx scripts/audit.ts",
-    "build:graph": "tsx scripts/build-graph.ts"
+    "build:graph": "tsx scripts/build-graph.ts",
+    "test:unit": "tsx --test tests/unit.test.ts",
+    "test:integration": "tsx --test tests/integration.test.ts",
+    "test:system": "npm run build && tsx --test --test-timeout=120000 tests/system.test.ts",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:system"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",
