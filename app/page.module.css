@@ -129,12 +129,6 @@
   }
 }
 
-.agentIntro {
-  margin: 0 0 1.5rem;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  max-width: var(--measure);
-}
 
 /* Defined in globals so the scroll timeline can reference the root scroller. */
 .progress {

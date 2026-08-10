@@ -42,15 +42,7 @@
   border-top: 1px solid var(--rule);
 }
 
-.node {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.75rem;
-}
 
-.arrow {
-  color: var(--ink-faint);
-}
 
 .label {
   font-size: var(--step-0);

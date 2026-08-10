@@ -50,7 +50,10 @@
 
 .label {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  /* Node labels are the only text in the SVG and were set at 11px, which is
+     below the point where a monospace face stays comfortable. Scales with the
+     rest of the page rather than sitting outside the system. */
+  font-size: var(--step--1);
   fill: var(--ink-soft);
   text-anchor: middle;
   letter-spacing: 0.02em;

@@ -42,7 +42,7 @@
 .label {
   margin: 0;
   font-size: var(--step--1);
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.35;
   color: var(--ink-soft);
   max-width: 22ch;
