@@ -1,4 +1,4 @@
-import { speakNeural, stopNeural } from "./neural";
+import { speakNeural, stopNeural, loadNeuralVoice, neuralReady } from "./neural";
 
 /**
  * Browser speech, in and out.
@@ -147,18 +147,36 @@ export function sentences(text: string): { ready: string[]; rest: string } {
   return { ready, rest: text.slice(start) };
 }
 
-/** Speaks a queue of sentences in order. Resolves when the last one finishes. */
+/**
+ * Speaks one chunk, using whichever voice can start now.
+ *
+ * The neural model is roughly 86MB and loads on first use. Awaiting that load
+ * before making any sound meant the first answer played nothing at all for as
+ * long as the download took, and the built-in fallback never ran because the
+ * load had not failed, only not finished. Silence reads as a broken feature.
+ *
+ * So: if the model is ready, use it. If it is not, speak with the built-in voice
+ * immediately and start the download in the background, so the next chunk and
+ * every answer after it get the better voice.
+ */
 export function speak(text: string, onEnd?: () => void) {
-  // Neural first, built-in synthesiser second. speakNeural resolves false on any
-  // device that cannot run it, which keeps audio working everywhere while the
-  // machines that can run it get a voice that does not sound like a screen
-  // reader. The fetch happens on the first spoken answer, not on page load.
-  speakNeural(text).then((spoke) => {
-    if (spoke) {
-      onEnd?.();
-      return;
-    }
-    speakBuiltIn(text, onEnd);
+  if (neuralReady()) {
+    speakNeural(text).then((spoke) => (spoke ? onEnd?.() : speakBuiltIn(text, onEnd)));
+    return;
+  }
+
+  speakBuiltIn(text, onEnd);
+  warmNeural();
+}
+
+let warming = false;
+
+/** Starts the model download once, without blocking anything on it. */
+export function warmNeural(onProgress?: (pct: number) => void) {
+  if (warming || neuralReady()) return;
+  warming = true;
+  loadNeuralVoice(onProgress).finally(() => {
+    warming = false;
   });
 }
 

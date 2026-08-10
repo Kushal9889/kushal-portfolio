@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { listen, speak, silence, speechSupported, synthesisSupported } from "@/lib/voice/speech";
+import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import styles from "./Agent.module.css";
 
@@ -309,7 +309,15 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
             checked={voiceOn}
             onChange={(e) => {
               setVoiceOn(e.target.checked);
-              if (!e.target.checked) silence();
+              if (e.target.checked) {
+                // Start the model download the moment someone opts in, rather
+                // than on the first answer. By the time a question is typed and
+                // answered it is usually ready, so the first spoken reply gets
+                // the neural voice instead of the built-in one.
+                warmNeural();
+              } else {
+                silence();
+              }
             }}
           />
           Read answers aloud
