@@ -71,11 +71,14 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
     // start and avoids showing a visitor the model's working.
     let buffer = "";
     let emitted = 0;
+    let usage: { in: number; out: number } | null = null;
 
     for await (const token of streamWithFailover([
       { role: "system", content: systemPrompt(context) },
       { role: "user", content: question },
-    ])) {
+    ], (u) => {
+      usage = u;
+    })) {
       buffer += token;
       const clean = cleanAnswer(buffer);
       if (clean.length > emitted) {
@@ -84,7 +87,7 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
       }
     }
 
-    yield { type: "done", total: Date.now() - started, usage: null };
+    yield { type: "done", total: Date.now() - started, usage };
   } catch {
     yield { type: "error", message: "The model is unavailable. Reach him directly by email." };
   }

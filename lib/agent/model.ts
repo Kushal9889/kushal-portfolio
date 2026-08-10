@@ -111,6 +111,10 @@ function build(name: ProviderName, streaming: boolean) {
     // One retry only. A visitor is waiting, and a provider that failed twice is
     // better swapped than waited on.
     maxRetries: 1,
+    // Without this the final chunk carries no usage_metadata and the token
+    // count on screen stays empty, which is the number a reader most wants
+    // when the page is claiming to be cost-aware.
+    streamUsage: true,
   };
 
   if (name === "azure") {
@@ -192,6 +196,7 @@ export async function invokeWithFailover(
  */
 export async function* streamWithFailover(
   messages: { role: string; content: string }[],
+  onUsage?: (usage: { in: number; out: number }) => void,
 ): AsyncGenerator<string> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -203,6 +208,12 @@ export async function* streamWithFailover(
       for await (const chunk of stream) {
         const text = typeof chunk.content === "string" ? chunk.content : "";
         if (text) yield text;
+
+        // Usage arrives on the final chunk rather than alongside the tokens, so
+        // it is reported through a callback instead of the generator: a consumer
+        // reading text should not have to discriminate two payload shapes.
+        const u = chunk.usage_metadata;
+        if (u) onUsage?.({ in: u.input_tokens ?? 0, out: u.output_tokens ?? 0 });
       }
       return;
     } catch (err) {
