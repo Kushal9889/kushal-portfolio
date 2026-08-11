@@ -1,0 +1,11 @@
+# Next.js on Netlify. The plugin wires the App Router's server routes to
+# Netlify Functions; without it the API routes 404 and the agent is a dead box.
+[build]
+  command = "npm run build:index && npm run build:graph && npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "22"
