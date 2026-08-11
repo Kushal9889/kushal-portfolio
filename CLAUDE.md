@@ -349,8 +349,24 @@ Do not reintroduce. Each has a test.
 | Sticky 260vh scroll track failed to paint under compositing | replaced with per-element `view()` |
 | Agent lived only at the page bottom, below the fold | rendered inside `Hero` |
 | JSON-LD test did not handle `@graph` nesting | test fixed, site was correct |
+| Diagonal hatch used `repeating-linear-gradient`, tripping the no-gradients rule | audit check 2.5, blocking |
+| Colour linter walked `.netlify/static`, where tokens are already compiled to hex | `SKIP_DIRS` in `lint-tokens.ts` |
 
 ---
+
+## v8, 10 Aug: the matrix
+
+The corpus ring draws only pairs that share a technology, which left 7 of the 15
+possible pairs invisible. `CorpusMatrix` puts all six nodes on both axes and
+scores every cell by shared-technology count, so an empty cell is a reading
+rather than a gap: IMG Systems and BU Life AI have no technology in common, and
+that is a fact about the work.
+
+The diagonal counts a node's own stack and is marked rather than scored, so it
+never reads as the strongest cell in its row.
+
+**Both components ship.** The ring shows shape at a glance; the matrix shows
+every pair including the empty ones. Neither is redundant.
 
 ## Known limits, stated plainly
 
@@ -367,13 +383,39 @@ Do not reintroduce. Each has a test.
 
 ---
 
+## Live
+
+Both URLs serve the same build.
+
+- **https://kushal-portfolio-223.netlify.app** is the address printed on the
+  résumé, so this is the one that matters. It served the old site until 10 Aug.
+- **https://kushal-portfolio-v2.netlify.app** is the same deploy under the repo's
+  own name.
+- Source: **https://github.com/Kushal9889/kushal-portfolio-v2**
+
+Deploying: `netlify deploy --prod --build` from this directory. The CLI is linked
+to `kushal-portfolio-223`; check with `netlify status` before deploying, because
+`netlify link --id` has silently failed here and left the CLI pointed at the
+wrong site. Env vars set while mislinked land on the wrong project.
+
+The first deploy attempt reported exit 0 having only built, never uploading.
+Verify a route rather than trusting the exit code:
+
+```
+curl -sL -o /dev/null -w "%{http_code}\n" https://kushal-portfolio-223.netlify.app/llms.txt
+```
+
 ## Open, needs credentials this session did not hold
 
-1. **Push v2.** `git push --force origin main` from `v2/`. Blocked by the
-   permission classifier. Nothing built here is publicly visible until it lands.
-2. **Connect ORCID** `0009-0009-9318-1616` at `github.com/settings/profile`.
+1. **Rotate `NVIDIA_API_KEY`.** It is set on two public Netlify sites and was
+   pasted into a chat transcript. Treat it as compromised. After rotating:
+   `netlify env:set NVIDIA_API_KEY <new>` on both projects, then redeploy.
+2. **Connect ORCID** `0009-0009-9318-1616` at `github.com/settings/profile` so
+   GitHub renders the verified iD. Needs the `user` scope.
 3. **Set the profile blog field** to the portfolio URL. Currently empty.
-4. **Add the IEEE paper to the ORCID record.** It lists only the IGI chapter.
-5. **Deploy.** The résumé points at `kushal-portfolio-223.netlify.app`, which
-   still serves the old site. `profile.site` in `facts.md` says
-   `kushalgaddamwar.vercel.app`, which 404s. These must converge.
+4. **Add the IEEE paper to the ORCID record.** It lists only the IGI chapter, so
+   the verified record is missing the stronger publication.
+5. **Decide the old repo.** `Kushal9889/kushal-portfolio` still holds the previous
+   portfolio and its history back to May. A force-push over it was approved but
+   blocked by the permission classifier, so v2 went to a new repo instead. Old
+   history is bundled at `~/kushal-portfolio-old-history-20260810.bundle`.
