@@ -7,6 +7,7 @@ import Palette from "./components/Palette";
 import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import CorpusGraph from "./components/CorpusGraph";
+import CorpusMatrix from "./components/CorpusMatrix";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import styles from "./page.module.css";
@@ -117,6 +118,7 @@ export default function Page() {
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" index="02" title="How he works">
           <CorpusGraph />
+          <CorpusMatrix />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           <Prose body={section("What he does not do").body} />

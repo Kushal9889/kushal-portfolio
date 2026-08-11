@@ -16,3 +16,6 @@ docs/
 
 # Local editor/preview config
 .claude/
+
+# Local Netlify folder
+.netlify

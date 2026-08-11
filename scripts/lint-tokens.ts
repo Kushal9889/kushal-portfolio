@@ -31,7 +31,10 @@ const ALLOWED = new Set([
  * particular exists to name the forbidden colours, so scanning it for them
  * reports the detector as the offence.
  */
-const SKIP_DIRS = ["node_modules", ".next", ".git", "scripts"];
+// Build output belongs here too. The Netlify adapter writes compiled CSS to
+// .netlify/static, where every token has already been resolved to a hex value,
+// so scanning it reports the design system as a violation of itself.
+const SKIP_DIRS = ["node_modules", ".next", ".netlify", ".git", "scripts", "out", "dist"];
 
 // Stylesheets may write any hex shorthand. Source files are matched only on the
 // six and eight digit forms, because shorter runs collide with ordinary text:
