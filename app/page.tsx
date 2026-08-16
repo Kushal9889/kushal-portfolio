@@ -32,7 +32,12 @@ function Section({
 }) {
   return (
     <section id={id} className={styles.section} {...tone}>
-      <div className="wrap">
+      {/* Two columns above 62rem: the heading holds a rail on the left and
+          everything else runs beside it. Stacked, seven section headings cost
+          most of a screen on their own and the page used half its width. The
+          children stay direct descendants of the wrap so the scroll batching
+          still sees them individually. */}
+      <div className={`wrap ${styles.grid}`}>
         <div className={styles.head}>
           <span className={styles.index}>{index}</span>
           <h2 className={styles.title}>{title}</h2>

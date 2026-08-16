@@ -109,3 +109,32 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Two abreast once there is room.
+ *
+ * The course completions are short, self-contained rows, and stacked they were
+ * the tallest block in the section while carrying the least weight in it. The
+ * IBM programme is the exception: it brings a list of components with it, so it
+ * takes the full width rather than being squeezed into half of one. */
+@media (min-width: 62rem) {
+  .list {
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  .item:has(.components) {
+    grid-column: 1 / -1;
+  }
+
+  /* With two per row the last-child rule no longer closes the block, because
+     the final row may hold one item or two. */
+  .item:last-child {
+    border-bottom: none;
+  }
+
+  .list::after {
+    content: "";
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--rule);
+  }
+}

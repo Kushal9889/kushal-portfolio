@@ -1,5 +1,8 @@
+/* Vertical rhythm is set by the shorter end of the clamp now. Seven sections at
+   96px of padding on each side spent more than a screen and a half on empty
+   space alone, and the section rules already separate them. */
 .section {
-  padding-block: clamp(3rem, 10vh, 6rem);
+  padding-block: clamp(2.5rem, 6vh, 4rem);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -124,8 +127,91 @@
 }
 
 @media (min-width: 62rem) {
-.split {
+  .split {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /*
+   * The page turns sideways.
+   *
+   * Text has to stay near 65 characters a line whatever the window is doing, so
+   * the width a wide screen offers cannot be spent on longer lines. Stacked, it
+   * was not spent at all: prose measured 714px inside a 1440px window and the
+   * other half of the screen was empty while the document ran to fifteen
+   * screens. The heading takes that space instead.
+   *
+   * The heading spans every row so it has a column tall enough to stick inside.
+   * It stays visible for the length of its section, which means a reader who
+   * lands mid-page always knows which one they are in without scrolling back.
+   */
+  /*
+   * The rails are sized from what is left, not from what looks generous.
+   *
+   * Usable width inside the wrap is 1088px at 1440. A 14rem rail and a 19rem
+   * role column left the paragraph 452px, which is under its own 515px cap, so
+   * the text simply grew taller: the Work section got 565px longer than it was
+   * in one column. Every column below is set so the paragraph still reaches its
+   * natural measure, because a narrower paragraph is not a shorter one.
+   */
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+    column-gap: clamp(1.5rem, 3vw, 3.5rem);
+    align-items: start;
+  }
+
+  .grid > * {
+    grid-column: 2;
+  }
+
+  .head {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: clamp(1.5rem, 6vh, 3rem);
+    align-self: start;
+    margin-bottom: 0;
+  }
+
+  /*
+   * A role, read in two passes.
+   *
+   * Title, dates, numbers and stack are what a recruiter scans; the paragraph is
+   * what they read if the scan lands. Stacked, each role ran to 1090px and the
+   * scan and the read were the same vertical journey. Beside each other, the
+   * role is as tall as its longer half rather than the sum of both.
+   */
+  .role {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+    align-items: start;
+  }
+
+  /*
+   * Only the identity goes in the rail.
+   *
+   * The metric row is a grid of its own, and at rail width it had nowhere to put
+   * three figures except on top of each other, so the left column ended up
+   * taller than the paragraph it was meant to sit beside and the section grew.
+   * Numbers belong next to the prose that explains them anyway.
+   */
+  .role > * {
+    grid-column: 2;
+  }
+
+  .roleHead,
+  .stack {
+    grid-column: 1;
+  }
+
+  .roleHead {
+    grid-row: 1;
+  }
+
+  .stack {
+    grid-row: 2;
+    margin-bottom: 0;
   }
 }
 
