@@ -89,21 +89,57 @@ function render(text: string, keyPrefix: string) {
   });
 }
 
-export default function Prose({ body, className }: { body: string; className?: string }) {
-  return (
-    <div className={className ? `prose ${className}` : "prose"}>
-      {body.split(/\n{2,}/).map((para, i) => {
-        const cut = leadEnd(para);
-        const lead = para.slice(0, cut);
-        const rest = para.slice(cut);
+/**
+ * Long sections open on request; short ones never close.
+ *
+ * The page ran to fifteen screens, and a paragraph capped at its reading measure
+ * does not get shorter when the window gets wider, so layout alone could not fix
+ * it. Below the threshold a section is left whole, because a control that saves
+ * one line costs more attention than the line does.
+ *
+ * The detail is always in the markup. `hidden` is not used and nothing is
+ * fetched on expand: a crawler, a printer and a reader with scripting off all
+ * get the complete text, and `<details>` carries the open and closed state to
+ * assistive software without any of it being reimplemented here.
+ */
+const COLLAPSE_OVER_WORDS = 120;
 
-        return (
-          <p key={i}>
-            <span className="lead">{render(lead, `l${i}`)}</span>
-            {rest && render(rest, `r${i}`)}
-          </p>
-        );
-      })}
+export default function Prose({ body, className }: { body: string; className?: string }) {
+  const paras = body.split(/\n{2,}/);
+
+  const render_ = (para: string, i: number) => {
+    const cut = leadEnd(para);
+    const lead = para.slice(0, cut);
+    const rest = para.slice(cut);
+    return (
+      <p key={i}>
+        <span className="lead">{render(lead, `l${i}`)}</span>
+        {rest && render(rest, `r${i}`)}
+      </p>
+    );
+  };
+
+  const words = body.split(/\s+/).length;
+  const root = className ? `prose ${className}` : "prose";
+
+  if (words <= COLLAPSE_OVER_WORDS || paras.length < 2) {
+    return <div className={root}>{paras.map(render_)}</div>;
+  }
+
+  // The opening paragraph carries the argument on its own; the rest is the
+  // evidence for it. That is the seam, so that is where it folds.
+  const [first, ...others] = paras;
+
+  return (
+    <div className={root}>
+      {render_(first, 0)}
+      <details className="more">
+        <summary>
+          <span className="more-open">Read the detail</span>
+          <span className="more-close">Show less</span>
+        </summary>
+        {others.map((p, i) => render_(p, i + 1))}
+      </details>
     </div>
   );
 }

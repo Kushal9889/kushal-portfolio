@@ -89,6 +89,11 @@ export default function Palette({ email, resume }: { email: string; resume: stri
     } else {
       previous.current?.focus();
     }
+
+    // Published on the root so the printed keys next to the agent depress when
+    // the real shortcut is used. The hint then demonstrates itself rather than
+    // describing something happening elsewhere on the page.
+    document.documentElement.dataset.palette = open ? "open" : "closed";
   }, [open]);
 
   if (!open) return null;

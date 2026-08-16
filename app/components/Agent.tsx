@@ -334,14 +334,38 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           Select-to-ask, the trace, the command palette and the share link were
           all reachable and none of them were named, which meant a visitor had to
           guess they existed. */}
-      <p className={styles.affordances}>
-        <span>
-          <kbd className={styles.kbd}>{modKey}</kbd>
-          <kbd className={styles.kbd}>K</kbd> for anywhere
-        </span>
-        <span>select any text to ask about it</span>
-        <span>every answer shows its trace and token cost</span>
-      </p>
+      {/* Written for someone who has never used a command palette and does not
+          know what a trace is. Each line says what to do first and what happens
+          because of it, in that order, because an instruction a reader has to
+          decode is one they skip. */}
+      <ul className={styles.affordances}>
+        <li>
+          <span className={styles.keys}>
+            <kbd className={styles.kbd}>{modKey}</kbd>
+            <kbd className={styles.kbd}>K</kbd>
+          </span>
+          <span>
+            <b>Jump anywhere on this page.</b> Opens a search box for every section.
+          </span>
+        </li>
+        <li>
+          <span className={styles.keys} aria-hidden="true">
+            <span className={styles.gesture}>drag</span>
+          </span>
+          <span>
+            <b>Highlight any sentence.</b> A button appears to ask the agent about exactly that.
+          </span>
+        </li>
+        <li>
+          <span className={styles.keys} aria-hidden="true">
+            <span className={styles.gesture}>trace</span>
+          </span>
+          <span>
+            <b>Open the trace under any answer.</b> It shows where the answer came from, how long
+            each step took, and what it cost in tokens.
+          </span>
+        </li>
+      </ul>
 
       <ul className={styles.openers}>
           {OPENERS.map((q) => (

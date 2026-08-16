@@ -260,11 +260,14 @@ hr {
  * highest-signal machine-made layout tell there is, and it is what most sites
  * reach for when they want exactly this effect.
  */
+/* The name is ink. The mark is the brand. Mixing the hue into the words bought
+   contrast by destroying recognition: AWS orange resolved to brown, Google blue
+   to navy, and neither read as the vendor any more. */
 .issuer {
-  color: color-mix(in oklch, var(--brand, var(--ink)) 25%, var(--ink));
+  color: var(--ink);
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
+  gap: 0.45em;
 }
 
 .issuer-dot {
@@ -295,6 +298,46 @@ hr {
   font-size: 1.06em;
 }
 
+/*
+ * Emphasis you can see from a metre away.
+ *
+ * Measured, the previous ladder was body at Lc 87 and a bold claim at Lc 99,
+ * with no change of size and none of weight that survived the serif. Twelve
+ * points of lightness is not emphasis; at scanning distance the two were the
+ * same grey. A claim now moves on three axes at once, which is what makes it
+ * arrive before the sentence around it is read.
+ *
+ * Still no colour. --signal means live, and spending it here would cost that
+ * word its meaning everywhere else on the page.
+ */
+.prose strong {
+  font-size: 1.06em;
+  font-weight: 700;
+  letter-spacing: -0.006em;
+  color: var(--ink);
+}
+
+/* A link in prose should look like somewhere to go before it is read, and at
+   rest it says so with weight rather than with colour: a 2px rule in ink is
+   visible at scanning distance without spending the accent, which means live.
+   Hovering is a live state, so that is where the accent is allowed. */
+.prose a {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 0.18em;
+  transition:
+    text-decoration-color var(--t-fast) var(--ease-standard),
+    background-color var(--t-fast) var(--ease-standard);
+}
+
+.prose a:hover,
+.prose a:focus-visible {
+  text-decoration-color: var(--signal);
+  background: var(--signal-wash);
+}
+
 /* Identifiers keep the mono face so a symbol read on the page matches the
    symbol typed into an editor. Sized down because mono runs optically larger
    than the serif around it at the same nominal size. */
@@ -315,25 +358,10 @@ hr {
  * register at scanning distance; weight alone on an already-dark paragraph does
  * not read from a metre away.
  */
-.prose strong {
-  font-weight: 600;
-  color: var(--ink);
-}
 
 /* Links in prose are underlined rather than coloured. Colour here would collide
    with --signal, which means "live" everywhere else on the page, and an
    underline is the older and more legible signal for "this opens somewhere". */
-.prose a {
-  color: var(--ink);
-  text-decoration-color: var(--ink-soft);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-
-.prose a:hover {
-  text-decoration-thickness: 2px;
-  text-decoration-color: var(--signal);
-}
 
 /* Inline emphasis for a figure inside running prose, for the cases where pulling
    it into the metric strip would strip its context. Weight and tracking only:
@@ -612,4 +640,81 @@ time,
 .prose a,
 button {
   transition-timing-function: var(--ease-standard);
+}
+
+/*
+ * Detail, folded.
+ *
+ * The summary is a real control and is styled like one: it has a hit area, a
+ * hover state and a marker that turns. Native <details> keeps the semantics, so
+ * the open and closed state reaches a screen reader without any of it being
+ * rebuilt in JavaScript, and the text inside is present whether it is open or
+ * not, which matters for printing and for crawlers.
+ */
+.more {
+  margin-top: 0.25rem;
+}
+
+.more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  min-height: 44px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  border-block-end: 1px solid var(--rule);
+  width: fit-content;
+  transition:
+    color var(--t-fast) var(--ease-standard),
+    border-color var(--t-fast) var(--ease-standard);
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The marker is drawn rather than typographic so it can rotate. A caret that
+   turns is the one affordance every reader already knows. */
+.more > summary::before {
+  content: "";
+  width: 0.42em;
+  height: 0.42em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-0.1em, -0.1em);
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.more[open] > summary::before {
+  transform: rotate(-135deg) translate(-0.12em, -0.12em);
+}
+
+.more > summary:hover {
+  color: var(--ink);
+  border-block-end-color: var(--ink);
+}
+
+.more-close,
+.more[open] .more-open {
+  display: none;
+}
+
+.more[open] .more-close {
+  display: inline;
+}
+
+@media print {
+  /* Paper has no controls. Everything is open and the toggle is gone. */
+  .more > summary {
+    display: none;
+  }
+
+  .more > *:not(summary) {
+    display: block !important;
+  }
 }

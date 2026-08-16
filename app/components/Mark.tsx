@@ -25,15 +25,12 @@ const NVIDIA = "#76B900";
 /**
  * Issuer hues, for the credential wall.
  *
- * These are the vendors' own values. They are never painted directly onto text:
- * AWS orange on this paper measures far below the floor the rest of the page is
- * held to, and a credential nobody can read is not a credential. The stylesheet
- * mixes each hue toward --ink, which keeps the hue recognisable, brings the
- * contrast up to the same standard as body copy, and inverts by itself in the
- * dark scheme because --ink is what flips.
- *
- * Only vendors whose mark is not drawn here appear in this list. NVIDIA has an
- * actual logo above and does not need a stand-in.
+ * The vendors' own values, used at full strength on the mark and never on the
+ * text beside it. An earlier version mixed them into the ink to make the names
+ * legible and produced #51371d for AWS orange and #233551 for Google blue:
+ * brown and navy, recognisable as neither. Contrast belongs to the words and
+ * saturation belongs to the logo, and trying to make one element carry both
+ * loses both.
  */
 export const ISSUER_HUE: Record<string, string> = {
   NVIDIA,
@@ -41,6 +38,37 @@ export const ISSUER_HUE: Record<string, string> = {
   "Google Cloud": "#4285F4",
   IBM: "#0F62FE",
 };
+
+/**
+ * Official paths, from simple-icons, which publishes them CC0.
+ *
+ * Not redrawn from memory. A logo that is almost right is the detail a reader
+ * who knows the brand spots immediately, which is worse than showing none.
+ *
+ * AWS and IBM are deliberately absent: both companies asked simple-icons to
+ * remove their marks, so there is no freely licensed source for either. They
+ * keep the coloured dot instead. That is a trademark limit, not an oversight.
+ */
+const ISSUER_PATH: Record<string, string> = {
+  "Google Cloud":
+    "M12.19 2.38a9.344 9.344 0 0 0-9.234 6.893c.053-.02-.055.013 0 0-3.875 2.551-3.922 8.11-.247 10.941l.006-.007-.007.03a6.717 6.717 0 0 0 4.077 1.356h5.173l.03.03h5.192c6.687.053 9.376-8.605 3.835-12.35a9.365 9.365 0 0 0-2.821-4.552l-.043.043.006-.05A9.344 9.344 0 0 0 12.19 2.38zm-.358 4.146c1.244-.04 2.518.368 3.486 1.15a5.186 5.186 0 0 1 1.862 4.078v.518c3.53-.07 3.53 5.262 0 5.193h-5.193l-.008.009v-.04H6.785a2.59 2.59 0 0 1-1.067-.23h.001a2.597 2.597 0 1 1 3.437-3.437l3.013-3.012A6.747 6.747 0 0 0 8.11 8.24c.018-.01.04-.026.054-.023a5.186 5.186 0 0 1 3.67-1.69z",
+};
+
+/** LangChain's own mark, for the repository the contribution landed in. */
+export function LangChainMark({ size = 16, className }: Props) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M13.796 0a6.93 6.93 0 0 0-4.91 2.019L5.451 5.455l3.273 3.27 3.432-3.432a2.284 2.284 0 0 1 3.277 0 2.28 2.28 0 0 1 0 3.275L12 12.001l3.273 3.273 3.433-3.435c2.692-2.692 2.692-7.127 0-9.82A6.92 6.92 0 0 0 13.796 0m-5.07 8.728-3.433 3.434c-2.692 2.693-2.692 7.126 0 9.819A6.92 6.92 0 0 0 10.203 24a6.93 6.93 0 0 0 4.911-2.02l3.432-3.432-3.271-3.272-3.433 3.433a2.284 2.284 0 0 1-3.277 0 2.28 2.28 0 0 1 0-3.276L12 12z" />
+    </svg>
+  );
+}
 
 export function GitHubMark({ size = 16, className }: Props) {
   return (
@@ -99,14 +127,27 @@ export function MailMark({ size = 16, className }: Props) {
  * dot claims nothing except the colour, which is the part doing the recognition
  * work at this size anyway.
  */
-export function IssuerDot({ issuer, size = 7 }: { issuer: string; size?: number }) {
+export function IssuerDot({ issuer, size = 14 }: { issuer: string; size?: number }) {
   const hue = ISSUER_HUE[issuer];
   if (!hue) return null;
+
+  const path = ISSUER_PATH[issuer];
+  if (path) {
+    return (
+      <svg viewBox="0 0 24 24" width={size} height={size} fill={hue} aria-hidden="true">
+        <path d={path} />
+      </svg>
+    );
+  }
+
+  // No freely licensed mark exists for this vendor, so the colour carries the
+  // recognition on its own rather than an approximation of the logo doing it
+  // badly.
   return (
     <span
       aria-hidden="true"
       className="issuer-dot"
-      style={{ "--brand": hue, width: size, height: size } as React.CSSProperties}
+      style={{ "--brand": hue, width: size * 0.5, height: size * 0.5 } as React.CSSProperties}
     />
   );
 }

@@ -282,28 +282,88 @@
 
 /* The capability line. Set small and quiet: it tells a visitor what is here
    without competing with the thing it is describing. */
+/*
+ * What this page can do, said plainly.
+ *
+ * Previously three grey fragments on one line at 15px: "K for anywhere",
+ * "select any text to ask about it". Each named a mechanism rather than an
+ * outcome, and a reader who does not already know what a command palette is
+ * learned nothing from any of them. Each row now leads with the action in ink
+ * and follows with what happens, and the rows are stacked because three
+ * instructions on one line read as a footer nobody looks at.
+ */
 .affordances {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1.25rem;
-  margin: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
+  max-width: 44rem;
 }
 
-.affordances > span {
+.affordances li {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.affordances b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.keys {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  justify-self: start;
 }
 
+/*
+ * A key that looks like a key.
+ *
+ * It was a hairline outline at 0.85em, which read as a bordered word rather
+ * than as something to press. Given a face, a shadow standing it off the page
+ * and a press state, it becomes the one instruction on the page that needs no
+ * explaining.
+ */
 .kbd {
   font-family: var(--font-mono), monospace;
-  font-size: 0.85em;
-  padding: 0.1em 0.4em;
-  border: 1px solid var(--rule);
-  border-bottom-width: 2px;
+  font-size: 0.82em;
+  line-height: 1;
+  min-width: 1.6em;
+  padding: 0.34em 0.42em;
+  text-align: center;
   color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: 0 1.5px 0 var(--rule);
+  transition:
+    transform var(--t-fast) var(--ease-standard),
+    box-shadow var(--t-fast) var(--ease-standard);
+}
+
+/* Pressing the real shortcut presses these too, so the hint confirms itself. */
+:global(:root[data-palette="open"]) .kbd {
+  transform: translateY(1.5px);
+  box-shadow: 0 0 0 var(--rule);
+}
+
+/* A gesture has no key to draw, so it is named in the same slot at the same
+   size. Keeping the column identical is what makes the three rows scan as one
+   list rather than as three unrelated notes. */
+.gesture {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-block-end: 1px dashed var(--rule);
+  padding-block-end: 0.15em;
 }
 
 /* Retrieved sections, arriving in sequence.
