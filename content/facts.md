@@ -156,12 +156,12 @@ pooling. He has not needed it yet and has not pretended otherwise.
 
 He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK.
 
-@metric 3 days | filed to merged by a maintainer
-@metric 4 | code paths shown to disagree
-@metric credited | by name in the merged PR
+@metric 57 hours | from his report to a merged fix
+@metric 3 | places the file already contradicted itself
+@metric credited | in the merged pull request body
 
-Issue: [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
-Merged fix: [langchain-ai/deepagents#4925](https://github.com/langchain-ai/deepagents/pull/4925)
+@artifact Issue he filed | closed | langchain-ai/deepagents#4846 | https://github.com/langchain-ai/deepagents/issues/4846
+@artifact Fix a maintainer wrote | merged | langchain-ai/deepagents#4925 | https://github.com/langchain-ai/deepagents/pull/4925
 
 `CompositeBackend.ls("/")` and `als("/")` aggregated results at the root and discarded errors from
 the default backend, returning a successful-looking listing containing only virtual route
@@ -173,12 +173,13 @@ a backend error must not be swallowed as a partial success. The routed branch al
 errors. The grep root merge already returned default backend errors first. Only this path did not.
 He also traced the precedent, the same bug class as issue #3105, fixed for sandbox backends in #3359.
 
-Filed 19 July 2026. Mason Daugherty, a LangChain maintainer, merged the fix on 22 July 2026. The
-merged pull request credits him by name: Kushal Gaddamwar (@Kushal9889) reported the issue and
-provided reproduction steps.
+Filed 19 July 2026 at 15:20 UTC. Mason Daugherty, a LangChain maintainer, wrote and merged the fix on
+22 July at 00:45 UTC, 57 hours later, in 29 added lines across 2 files with nothing deleted. The pull
+request body reads: Credit to @Kushal9889 for reporting the issue and providing the reproduction.
 
-**Three days from report to merged fix.** He could not open the pull request himself because deepagents
-restricts merges to organisation contributors.
+**Fifty-seven hours from a stranger's bug report to a merged fix in a LangChain SDK.** He offered in
+the issue to write the patch himself. The maintainer wrote it instead, which is the ordinary outcome
+when the report is good enough that fixing it takes twenty minutes.
 
 ## Certifications
 

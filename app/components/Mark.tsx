@@ -22,6 +22,26 @@ const GITHUB = "#181717";
 const LINKEDIN = "#0A66C2";
 const NVIDIA = "#76B900";
 
+/**
+ * Issuer hues, for the credential wall.
+ *
+ * These are the vendors' own values. They are never painted directly onto text:
+ * AWS orange on this paper measures far below the floor the rest of the page is
+ * held to, and a credential nobody can read is not a credential. The stylesheet
+ * mixes each hue toward --ink, which keeps the hue recognisable, brings the
+ * contrast up to the same standard as body copy, and inverts by itself in the
+ * dark scheme because --ink is what flips.
+ *
+ * Only vendors whose mark is not drawn here appear in this list. NVIDIA has an
+ * actual logo above and does not need a stand-in.
+ */
+export const ISSUER_HUE: Record<string, string> = {
+  NVIDIA,
+  "Amazon Web Services": "#FF9900",
+  "Google Cloud": "#4285F4",
+  IBM: "#0F62FE",
+};
+
 export function GitHubMark({ size = 16, className }: Props) {
   return (
     <svg
@@ -67,6 +87,27 @@ export function MailMark({ size = 16, className }: Props) {
       <rect x="1" y="3" width="14" height="10" rx="1" />
       <path d="m1.5 4 6.5 4.5L14.5 4" />
     </svg>
+  );
+}
+
+/**
+ * A vendor's hue, carried by a dot rather than by a drawn logo.
+ *
+ * Redrawing the AWS, Google Cloud and IBM marks from memory would produce four
+ * logos that are almost right, and an almost-right logo is a worse signal than
+ * none: it is the detail a reader who knows the brand notices immediately. The
+ * dot claims nothing except the colour, which is the part doing the recognition
+ * work at this size anyway.
+ */
+export function IssuerDot({ issuer, size = 7 }: { issuer: string; size?: number }) {
+  const hue = ISSUER_HUE[issuer];
+  if (!hue) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="issuer-dot"
+      style={{ "--brand": hue, width: size, height: size } as React.CSSProperties}
+    />
   );
 }
 

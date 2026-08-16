@@ -243,6 +243,71 @@ hr {
 }
 
 
+/*
+ * Vendor hues on the credential wall.
+ *
+ * The raw brand value is never painted onto text, and the share of it that can
+ * be is smaller than it looks. Measured across both schemes and all four
+ * vendors, 25% is the most brand that still clears the Lc 75 the 14px labels are
+ * held to; IBM blue on the dark ground is the binding case at 77, and 30% drops
+ * it to 74. The mix needs no dark variant of its own, because --ink is what
+ * flips and the mix flips with it.
+ *
+ * Full saturation lives in the dot instead. It carries no text, so legibility
+ * does not apply to it, and it is where the recognition actually happens.
+ *
+ * Deliberately not a coloured strip down the side of a card. That is the single
+ * highest-signal machine-made layout tell there is, and it is what most sites
+ * reach for when they want exactly this effect.
+ */
+.issuer {
+  color: color-mix(in oklch, var(--brand, var(--ink)) 25%, var(--ink));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.issuer-dot {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--brand);
+  flex: none;
+}
+
+/* Two reading speeds in one paragraph.
+ *
+ * The opening sentence carries full ink and a step of size; the remainder sits
+ * at --ink-soft. A reader skimming the leads gets the whole argument, and a
+ * reader who stops finds the detail already there under it. This is the only
+ * mechanism on the page for making a 90-word paragraph scannable that does not
+ * either spend colour, which would collide with --signal, or bold key terms,
+ * which is a machine-writing tell.
+ *
+ * The step is deliberately small. Anything past about 1.1em stops reading as
+ * one paragraph and starts reading as a heading followed by a caption.
+ */
+.prose p {
+  color: var(--ink-soft);
+}
+
+.prose .lead {
+  color: var(--ink);
+  font-size: 1.06em;
+}
+
+/* Identifiers keep the mono face so a symbol read on the page matches the
+   symbol typed into an editor. Sized down because mono runs optically larger
+   than the serif around it at the same nominal size. */
+.prose code {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.84em;
+  color: var(--ink);
+  background: var(--paper-sunk);
+  padding: 0.1em 0.32em;
+  border-radius: 2px;
+  word-break: break-word;
+}
+
 /* Emphasis inside prose.
  *
  * Body text sits at --ink-soft so that bolded text can step up to full --ink and

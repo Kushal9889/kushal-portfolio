@@ -5,6 +5,16 @@ const CONTENT_DIR = join(process.cwd(), "content");
 
 export type Metric = { value: string; label: string };
 
+/**
+ * A public thing a reader can open, with the state it is actually in upstream.
+ *
+ * Kept in the corpus beside the prose rather than in a component, for the same
+ * reason the metrics are: a URL written into a component is a URL the link
+ * checker never sees, and an artifact section whose links have rotted is worse
+ * than one that never claimed them.
+ */
+export type Artifact = { kind: string; state: string; label: string; url: string };
+
 export type Section = {
   /** The `##` heading, verbatim. Doubles as the chunk id for retrieval. */
   title: string;
@@ -15,6 +25,8 @@ export type Section = {
   metrics: Metric[];
   /** Technologies, lifted out for the same reason: a reader scans for these. */
   stack: string[];
+  /** Openable proof, rendered as its own row rather than buried in a sentence. */
+  artifacts: Artifact[];
   /** "Role: ... " line. Rendered as the section heading, so it is kept out of the
    *  prose to avoid printing it twice, and folded back into the retrieval text. */
   role: string;
@@ -56,6 +68,7 @@ function splitSections(body: string, source: string): Section[] {
       // in the corpus rather than in a component means the page and the agent
       // read the same numbers, which is the only way they cannot disagree.
       const metrics: Metric[] = [];
+      const artifacts: Artifact[] = [];
       let stack: string[] = [];
       let role = "";
 
@@ -72,6 +85,20 @@ function splitSections(body: string, source: string): Section[] {
         const metric = line.match(/^@metric\s+(.+?)\s*\|\s*(.+)$/);
         if (metric) {
           metrics.push({ value: metric[1].trim(), label: metric[2].trim() });
+          continue;
+        }
+
+        // `@artifact kind | state | label | url`. State is written out rather
+        // than inferred, because "merged" and "closed" look identical to a
+        // parser and mean opposite things to a reader.
+        const artifact = line.match(/^@artifact\s+(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(\S+)$/);
+        if (artifact) {
+          artifacts.push({
+            kind: artifact[1].trim(),
+            state: artifact[2].trim(),
+            label: artifact[3].trim(),
+            url: artifact[4].trim(),
+          });
           continue;
         }
 
@@ -98,7 +125,15 @@ function splitSections(body: string, source: string): Section[] {
 
       const body = kept.join("\n");
 
-      return { title: block.slice(0, nl).trim(), body: body.trim(), source, metrics, stack, role };
+      return {
+        title: block.slice(0, nl).trim(),
+        body: body.trim(),
+        source,
+        metrics,
+        stack,
+        artifacts,
+        role,
+      };
     })
     .filter((s) => s.body.length > 0);
 }
@@ -179,6 +214,9 @@ export function allLinks(): string[] {
     for (const m of s.body.matchAll(/https?:\/\/[^\s)<>"']+/g)) {
       found.add(m[0].replace(/[.,]$/, ""));
     }
+    // Artifact URLs are stripped out of the body by the parser, so scanning the
+    // prose alone would quietly stop checking the strongest links on the site.
+    for (const a of s.artifacts) found.add(a.url);
   }
   for (const c of loadCertifications()) {
     if (c.url) found.add(c.url);

@@ -152,11 +152,22 @@ redundant LLM calls **−70%**. BM25 + NV-Embed 1024-dim over pgvector.
 
 **Open source**: reported
 [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
-(19 Jul 2026): `CompositeBackend.ls("/")` discarded default-backend errors and
-returned a healthy-looking empty listing. Maintainer Mason Daugherty authored and
-merged [#4925](https://github.com/langchain-ai/deepagents/pull/4925) three days
-later, crediting him by name. **He did not write the patch**, because merges are
-org-restricted. Never describe it as authored.
+(19 Jul 2026, 15:20 UTC): `CompositeBackend.ls("/")` discarded default-backend
+errors and returned a healthy-looking empty listing. Maintainer Mason Daugherty
+(`mdrxy`) wrote and merged
+[#4925](https://github.com/langchain-ai/deepagents/pull/4925) on 22 Jul at 00:45
+UTC, **57 hours** later: 29 additions, 0 deletions, 2 files.
+
+**He did not write the patch.** Never describe it as authored. He did offer to,
+in the issue itself ("Happy to take this if the direction looks right"), so do
+not claim he was unable to open a pull request either; that is false on a public
+repo and the issue disproves it. Merging is what is org-restricted.
+
+The PR body credits the handle, not the name: "Credit to @Kushal9889 for
+reporting the issue and providing the reproduction." Do not upgrade this to
+"credits him by name". The issue names **three** places the file already
+contradicted itself, not four. All of these were wrong on the site until
+16 Aug 2026 and are checkable by anyone who opens the links.
 
 **Certifications**: NVIDIA NCP-AAI 2026
 ([Credly](https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url),

@@ -1,0 +1,94 @@
+.list {
+  list-style: none;
+  margin: clamp(1.25rem, 3vh, 2rem) 0 0;
+  padding: 0;
+  border-block-start: 1px solid var(--rule);
+  max-width: 46rem;
+}
+
+.row {
+  border-block-end: 1px solid var(--rule);
+}
+
+/* A whole row is the target, not just the number at the end of it. A 15px link
+   inside a line of prose is a smaller tap area than a thumb, and this is the one
+   link on the page that most needs to be followed. */
+.link {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  padding: 0.85rem 0.2rem;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.mark {
+  grid-row: 1 / span 2;
+  /* The GitHub mark ships in its own brand black, which disappears against the
+     dark scheme's paper. Here it is doing the job of an icon rather than of a
+     logo, so it takes the page's ink. */
+  fill: var(--ink-soft);
+  transition: fill var(--t-fast) var(--ease-standard);
+}
+
+.kind {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.label {
+  grid-column: 2;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--1);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* State sits at the end of the row, upper case and quiet. It is not colour
+   coded: on a page where one colour means "live", spending a second and third
+   on "merged" and "closed" would make all three mean nothing. */
+.state {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+/* The merged state is the one that carries the argument, so it is the one that
+   is filled rather than outlined. Weight, not hue. */
+.state[data-state="merged"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.link:hover .label,
+.link:focus-visible .label {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.link:hover .mark,
+.link:focus-visible .mark {
+  fill: var(--ink);
+}
+
+@media (max-width: 34rem) {
+  .link {
+    grid-template-columns: auto 1fr;
+  }
+
+  .state {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: start;
+  }
+}

@@ -7,7 +7,7 @@ import Palette from "./components/Palette";
 import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import CorpusGraph from "./components/CorpusGraph";
-import CorpusMatrix from "./components/CorpusMatrix";
+import Artifacts from "./components/Artifacts";
 import SectionMotion from "./components/SectionMotion";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
@@ -112,6 +112,7 @@ export default function Page() {
           <DiffReveal />
           <Metrics items={section("Open source, LangChain deepagents").metrics} />
           <Prose body={section("Open source, LangChain deepagents").body} />
+          <Artifacts items={section("Open source, LangChain deepagents").artifacts} />
         </Section>
 
         {/* What he is and what he is not, before the evidence. A reader who has
@@ -120,7 +121,6 @@ export default function Page() {
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" index="02" title="How he works">
           <CorpusGraph />
-          <CorpusMatrix />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           <Prose body={section("What he does not do").body} />

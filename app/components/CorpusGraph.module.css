@@ -2,6 +2,48 @@
   margin-block: clamp(1rem, 3vh, 2rem);
 }
 
+/* Two arrangements of one dataset, so the control is a pair of states rather
+   than a button that does something. aria-pressed carries which is current, and
+   the underline carries the same thing for everyone else. */
+.views {
+  display: flex;
+  gap: 1.25rem;
+  margin-block-end: 0.5rem;
+}
+
+.viewButton {
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0.5rem 0;
+  min-height: 44px;
+  border-block-end: 1px solid transparent;
+  transition:
+    color var(--t-fast) var(--ease-standard),
+    border-color var(--t-fast) var(--ease-standard);
+}
+
+.viewButton:hover {
+  color: var(--ink-soft);
+}
+
+.viewButton[aria-pressed="true"] {
+  color: var(--ink);
+  border-block-end-color: var(--ink);
+}
+
+/* Column headings in the technology arrangement. Set apart from the node labels
+   by case and tone so a heading is never mistaken for a node. */
+.column {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--2);
+  fill: var(--ink-faint);
+  text-anchor: middle;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .svg {
   width: 100%;
   height: auto;

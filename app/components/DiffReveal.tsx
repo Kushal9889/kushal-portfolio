@@ -77,7 +77,7 @@ export default function DiffReveal() {
         </pre>
 
         <p className={styles.credit}>
-          Merged by a LangChain maintainer three days after the report.{" "}
+          Written and merged by a LangChain maintainer 57 hours after the report.{" "}
           <a
             href="https://github.com/langchain-ai/deepagents/pull/4925"
             target="_blank"

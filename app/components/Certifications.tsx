@@ -1,5 +1,5 @@
 import { progress, type Certification } from "@/lib/content";
-import { NvidiaMark } from "./Mark";
+import { NvidiaMark, IssuerDot, ISSUER_HUE } from "./Mark";
 import styles from "./Certifications.module.css";
 
 /**
@@ -50,8 +50,24 @@ export default function Certifications({ certifications }: { certifications: Cer
                   ) : (
                     <span>{c.name}</span>
                   )}
+                  {/* The issuer carries its own hue so the wall can be read by
+                      vendor at a glance, which is how anyone scanning
+                      credentials actually reads it. The year stays neutral: it
+                      is not part of the brand. */}
                   <span className="label">
-                    {c.issuer} · {c.year}
+                    <span
+                      className="issuer"
+                      style={
+                        ISSUER_HUE[c.issuer]
+                          ? ({ "--brand": ISSUER_HUE[c.issuer] } as React.CSSProperties)
+                          : undefined
+                      }
+                    >
+                      <IssuerDot issuer={c.issuer} />
+                      {c.issuer}
+                    </span>
+                    {" · "}
+                    {c.year}
                   </span>
                 </div>
                 {p && (
