@@ -221,7 +221,24 @@ const domains: Domain[] = [
     checks: [
       { id: "12.1", need: "exactly two typefaces", pass: new Set((builtCss.match(/font-family:\s*([A-Z][A-Za-z ]+)/g) ?? []).map((m) => m.replace(/font-family:\s*/, "").replace(/ Fallback/, "").trim())).size <= 2 },
       { id: "12.2", need: "type scale is token-driven", pass: countOf(builtCss, /--step-/g) >= 6 },
-      { id: "12.3", need: "one accent colour token", pass: countOf(read("app/globals.css"), /--signal:/g) === 1 },
+      {
+        // Counting declarations was a proxy for the rule, and it stopped being a
+        // good one the moment the page gained a dark scheme: an accent legible on
+        // white is invisible on near black, so the token has to be stated more
+        // than once. What must not change is which colour it is, and hue is the
+        // whole of that. Lightness and chroma are deliberately left free: sRGB
+        // holds less chroma at high lightness than at low, so demanding a fixed
+        // chroma in both schemes demands a colour that does not exist, and the
+        // browser answers by clipping it to a different one.
+        id: "12.3",
+        need: "one accent hue, restated per colour scheme but never re-hued",
+        pass: (() => {
+          const decls = [
+            ...read("app/globals.css").matchAll(/--signal:\s*oklch\([\d.]+\s+[\d.]+\s+([\d.]+)/g),
+          ];
+          return decls.length > 0 && new Set(decls.map((d) => d[1])).size === 1;
+        })(),
+      },
       {
         // The rule is not "use the accent rarely", it is "the accent always means
         // something is happening". Counting uses punished the site for gaining

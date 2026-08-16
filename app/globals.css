@@ -58,7 +58,57 @@
   --step-2: clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem);
   --step-3: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
 
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/*
+ * Dark.
+ *
+ * Four values change and nothing else does. Every other token on this page is a
+ * color-mix of --ink and --paper, so they re-derive on their own: --paper-sunk
+ * mixes ink into paper, which lightens a surface here and darkens it in light
+ * mode, and in both cases means the same thing, which is "set back from the
+ * page".
+ *
+ * Neither ground is neutral. Pure #000 against warm ink reads as a hole in the
+ * screen, so the dark paper carries the same hue 88 as the light one and the ink
+ * carries it back. The page is the same paper under different light rather than
+ * a second theme.
+ *
+ * The derived tokens are restated rather than inherited. The mix percentages in
+ * the block above were tuned against a near-white ground and do not transfer:
+ * measured on this paper, the same 76% mix put 14px labels at Lc 58 against a
+ * target of 75. Every value below was read out of the browser, not calculated.
+ *
+ *   --ink        Lc 96   body prose
+ *   --ink-soft   Lc 86   captions, secondary links, table headers
+ *   --ink-faint  Lc 82   small uppercase labels
+ *   --rule       Lc 19   hairlines, matching the light scheme exactly
+ *   --signal     Lc 61   see below
+ *
+ * --signal holds its hue and gives up chroma, because it has to. sRGB has less
+ * room at high lightness than at low: asking for the light scheme's 0.17 chroma
+ * anywhere bright enough to read on this ground falls outside the gamut and gets
+ * clipped, and clipped vermillion is salmon. Measured, the best in-gamut value
+ * that still reads as the same colour lands at Lc 61. So the accent is the same
+ * hue in both schemes and never text-grade here: it fills the dot, the progress
+ * rule and the focus ring, all of which need Lc 45, and the words next to them
+ * are set in --ink.
+ *
+ * No toggle. The system already knows, and a theme switch on a portfolio is one
+ * more control to explain and one more state to get wrong.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(0.185 0.008 88);
+    --ink: oklch(0.95 0.01 88);
+    --rule: oklch(0.485 0.01 88);
+    --signal: oklch(0.78 0.12 32);
+
+    --ink-soft: oklch(0.9 0.01 88);
+    --ink-faint: oklch(0.88 0.01 88);
+    --paper-sunk: oklch(0.225 0.008 88);
+  }
 }
 
 *,
@@ -311,9 +361,14 @@ hr {
  * dropped and every destination is spelled out next to its anchor.
  */
 @media print {
+  /* All four are pinned, not just the two that change the page background.
+     Without --signal a page printed from a dark-mode browser carries the lifted
+     vermillion onto white paper, where it is too light to read. */
   :root {
     --paper: white;
     --ink: black;
+    --rule: oklch(0.86 0.006 88);
+    --signal: oklch(0.47 0.17 32);
   }
 
   .no-print,
@@ -383,6 +438,23 @@ hr {
     opacity: 1;
     transform: none;
   }
+}
+
+/*
+ * The handoff.
+ *
+ * The block above is the floor: it needs no JavaScript, so it is what a visitor
+ * gets when the motion bundle is still in flight, fails to arrive, or never gets
+ * requested. Once that bundle registers itself it sets data-motion on the root
+ * and this rule stands the stylesheet down, because two entrances on one element
+ * is not twice the effect, it is a stutter.
+ *
+ * The swap is not visible. Sections above the fold have already finished their
+ * range by the time the bundle lands, and sections below it were never on screen
+ * to be seen changing hands.
+ */
+:root[data-motion="js"] main > section > .wrap > * {
+  animation: none;
 }
 
 /* A reading-progress rule pinned to the top of the viewport. It is the one piece

@@ -8,6 +8,7 @@ import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import CorpusGraph from "./components/CorpusGraph";
 import CorpusMatrix from "./components/CorpusMatrix";
+import SectionMotion from "./components/SectionMotion";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import styles from "./page.module.css";
@@ -89,6 +90,7 @@ export default function Page() {
   return (
     <>
       <Palette email={profile.email} resume={profile.github} />
+      <SectionMotion />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}
       <div className={styles.progress} aria-hidden="true" />
