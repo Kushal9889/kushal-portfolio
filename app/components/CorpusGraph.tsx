@@ -88,7 +88,10 @@ function stackPositions() {
   GROUPS.forEach(([, members], c) => {
     const x = colW * c + colW / 2;
     members.forEach((i, r) => {
-      pts[i] = { x, y: 128 + r * 74 };
+      // 92, not 74: the invisible hit ring below needs a real 44px touch target
+      // at the narrowest width this renders at, and two adjacent rings closer
+      // than their combined radius would overlap.
+      pts[i] = { x, y: 128 + r * 92 };
     });
   });
   return pts;
@@ -232,6 +235,14 @@ export default function CorpusGraph() {
             role="button"
             aria-label={`${n.label}, ${n.stack.length} technologies`}
           >
+            {/* Invisible, sized in the SVG's own coordinate space rather than
+                screen pixels. The container renders as narrow as ~335px on a
+                phone against a 680-unit viewBox (scale ~0.49), so a real 44px
+                target needs r=45 here; at desktop widths, where the container
+                is close to the viewBox's own size, that is comfortably more
+                than 44px and never a problem, only unused margin. The visible
+                dot stays 6px because that is what the picture needs. */}
+            <circle cx={pts[i].x} cy={pts[i].y} r={45} className={styles.hit} />
             <circle
               cx={pts[i].x}
               cy={pts[i].y}

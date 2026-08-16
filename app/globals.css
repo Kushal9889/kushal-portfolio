@@ -436,6 +436,9 @@ hr {
   position: absolute;
   left: -9999px;
   top: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   background: var(--ink);
   color: var(--paper);
   padding: 0.6rem 1rem;
@@ -716,5 +719,15 @@ button {
 
   .more > *:not(summary) {
     display: block !important;
+  }
+}
+
+/* On a wide screen a short section is left whole: a toggle that saves one line
+   costs more attention than the line does. The fold still exists in the
+   markup (open, readable) so a narrow screen gets it without any client/server
+   mismatch; only the control disappears here. */
+@media (min-width: 62rem) {
+  .more[data-desktop-fold="no"] > summary {
+    display: none;
   }
 }

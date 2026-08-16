@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useMotion } from "@/lib/motion";
 import { GitHubMark } from "./Mark";
 import styles from "./DiffReveal.module.css";
+
+/** Same four states the desktop scrub passes through, named for a tap. */
+const STEPS = ["The line that looked fine", "What it actually did", "The fix", "Merged"] as const;
 
 /**
  * The signature moment on the page.
@@ -36,23 +40,32 @@ const AFTER = [
 ] as const;
 
 export default function DiffReveal() {
+  const [step, setStep] = useState(0);
+
   /**
-   * The one moment on the page that holds the scroll.
+   * The one moment on the page that holds the scroll, on a screen wide enough
+   * that holding the scroll is not scroll-jacking.
    *
-   * The section pins and the reader drives the sequence with the scrollbar: the
+   * Under 62rem this never arms. Pinning small-viewport content is flagged for
+   * a reason: on a phone the pinned section is close to the whole screen, so a
+   * hold that reads as a pause on a desktop reads as the page refusing to move.
+   * The tap sequence below is the same four states for that width instead.
+   *
+   * Above the threshold, the reader drives the sequence with the scrollbar: the
    * swallowed error is struck out, the consequence lands, the guard writes
    * itself in line by line, and the merge credit resolves last. Scrubbed rather
-   * than played, so it moves at whatever speed the reader moves and can be run
-   * backwards, which is the difference between watching something and examining
-   * it.
+   * than played, so it moves at whatever speed the reader moves and can run
+   * backwards, which is the difference between watching something and
+   * examining it.
    *
    * Everything is readable before this runs and stays readable if it never
    * does. The stylesheet already resolves the whole diff for Safari and for
    * scripting off; this only takes the same elements and ties their progress to
-   * scroll position. Pinning is limited to this one section, because a page that
-   * pins twice has stopped being a document.
+   * scroll position.
    */
   const ref = useMotion<HTMLDivElement>(({ gsap, ScrollTrigger }, root) => {
+    if (window.matchMedia("(max-width: 62rem)").matches) return;
+
     const bad = root.querySelector(`.${styles.bad}`);
     const verdict = root.querySelector(`.${styles.verdict}`);
     const fixLines = root.querySelectorAll(`.${styles.fix} .${styles.line}`);
@@ -109,7 +122,20 @@ export default function DiffReveal() {
 
   return (
     <div className={styles.stage} ref={ref}>
-      <div className={styles.sticky}>
+      {/* Thumb-driven, under 62rem. data-step selects the CSS state directly,
+          so this needs no JS to render correctly on first paint: step 3, fully
+          resolved, is also what a visitor with scripting off always sees. */}
+      <div className={styles.mobileSteps}>
+        <button
+          type="button"
+          className={styles.mobileStepBtn}
+          onClick={() => setStep((s) => (s + 1) % STEPS.length)}
+        >
+          {STEPS[step]} <span aria-hidden="true">→</span>
+        </button>
+      </div>
+
+      <div className={styles.sticky} data-step={step}>
         <p className={styles.caption}>
           <a
             className={styles.repo}

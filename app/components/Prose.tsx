@@ -1,4 +1,6 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useEffect, useRef } from "react";
 
 /**
  * Inline emphasis for the corpus.
@@ -104,6 +106,74 @@ function render(text: string, keyPrefix: string) {
  */
 const COLLAPSE_OVER_WORDS = 120;
 
+/**
+ * Folds on a phone, open on a desktop.
+ *
+ * Rendered open, always. A crawler, a printer, a reader with scripting off and
+ * anyone on a wide screen gets the complete text with no control in the way,
+ * which is also why there is no hydration mismatch to manage: the server and
+ * the first client render agree, and the narrow case is applied afterwards.
+ *
+ * The phone is the case that needs this. Measured at 375px the page ran to 15.4
+ * screens against 11.7 on a desktop, because the two-column layout collapses and
+ * every horizontal saving disappears. Folding the evidence and leaving the lead
+ * sentences is what makes that length skimmable rather than shorter.
+ */
+function useFoldOnNarrow(ref: React.RefObject<HTMLDetailsElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const narrow = window.matchMedia("(max-width: 62rem)");
+    const apply = () => {
+      // Never re-close something the reader opened themselves.
+      if (el.dataset.touched === "yes") return;
+      el.open = !narrow.matches;
+    };
+
+    const remember = () => {
+      el.dataset.touched = "yes";
+    };
+
+    apply();
+    narrow.addEventListener("change", apply);
+    el.addEventListener("toggle", remember);
+    return () => {
+      narrow.removeEventListener("change", apply);
+      el.removeEventListener("toggle", remember);
+    };
+  }, [ref]);
+}
+
+/**
+ * `desktopWorthy` marks a section long enough that the control earns its place
+ * on a wide screen too (the 120-word threshold below). Below it, the fold still
+ * exists in the markup for narrow screens, but the toggle is hidden above the
+ * 62rem breakpoint via `data-desktop-fold`, purely in CSS: no viewport check
+ * needed at render time, so there is nothing here for server and client to
+ * disagree about.
+ */
+function Foldable({
+  children,
+  desktopWorthy,
+}: {
+  children: React.ReactNode;
+  desktopWorthy: boolean;
+}) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useFoldOnNarrow(ref);
+
+  return (
+    <details className="more" data-desktop-fold={desktopWorthy ? "yes" : "no"} ref={ref} open>
+      <summary>
+        <span className="more-open">Read the detail</span>
+        <span className="more-close">Show less</span>
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 export default function Prose({ body, className }: { body: string; className?: string }) {
   const paras = body.split(/\n{2,}/);
 
@@ -122,24 +192,25 @@ export default function Prose({ body, className }: { body: string; className?: s
   const words = body.split(/\s+/).length;
   const root = className ? `prose ${className}` : "prose";
 
-  if (words <= COLLAPSE_OVER_WORDS || paras.length < 2) {
+  // A single paragraph has no seam to fold at, on any screen.
+  if (paras.length < 2) {
     return <div className={root}>{paras.map(render_)}</div>;
   }
 
   // The opening paragraph carries the argument on its own; the rest is the
-  // evidence for it. That is the seam, so that is where it folds.
+  // evidence for it. That is the seam, so that is where it folds. Every
+  // multi-paragraph section folds on a narrow screen, because line width is
+  // fixed there regardless of how much room the window has; the 120-word
+  // threshold only decides whether the control is worth its keep once there
+  // is width to spend elsewhere.
   const [first, ...others] = paras;
 
   return (
     <div className={root}>
       {render_(first, 0)}
-      <details className="more">
-        <summary>
-          <span className="more-open">Read the detail</span>
-          <span className="more-close">Show less</span>
-        </summary>
+      <Foldable desktopWorthy={words > COLLAPSE_OVER_WORDS}>
         {others.map((p, i) => render_(p, i + 1))}
-      </details>
+      </Foldable>
     </div>
   );
 }

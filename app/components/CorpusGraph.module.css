@@ -121,3 +121,14 @@
     transition: none;
   }
 }
+
+/*
+ * A node is 6px of ink and was an 18px target. The ring below is transparent
+ * and 44px across, so the dot stays the size the picture needs while the thing
+ * a finger has to hit is the size a finger needs.
+ */
+.hit {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
+}

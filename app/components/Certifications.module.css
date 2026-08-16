@@ -89,6 +89,15 @@
   border-left: 1px solid var(--rule);
 }
 
+/* Each verified component is its own link, standalone rather than inline in a
+   sentence, so it needs the same 44px floor as any other control. Measured at
+   38px before this. */
+.components a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .done {
   color: var(--ink);
 }

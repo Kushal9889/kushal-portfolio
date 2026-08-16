@@ -251,8 +251,11 @@ const domains: Domain[] = [
           // Comments sit between rules, so they land in the selector slot when a
           // stylesheet is split naively and every commented rule reads as a
           // violation. Stripped first.
+          // :checked belongs beside :hover/:focus/:active/:target: all four are
+          // native pseudo-classes describing a live state of the element itself,
+          // and a toggle's checked state is exactly that, not decoration.
           const STATE =
-            /:hover|:focus|:active|:target|\[data-state|\[data-active|\.on\b|lit|active|live|selected|running|pending|dot|progress|bad|wash|stop|micOn|traceBar/i;
+            /:hover|:focus|:active|:target|:checked|\[data-state|\[data-active|\.on\b|lit|active|live|selected|running|pending|dot|progress|bad|wash|stop|micOn|traceBar/i;
           // stop, micOn and traceBar are rendered conditionally rather than
           // toggled by a class, so their state lives in the JSX. Named here so
           // the rule still holds without weakening it for everything else.

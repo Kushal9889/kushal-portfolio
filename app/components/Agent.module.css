@@ -41,6 +41,9 @@
 
 .send,
 .stop {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.5em 1.1em;
   font-size: var(--step--1);
   letter-spacing: 0.06em;
@@ -405,4 +408,51 @@
   .source {
     animation: none;
   }
+}
+
+/*
+ * Reachability.
+ *
+ * Measured on a phone, 26 controls on this page were under the 44px minimum,
+ * including a 13px checkbox for the voice toggle. Every fix below is padding
+ * and hit area rather than visible size, so nothing looks larger; it is simply
+ * possible to hit with a thumb.
+ *
+ * Links inside a sentence are deliberately untouched. WCAG 2.5.8 exempts
+ * inline targets, and padding them would break the line rhythm of the prose
+ * they sit in for no gain in either compliance or usability.
+ */
+.opener {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.traceToggle {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* The checkbox itself stays visually small; the label around it becomes the
+   target, which is what a thumb actually lands on. */
+.voiceToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.voiceToggle input {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+}
+
+/* The accent belongs to the checked state, not the control. Unscoped, the
+   fill read as live before voice was ever turned on. */
+.voiceToggle input:checked {
+  accent-color: var(--signal);
 }

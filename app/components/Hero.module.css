@@ -259,3 +259,43 @@
   font-size: var(--step--1);
   color: var(--ink-faint);
 }
+
+/*
+ * The phone puts the agent first.
+ *
+ * Measured on a 375x812 screen, the agent input sat at 910px: below the fold,
+ * on the one device most recruiters open a link from. The whole argument of
+ * this page is that the thing works, and an argument nobody scrolls to is not
+ * made. The pipeline diagram is the most expendable 200px here, because the
+ * caption under it already reports the same measurement in words.
+ */
+@media (max-width: 40rem) {
+  .graph {
+    display: none;
+  }
+
+  .caption {
+    margin-block-start: 0.9rem;
+  }
+
+  /* The credential is a link and was 21px tall, which is not a target. Padding
+     only: nothing about it looks different, it is simply reachable. */
+  .cred {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .focus,
+  .proof,
+  .available {
+    margin-block-start: 0.85rem;
+  }
+}
+
+/* Below the phone breakpoint too: a mouse is not an excuse for a 21px target. */
+.cred {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

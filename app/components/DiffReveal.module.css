@@ -131,8 +131,91 @@
 
 /* The repository the fix landed in, marked so the source is recognisable before
    the name is read. */
+/* A standalone control, not a word inside a sentence, so it does not qualify
+   for the WCAG inline-target exemption and needs the same 44px floor as any
+   other link. Measured at 21px before this. */
 .repo {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-height: 44px;
+}
+
+/*
+ * The mobile control, and what it drives.
+ *
+ * Desktop never sees this: the scrub pin is armed above 62rem and the button is
+ * hidden there. Under 62rem the pin never arms (guarded in the component), so
+ * this is the only interaction, and it never scroll-jacks because nothing here
+ * moves the scroll position, only the CSS state.
+ *
+ * data-step gates the same four visual states the desktop scrub passes
+ * through, so the two paths tell the same story through different input.
+ * Fully resolved (step 3) is also the state with no JS: the stylesheet's own
+ * @supports block already renders everything visible, and this only adds a
+ * reason to look at one part at a time first.
+ */
+.mobileSteps {
+  display: none;
+}
+
+@media (max-width: 62rem) {
+  .mobileSteps {
+    display: block;
+    margin-block-end: 0.75rem;
+  }
+
+  .mobileStepBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.5em 1em;
+    font-size: var(--step--1);
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    background: var(--paper-sunk);
+    border: 1px solid var(--rule);
+    transition: border-color var(--t-fast) var(--ease-standard);
+  }
+
+  .mobileStepBtn:hover {
+    border-color: var(--ink);
+  }
+
+  /* Step 0: only the broken line is visible, at rest, unstruck. Everything
+     past it is what tapping reveals. */
+  .sticky[data-step="0"] .verdict,
+  .sticky[data-step="0"] .fix,
+  .sticky[data-step="0"] .credit {
+    display: none;
+  }
+
+  .sticky[data-step="0"] .bad {
+    --strike: 0;
+  }
+
+  /* Step 1: the line is struck and the consequence is stated. */
+  .sticky[data-step="1"] .fix,
+  .sticky[data-step="1"] .credit {
+    display: none;
+  }
+
+  .sticky[data-step="1"] .bad {
+    --strike: 1;
+  }
+
+  /* Step 2: the fix is visible, credit still withheld. */
+  .sticky[data-step="2"] .credit {
+    display: none;
+  }
+
+  .sticky[data-step="2"] .bad {
+    --strike: 1;
+  }
+
+  /* Step 3: fully resolved, the state a visitor without JS always sees. */
+  .sticky[data-step="3"] .bad {
+    --strike: 1;
+  }
 }
