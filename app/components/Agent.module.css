@@ -305,3 +305,40 @@
   border-bottom-width: 2px;
   color: var(--ink);
 }
+
+/* Retrieved sections, arriving in sequence.
+ *
+ * Each one starts 60ms after the one before it, which is slow enough to read as
+ * separate arrivals and fast enough that four of them are settled well inside
+ * the time it takes to finish the first line of the answer above.
+ *
+ * The separator is drawn by the stylesheet rather than joined into the string,
+ * so the last item does not carry a trailing one and nothing has to know how
+ * many there are. */
+.source {
+  display: inline-block;
+  animation: source-land 320ms var(--ease-out) both;
+  animation-delay: calc(var(--n) * 60ms);
+}
+
+.source:not(:last-child)::after {
+  content: " · ";
+  color: var(--ink-faint);
+}
+
+@keyframes source-land {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source {
+    animation: none;
+  }
+}

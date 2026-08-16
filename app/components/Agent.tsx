@@ -384,9 +384,24 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                     below it, so a reader who only wants the answer is done. */}
                 <p className={styles.answer}>{turn.result.answer}</p>
 
+                {/* Each retrieved section is its own element rather than one
+                    joined string, so they can arrive one after another as the
+                    retrieval did. The stagger is not decoration: four sources
+                    landing in sequence is the difference between the answer
+                    looking generated and looking fetched. Safe to animate from
+                    nothing because these nodes did not exist a moment ago. */}
                 {turn.result.sources.length > 0 && (
                   <p className={styles.sources}>
-                    <span className="label">grounded in</span> {turn.result.sources.join(" · ")}
+                    <span className="label">grounded in</span>{" "}
+                    {turn.result.sources.map((s, n) => (
+                      <span
+                        key={s}
+                        className={styles.source}
+                        style={{ "--n": n } as React.CSSProperties}
+                      >
+                        {s}
+                      </span>
+                    ))}
                   </p>
                 )}
 

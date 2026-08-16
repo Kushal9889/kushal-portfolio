@@ -110,6 +110,24 @@ shape does not have. `EventSource` also reconnects natively.
 provider that 429s moves to the back for 15 minutes rather than being retried
 first on every question, which was costing about two seconds of dead time.
 
+**Motion loads after first paint, never before.** `lib/motion.ts` fetches GSAP
+plus ScrollTrigger, SplitText and Flip on the first idle callback, waits for
+`document.fonts.ready`, then sets `data-motion="js"` on the root, which stands
+the CSS scroll timelines down. Those timelines stay in `globals.css` as the
+floor: they are what Safari and a blocked script get. Under
+`prefers-reduced-motion` nothing is requested at all. Every tween is a `from()`,
+so nothing is ever hidden waiting for a script.
+
+**Dark scheme is measured, not derived.** The light `color-mix` percentages do
+not transfer to a dark ground; the same 76% mix put 14px labels at Lc 58 against
+a target of 75. All four tokens and the three derived ones are restated in the
+`prefers-color-scheme: dark` block from browser readings. `--signal` keeps its
+hue and gives up chroma, because sRGB has no room for both at a lightness that
+reads on near-black, and it is not text-grade there: Lc 61, so it fills the dot,
+the progress rule and the focus ring while the words beside them are `--ink`.
+Vendor hues on the credential wall sit at 25% against `--ink` for the same
+reason, measured across all four issuers in both schemes.
+
 ---
 
 ## Ground truth
@@ -362,6 +380,23 @@ Do not reintroduce. Each has a test.
 | JSON-LD test did not handle `@graph` nesting | test fixed, site was correct |
 | Diagonal hatch used `repeating-linear-gradient`, tripping the no-gradients rule | audit check 2.5, blocking |
 | Colour linter walked `.netlify/static`, where tokens are already compiled to hex | `SKIP_DIRS` in `lint-tokens.ts` |
+| `Prose` had no inline-code mark, so three identifiers printed their own backticks | `code` token in `Prose.tsx` |
+| ScrollTrigger built its triggers before webfonts laid the page out, so below-fold elements measured as already entered and spent their entrance off-screen | `await document.fonts.ready` in `lib/motion.ts` before the kit resolves |
+| `once: true` destroyed a trigger on that early enter, so the reveal could never play | played `WeakSet` in `PageMotion.tsx`, no `once` |
+| `gsap.context(fn, scope)` rewrites selector strings to the scope, and the scope was an empty node, so `toArray` silently matched nothing | `document.querySelectorAll` in `PageMotion.tsx` |
+| `profile.site` pointed at a Vercel address that is not this site, feeding the canonical tag, `metadataBase`, JSON-LD and the share image | corrected in `content/facts.md`; note `verify:links` skips the self URL by design, so nothing tested it |
+
+## Claims that were wrong until 16 Aug 2026
+
+All four were on the open-source section and all four are checkable by anyone
+who opens the links. Do not reintroduce.
+
+| Was | Is |
+|---|---|
+| "3 days" from report to merge | **57 hours** (19 Jul 15:20 UTC to 22 Jul 00:45 UTC) |
+| PR "credits him by name: Kushal Gaddamwar" | credits the handle only: "Credit to @Kushal9889 for reporting the issue and providing the reproduction" |
+| "4 code paths shown to disagree" | the issue names **three** |
+| "could not open the pull request himself" | he offered to write it in the issue; **merging** is what is org-restricted |
 
 ---
 
