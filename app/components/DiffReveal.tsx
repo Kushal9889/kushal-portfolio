@@ -1,3 +1,6 @@
+"use client";
+
+import { useMotion } from "@/lib/motion";
 import { GitHubMark } from "./Mark";
 import styles from "./DiffReveal.module.css";
 
@@ -33,8 +36,79 @@ const AFTER = [
 ] as const;
 
 export default function DiffReveal() {
+  /**
+   * The one moment on the page that holds the scroll.
+   *
+   * The section pins and the reader drives the sequence with the scrollbar: the
+   * swallowed error is struck out, the consequence lands, the guard writes
+   * itself in line by line, and the merge credit resolves last. Scrubbed rather
+   * than played, so it moves at whatever speed the reader moves and can be run
+   * backwards, which is the difference between watching something and examining
+   * it.
+   *
+   * Everything is readable before this runs and stays readable if it never
+   * does. The stylesheet already resolves the whole diff for Safari and for
+   * scripting off; this only takes the same elements and ties their progress to
+   * scroll position. Pinning is limited to this one section, because a page that
+   * pins twice has stopped being a document.
+   */
+  const ref = useMotion<HTMLDivElement>(({ gsap, ScrollTrigger }, root) => {
+    const bad = root.querySelector(`.${styles.bad}`);
+    const verdict = root.querySelector(`.${styles.verdict}`);
+    const fixLines = root.querySelectorAll(`.${styles.fix} .${styles.line}`);
+    const credit = root.querySelector(`.${styles.credit}`);
+
+    const timeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: root,
+        // Pins the trigger itself. Pinning the inner panel against an outer
+        // trigger measured the two separately, so the panel went to fixed and
+        // then kept travelling up the viewport to top: -433 while still pinned,
+        // which reads as a bug rather than as a hold.
+        pin: true,
+        start: "top 12%",
+        end: "+=110%",
+        // A number rather than true: the sequence lags the scrollbar slightly,
+        // which is what stops a fast flick from snapping through four states in
+        // one frame.
+        scrub: 0.6,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+      },
+    });
+
+    // The offending line is struck through rather than removed. The argument is
+    // that this line looked correct, so it has to stay visible to be disbelieved.
+    if (bad) {
+      timeline.fromTo(
+        bad,
+        { "--strike": 0 },
+        { "--strike": 1, duration: 1, ease: "none" },
+        0,
+      );
+    }
+
+    if (verdict) timeline.from(verdict, { opacity: 0, y: 10, duration: 0.6 }, 0.5);
+
+    // Written in from the left, one line after another, in the order a person
+    // would type them.
+    if (fixLines.length) {
+      timeline.from(
+        fixLines,
+        { opacity: 0, x: -12, duration: 0.5, stagger: 0.25 },
+        1.1,
+      );
+    }
+
+    if (credit) timeline.from(credit, { opacity: 0, duration: 0.5 }, 2.1);
+
+    // Pinning measures in pixels, and the panel is above the fold on a short
+    // window where fonts settle after the trigger is built.
+    ScrollTrigger.refresh();
+  });
+
   return (
-    <div className={styles.stage}>
+    <div className={styles.stage} ref={ref}>
       <div className={styles.sticky}>
         <p className={styles.caption}>
           <a

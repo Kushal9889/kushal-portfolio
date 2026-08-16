@@ -331,6 +331,10 @@
  * explaining.
  */
 .kbd {
+  /* kbd is inline, and a non-replaced inline box ignores both transform and
+     min-width. The press state was written, matched, and silently discarded by
+     the layout model until this line existed. */
+  display: inline-block;
   font-family: var(--font-mono), monospace;
   font-size: 0.82em;
   line-height: 1;

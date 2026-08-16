@@ -37,10 +37,38 @@
   padding-inline: 0.5rem;
 }
 
+/*
+ * Registered so it can be interpolated. A custom property with no @property
+ * declaration animates discretely, which would snap the strike across in one
+ * frame instead of drawing it.
+ */
+@property --strike {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .bad {
+  position: relative;
   color: var(--ink);
   background: var(--signal-wash);
   box-shadow: inset 2px 0 0 var(--signal);
+}
+
+/* The line is struck, not deleted. The whole point is that this code looked
+   correct, so it has to stay legible while being disbelieved. Drawn left to
+   right as the reader scrolls, and absent entirely until then, so nothing here
+   depends on the animation to make sense. */
+.bad::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.5rem;
+  inset-block-start: 50%;
+  height: 1px;
+  background: var(--signal);
+  transform: scaleX(var(--strike, 0));
+  transform-origin: left center;
+  pointer-events: none;
 }
 
 .good {
@@ -70,6 +98,14 @@
  * animation-duration is deliberately absent: scroll position drives progress and
  * any duration would be ignored.
  */
+/* Stood down once the motion bundle arrives, which drives the same elements from
+   a scrubbed timeline instead. Running both would reveal each element twice. */
+:global(:root[data-motion="js"]) .verdict,
+:global(:root[data-motion="js"]) .fix,
+:global(:root[data-motion="js"]) .credit {
+  animation: none;
+}
+
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .verdict,
