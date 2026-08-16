@@ -220,3 +220,42 @@
     animation: none;
   }
 }
+
+/* The scan line. Mono and tracked out so it reads as metadata rather than as a
+   sentence, which is what stops it competing with the headline directly above
+   it. Uppercase was tried and rejected: four terms in caps at this width wrap
+   into a block that looks like a navigation bar. */
+.focus {
+  margin: 1.1rem 0 0;
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  max-width: 46rem;
+}
+
+/* The one outside verdict on the page, so it is the only thing in the hero set
+   in the serif. A different voice carries further than a bigger size, and the
+   size is already spoken for by the headline. */
+.proof {
+  margin: 1.15rem 0 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.05rem, 0.98rem + 0.42vw, 1.3rem);
+  line-height: 1.45;
+  max-width: 34em;
+  color: var(--ink);
+}
+
+.proof a {
+  text-decoration-color: var(--rule);
+  text-underline-offset: 0.22em;
+}
+
+.proof a:hover {
+  text-decoration-color: var(--signal);
+}
+
+.available {
+  margin: 1.1rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}

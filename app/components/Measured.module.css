@@ -1,0 +1,65 @@
+.wrap {
+  margin-block: clamp(1rem, 3vh, 2rem);
+}
+
+.grid {
+  margin: 0;
+  border-block-start: 1px solid var(--rule);
+}
+
+/* Figure and its explanation on one line at reading width, stacked below it.
+   The number alone is a boast; the sentence beside it is what makes it a claim
+   someone can argue with, which is the only kind worth printing. */
+.row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr;
+  gap: 0.4rem 2rem;
+  padding: 1.1rem 0;
+  border-block-end: 1px solid var(--rule);
+  align-items: baseline;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.value {
+  font-size: var(--step-2);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.note {
+  margin: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 34em;
+}
+
+.foot {
+  margin: 1rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.foot code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.88em;
+  background: var(--paper-sunk);
+  padding: 0.1em 0.32em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+@media (max-width: 40rem) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}

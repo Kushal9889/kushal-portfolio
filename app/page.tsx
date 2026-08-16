@@ -8,6 +8,7 @@ import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import CorpusGraph from "./components/CorpusGraph";
 import Artifacts from "./components/Artifacts";
+import Measured from "./components/Measured";
 import PageMotion from "./components/PageMotion";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
@@ -98,6 +99,9 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
+        focus={profile.focus}
+        proof={profile.proof}
+        available={profile.available}
         credential={{
           label: featured ? `${featured.issuer} Certified · ${featured.short ?? featured.name}` : "",
           url: featured?.url ?? "#",
@@ -115,18 +119,25 @@ export default function Page() {
           <Artifacts items={section("Open source, LangChain deepagents").artifacts} />
         </Section>
 
+        {/* The strongest signal in 2026 hiring is evidence that the thing was
+            measured, not that it was built. It sits second because the bug above
+            proves he finds failures and this proves he checks for them. */}
+        <Section id="measured" index="02" title="How this is measured">
+          <Measured />
+        </Section>
+
         {/* What he is and what he is not, before the evidence. A reader who has
             just watched the agent answer wants to know who they are talking to;
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" index="02" title="How he works">
+        <Section id="approach" index="03" title="How he works">
           <CorpusGraph />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           <Prose body={section("What he does not do").body} />
         </Section>
 
-        <Section id="work" index="03" title="Work">
+        <Section id="work" index="04" title="Work">
           <Role
             role="AI Engineer, Graduate Researcher"
             company="Boston University, Questrom Computational Lab"
@@ -147,13 +158,13 @@ export default function Page() {
           />
         </Section>
 
-        <Section id="projects" index="04" title="BU Life AI">
+        <Section id="projects" index="05" title="BU Life AI">
           <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
           <Metrics items={section("BU Life AI").metrics} />
           <Prose body={section("BU Life AI").body} />
         </Section>
 
-        <Section id="proof" index="05" title="Proof" data-tone="sunk">
+        <Section id="proof" index="06" title="Credentials" data-tone="sunk">
           <Certifications certifications={certs} />
           <div className={styles.split}>
             <div>
@@ -168,7 +179,7 @@ export default function Page() {
         </Section>
 
 
-        <Section id="contact" index="06" title="Get in touch" data-weight="closing">
+        <Section id="contact" index="07" title="Get in touch" data-weight="closing">
           <Prose body={section("Availability").body} />
           {/* Marks sit before the label so the eye lands on a recognisable shape
               first. They inherit text colour, so the one-accent rule holds. */}

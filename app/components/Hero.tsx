@@ -13,6 +13,12 @@ type Props = {
   name: string;
   tagline: string;
   location: string;
+  /** What he builds, in the words a 2026 role is written in. */
+  focus: string;
+  /** The least fakeable thing he owns, stated before the first scroll. */
+  proof: string;
+  /** When he can start, and where. The question that gates a reply. */
+  available: string;
   credential: { label: string; url: string };
   contactHref: string;
   /** The agent itself, rendered under the graph it just traced. */
@@ -35,6 +41,9 @@ export default function Hero({
   name,
   tagline,
   location,
+  focus,
+  proof,
+  available,
   credential,
   contactHref,
   children,
@@ -107,6 +116,20 @@ export default function Hero({
           })()}
         </h1>
 
+        {/* What he builds, in the vocabulary the roles are written in.
+            The headline is the voice; this is the scan. Someone deciding in
+            twenty seconds is looking for these four words before they read a
+            sentence, and search engines read them too. */}
+        <p className={styles.focus}>{focus}</p>
+
+        {/* The strongest claim, above the fold, where it is the second thing
+            read rather than the first thing missed. Everything else in this
+            hero is a system describing itself; this is the one line where an
+            outside party did something in response to his work. */}
+        <p className={styles.proof}>
+          <a href="#opensource">{proof}</a>
+        </p>
+
         {/* The graph, drawn rather than written.
             Each node is a cell with a rail running through it; the rail fills as
             that node completes, so the row reads as a system executing instead of
@@ -150,6 +173,12 @@ export default function Hero({
             {credential.label}
           </a>
         </div>
+
+        {/* The two facts that decide whether a recruiter writes at all, kept
+            deliberately quiet. They gate the reply, so hiding them below six
+            sections costs replies; setting them loud would make the page sound
+            like it is asking rather than showing. */}
+        <p className={styles.available}>Available {available}</p>
 
         {/* The demo sits above the fold because it is the strongest thing on the
             page and an unseen proof persuades nobody. Everything below it is

@@ -7,8 +7,10 @@ email: kushal7887pd@gmail.com
 phone: "+1 (857) 328-4611"
 linkedin: https://linkedin.com/in/kushal-gaddamwar
 github: https://github.com/Kushal9889
-site: https://kushalgaddamwar.vercel.app
+site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
+focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
+proof: He found a silent error-swallowing bug in LangChain's SDK. A maintainer merged the fix in 57 hours.
 lastVerified: 2026-08-09
 ---
 
