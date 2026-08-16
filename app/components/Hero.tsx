@@ -143,10 +143,10 @@ export default function Hero({
         </p>
 
         <div className={styles.actions}>
-          <a className={styles.cta} href={contactHref}>
+          <a className={styles.cta} href={contactHref} data-pull>
             Get in touch
           </a>
-          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer">
+          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
             {credential.label}
           </a>
         </div>

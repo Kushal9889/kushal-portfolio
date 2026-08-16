@@ -8,7 +8,7 @@ import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import CorpusGraph from "./components/CorpusGraph";
 import Artifacts from "./components/Artifacts";
-import SectionMotion from "./components/SectionMotion";
+import PageMotion from "./components/PageMotion";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import styles from "./page.module.css";
@@ -90,7 +90,7 @@ export default function Page() {
   return (
     <>
       <Palette email={profile.email} resume={profile.github} />
-      <SectionMotion />
+      <PageMotion />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}
       <div className={styles.progress} aria-hidden="true" />
@@ -174,19 +174,19 @@ export default function Page() {
               first. They inherit text colour, so the one-accent rule holds. */}
           <ul className={styles.links}>
             <li>
-              <a href={`mailto:${profile.email}`}>
+              <a href={`mailto:${profile.email}`} data-pull>
                 <MailMark />
                 {profile.email}
               </a>
             </li>
             <li>
-              <a href={profile.linkedin} target="_blank" rel="noreferrer">
+              <a href={profile.linkedin} target="_blank" rel="noreferrer" data-pull>
                 <LinkedInMark />
                 LinkedIn
               </a>
             </li>
             <li>
-              <a href={profile.github} target="_blank" rel="noreferrer">
+              <a href={profile.github} target="_blank" rel="noreferrer" data-pull>
                 <GitHubMark />
                 GitHub
               </a>

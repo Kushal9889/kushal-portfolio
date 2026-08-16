@@ -37,10 +37,18 @@ async function load() {
   // disagree about how fast the page moves.
   gsap.defaults({ ease: "power3.out", duration: 0.55 });
 
-  // Trigger positions are measured in pixels. Measuring them before the webfonts
-  // land measures the fallback face, and every start point is then wrong by the
-  // difference in line height.
-  document.fonts?.ready.then(() => scroll.ScrollTrigger.refresh());
+  // Nothing is handed out until the webfonts have laid the page out.
+  //
+  // Trigger positions are measured in pixels, and before the real faces land the
+  // document is shorter than it will be. Every element below the fold therefore
+  // measures as already past its start line, so ScrollTrigger reports it as
+  // entering the instant the trigger is built and the entrance is spent on a
+  // frame nobody is looking at. Refreshing afterwards does not undo that; the
+  // animation has already run off-screen.
+  //
+  // Awaiting here rather than in each component means no consumer can forget it.
+  await document.fonts?.ready;
+  scroll.ScrollTrigger.refresh();
 
   // Lets the stylesheet stand down: the CSS scroll timelines are the floor for
   // visitors without this bundle, and running both would animate twice.
