@@ -119,7 +119,10 @@ const COLLAPSE_OVER_WORDS = 120;
  * every horizontal saving disappears. Folding the evidence and leaving the lead
  * sentences is what makes that length skimmable rather than shorter.
  */
-function useFoldOnNarrow(ref: React.RefObject<HTMLDetailsElement | null>) {
+function useFoldOnNarrow(
+  ref: React.RefObject<HTMLDetailsElement | null>,
+  always: boolean,
+) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -128,7 +131,11 @@ function useFoldOnNarrow(ref: React.RefObject<HTMLDetailsElement | null>) {
     const apply = () => {
       // Never re-close something the reader opened themselves.
       if (el.dataset.touched === "yes") return;
-      el.open = !narrow.matches;
+      // `always` sections start closed at every width. Work and Projects are
+      // where a reader is scanning for fit rather than reading prose, so the
+      // lead sentence plus the stack answers their question and the rest is
+      // there when they want it.
+      el.open = always ? false : !narrow.matches;
     };
 
     const remember = () => {
@@ -142,7 +149,7 @@ function useFoldOnNarrow(ref: React.RefObject<HTMLDetailsElement | null>) {
       narrow.removeEventListener("change", apply);
       el.removeEventListener("toggle", remember);
     };
-  }, [ref]);
+  }, [ref, always]);
 }
 
 /**
@@ -156,17 +163,26 @@ function useFoldOnNarrow(ref: React.RefObject<HTMLDetailsElement | null>) {
 function Foldable({
   children,
   desktopWorthy,
+  always,
+  label,
 }: {
   children: React.ReactNode;
   desktopWorthy: boolean;
+  always: boolean;
+  label: string;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
-  useFoldOnNarrow(ref);
+  useFoldOnNarrow(ref, always);
 
   return (
-    <details className="more" data-desktop-fold={desktopWorthy ? "yes" : "no"} ref={ref} open>
+    <details
+      className="more"
+      data-desktop-fold={desktopWorthy || always ? "yes" : "no"}
+      ref={ref}
+      open
+    >
       <summary>
-        <span className="more-open">Read the detail</span>
+        <span className="more-open">{label}</span>
         <span className="more-close">Show less</span>
       </summary>
       {children}
@@ -174,7 +190,20 @@ function Foldable({
   );
 }
 
-export default function Prose({ body, className }: { body: string; className?: string }) {
+export default function Prose({
+  body,
+  className,
+  /**
+   * "always" starts the fold closed at every width, so the section opens as a
+   * lead sentence plus a control. Used in Work and Projects, where a reader is
+   * scanning for fit and the frameworks are already visible as the stack row.
+   */
+  fold = "narrow",
+}: {
+  body: string;
+  className?: string;
+  fold?: "narrow" | "always";
+}) {
   const paras = body.split(/\n{2,}/);
 
   const render_ = (para: string, i: number) => {
@@ -208,7 +237,11 @@ export default function Prose({ body, className }: { body: string; className?: s
   return (
     <div className={root}>
       {render_(first, 0)}
-      <Foldable desktopWorthy={words > COLLAPSE_OVER_WORDS}>
+      <Foldable
+        desktopWorthy={words > COLLAPSE_OVER_WORDS}
+        always={fold === "always"}
+        label={fold === "always" ? "Read more" : "Read the detail"}
+      >
         {others.map((p, i) => render_(p, i + 1))}
       </Foldable>
     </div>

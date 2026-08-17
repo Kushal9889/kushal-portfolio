@@ -36,6 +36,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
   const [shared, setShared] = useState(false);
   const stream = useRef<EventSource | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const [listening, setListening] = useState(false);
   /** Set when the microphone is unavailable, so the failure is stated rather than silent. */
@@ -90,11 +91,37 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Bring the agent into view when it has been asked something.
+   *
+   * The agent lives in the hero, so every question asked from further down the
+   * page previously answered off-screen: the opener buttons, a re-asked past
+   * turn, a shared link and the select-to-ask button all left the reader looking
+   * at whatever they had been reading. Called from submit() rather than from
+   * each caller, so no path can forget it.
+   *
+   * Only scrolls when the agent is actually outside the viewport. Asking from
+   * the input while already looking at it should not move the page under the
+   * reader's hands.
+   */
+  function revealAgent() {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const box = root.getBoundingClientRect();
+    const offscreen = box.top < 0 || box.top > window.innerHeight * 0.6;
+    if (!offscreen) return;
+
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+  }
+
   async function submit(question: string) {
     if (!question.trim() || pending) return;
 
     trackOnce("agent_opened");
     track("agent_asked", question);
+    revealAgent();
 
     const index = turns.length;
     setTurns((t) => [...t, { question, result: null }]);
@@ -246,7 +273,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
   const showConversion = last?.result && !last.result.limited && last.result.route === "answer";
 
   return (
-    <div className={styles.agent}>
+    // id="agent" is load-bearing, not decoration. Two code paths already
+    // depended on it and both failed silently: the select-to-ask button called
+    // getElementById("agent")?.scrollIntoView(), and shareTurn() builds a URL
+    // ending in #agent. Neither element existed, and optional chaining meant
+    // there was no error to notice. Asking from further down the page therefore
+    // answered off-screen at the top and looked like nothing had happened.
+    <div className={styles.agent} id="agent" ref={rootRef}>
       {selection && (
         <button
           className={styles.selectAsk}
@@ -255,7 +288,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
             const text = selection.text;
             setSelection(null);
             window.getSelection()?.removeAllRanges();
-            document.getElementById("agent")?.scrollIntoView({ behavior: "smooth" });
+            // submit() reveals the agent itself now, so this no longer reaches
+            // for an element by id that did not exist.
             submit(`What does this mean: "${text}"`);
           }}
         >
@@ -367,7 +401,14 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         </li>
       </ul>
 
-      <ul className={styles.openers}>
+      {/* Suggestions, until there is something better to look at.
+          They rendered unconditionally before, so the same four cards sat above
+          every answer and the block read as though it kept repeating itself. A
+          suggestion is only useful while the reader has not asked anything; once
+          they have, the answer is the point and the past questions below it are
+          the way back. */}
+      {turns.length === 0 && (
+        <ul className={styles.openers}>
           {OPENERS.map((q) => (
             <li key={q}>
               <button className={styles.opener} onClick={() => submit(q)}>
@@ -375,7 +416,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
               </button>
             </li>
           ))}
-      </ul>
+        </ul>
+      )}
 
       <div className={styles.thread} aria-live="polite">
         {turns.map((turn, i) => {

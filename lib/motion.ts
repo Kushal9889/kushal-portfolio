@@ -50,6 +50,26 @@ async function load() {
   await document.fonts?.ready;
   scroll.ScrollTrigger.refresh();
 
+  // Re-measure whenever the document changes height, not only at startup.
+  //
+  // Trigger start and end positions are pixel offsets captured when the trigger
+  // is built. The agent sits above the pinned section and grows every time it
+  // answers: measured, one question added 251px and pushed the pinned diff down
+  // 252px, while nothing re-measured. Every start and end below the agent was
+  // then wrong by that amount, which is why the pinned card appeared to repeat
+  // or jump while scrolling after asking something.
+  //
+  // A ResizeObserver on the body catches all of it: streaming answers, a
+  // disclosure opening, a font swapping in, an image settling. Debounced to the
+  // next frame because a streaming answer resizes on nearly every token, and
+  // refresh() is a full layout pass.
+  let queued = 0;
+  const remeasure = () => {
+    cancelAnimationFrame(queued);
+    queued = requestAnimationFrame(() => scroll.ScrollTrigger.refresh());
+  };
+  new ResizeObserver(remeasure).observe(document.body);
+
   // Lets the stylesheet stand down: the CSS scroll timelines are the floor for
   // visitors without this bundle, and running both would animate twice.
   document.documentElement.dataset.motion = "js";

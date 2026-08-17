@@ -58,7 +58,13 @@
   --step-2: clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem);
   --step-3: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
 
-  color-scheme: light dark;
+  /* Light is the default, unconditionally.
+   *
+   * Paper and ink is the visual argument this page makes, and following the
+   * system meant a recruiter with a dark OS saw a different site from the one
+   * the design was measured against. Dark is kept below and reachable, but it
+   * is opt-in now rather than automatic. */
+  color-scheme: light;
 }
 
 /*
@@ -95,20 +101,20 @@
  * rule and the focus ring, all of which need Lc 45, and the words next to them
  * are set in --ink.
  *
- * No toggle. The system already knows, and a theme switch on a portfolio is one
- * more control to explain and one more state to get wrong.
+ * Opt-in, not automatic. This was a prefers-color-scheme query, which handed a
+ * visitor on a dark OS a page the design had never been reviewed in. Light is
+ * the argument the page makes, so light is what everyone gets unless the root
+ * carries data-theme="dark". Every value here stays measured and correct.
  */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: oklch(0.185 0.008 88);
-    --ink: oklch(0.95 0.01 88);
-    --rule: oklch(0.485 0.01 88);
-    --signal: oklch(0.78 0.12 32);
+:root[data-theme="dark"] {
+  --paper: oklch(0.185 0.008 88);
+  --ink: oklch(0.95 0.01 88);
+  --rule: oklch(0.485 0.01 88);
+  --signal: oklch(0.78 0.12 32);
 
-    --ink-soft: oklch(0.9 0.01 88);
-    --ink-faint: oklch(0.88 0.01 88);
-    --paper-sunk: oklch(0.225 0.008 88);
-  }
+  --ink-soft: oklch(0.9 0.01 88);
+  --ink-faint: oklch(0.88 0.01 88);
+  --paper-sunk: oklch(0.225 0.008 88);
 }
 
 *,

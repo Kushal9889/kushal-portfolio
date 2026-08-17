@@ -64,60 +64,75 @@ export default function DiffReveal() {
    * scroll position.
    */
   const ref = useMotion<HTMLDivElement>(({ gsap, ScrollTrigger }, root) => {
-    if (window.matchMedia("(max-width: 62rem)").matches) return;
+    // gsap.matchMedia rather than a bare matchMedia check.
+    //
+    // A plain `if (matches) return` is evaluated once, at the moment motion
+    // arms, and never again. Measured: the guard fired on a viewport that was
+    // narrow at load, and the pin was then never created even after the window
+    // was 1280px wide, because nothing re-ran the check. The signature moment
+    // was silently dead at desktop width with no error anywhere.
+    //
+    // matchMedia() re-evaluates on resize and reverts everything it created
+    // when the query stops matching, which is also what makes the phone case
+    // correct: rotating a tablet into a wide layout arms the pin, rotating back
+    // removes it rather than leaving a pinned section on a small screen.
+    const mm = gsap.matchMedia();
 
-    const bad = root.querySelector(`.${styles.bad}`);
-    const verdict = root.querySelector(`.${styles.verdict}`);
-    const fixLines = root.querySelectorAll(`.${styles.fix} .${styles.line}`);
-    const credit = root.querySelector(`.${styles.credit}`);
+    mm.add("(min-width: 62.0625rem)", () => {
+      const bad = root.querySelector(`.${styles.bad}`);
+      const verdict = root.querySelector(`.${styles.verdict}`);
+      const fixLines = root.querySelectorAll(`.${styles.fix} .${styles.line}`);
+      const credit = root.querySelector(`.${styles.credit}`);
 
-    const timeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: root,
-        // Pins the trigger itself. Pinning the inner panel against an outer
-        // trigger measured the two separately, so the panel went to fixed and
-        // then kept travelling up the viewport to top: -433 while still pinned,
-        // which reads as a bug rather than as a hold.
-        pin: true,
-        start: "top 12%",
-        end: "+=110%",
-        // A number rather than true: the sequence lags the scrollbar slightly,
-        // which is what stops a fast flick from snapping through four states in
-        // one frame.
-        scrub: 0.6,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-      },
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: root,
+          // Pins the trigger itself. Pinning the inner panel against an outer
+          // trigger measured the two separately, so the panel went to fixed and
+          // then kept travelling up the viewport to top: -433 while still
+          // pinned, which reads as a bug rather than as a hold.
+          pin: true,
+          start: "top 12%",
+          end: "+=110%",
+          // A number rather than true: the sequence lags the scrollbar slightly,
+          // which is what stops a fast flick from snapping through four states
+          // in one frame.
+          scrub: 0.6,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // The offending line is struck through rather than removed. The argument
+      // is that this line looked correct, so it has to stay visible to be
+      // disbelieved.
+      if (bad) {
+        timeline.fromTo(
+          bad,
+          { "--strike": 0 },
+          { "--strike": 1, duration: 1, ease: "none" },
+          0,
+        );
+      }
+
+      if (verdict) timeline.from(verdict, { opacity: 0, y: 10, duration: 0.6 }, 0.5);
+
+      // Written in from the left, one line after another, in the order a person
+      // would type them.
+      if (fixLines.length) {
+        timeline.from(
+          fixLines,
+          { opacity: 0, x: -12, duration: 0.5, stagger: 0.25 },
+          1.1,
+        );
+      }
+
+      if (credit) timeline.from(credit, { opacity: 0, duration: 0.5 }, 2.1);
+
+      // Pinning measures in pixels, and the panel is above the fold on a short
+      // window where fonts settle after the trigger is built.
+      ScrollTrigger.refresh();
     });
-
-    // The offending line is struck through rather than removed. The argument is
-    // that this line looked correct, so it has to stay visible to be disbelieved.
-    if (bad) {
-      timeline.fromTo(
-        bad,
-        { "--strike": 0 },
-        { "--strike": 1, duration: 1, ease: "none" },
-        0,
-      );
-    }
-
-    if (verdict) timeline.from(verdict, { opacity: 0, y: 10, duration: 0.6 }, 0.5);
-
-    // Written in from the left, one line after another, in the order a person
-    // would type them.
-    if (fixLines.length) {
-      timeline.from(
-        fixLines,
-        { opacity: 0, x: -12, duration: 0.5, stagger: 0.25 },
-        1.1,
-      );
-    }
-
-    if (credit) timeline.from(credit, { opacity: 0, duration: 0.5 }, 2.1);
-
-    // Pinning measures in pixels, and the panel is above the fold on a short
-    // window where fonts settle after the trigger is built.
-    ScrollTrigger.refresh();
   });
 
   return (

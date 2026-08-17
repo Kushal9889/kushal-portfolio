@@ -83,7 +83,7 @@ function Role({
           ))}
         </ul>
       )}
-      <Prose body={s.body} className={styles.roleBody} />
+      <Prose body={s.body} className={styles.roleBody} fold="always" />
     </article>
   );
 }
@@ -166,7 +166,7 @@ export default function Page() {
         <Section id="projects" index="05" title="BU Life AI">
           <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
           <Metrics items={section("BU Life AI").metrics} />
-          <Prose body={section("BU Life AI").body} />
+          <Prose body={section("BU Life AI").body} fold="always" />
         </Section>
 
         <Section id="proof" index="06" title="Credentials" data-tone="sunk">

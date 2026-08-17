@@ -164,7 +164,26 @@ const domains: Domain[] = [
       { id: "7.1", need: "command palette", pass: has("app/components/Palette.tsx") },
       { id: "7.2", need: "palette is discoverable, not hidden", pass: /for anywhere|⌘K|Cmd/i.test(read("app/components/Agent.tsx") + read("app/components/Palette.tsx")) },
       { id: "7.3", need: "select-to-ask", pass: /selectionchange/.test(read("app/components/Agent.tsx")) },
-      { id: "7.4", need: "templates always visible", pass: !/turns\.length === 0 && \(\s*<ul className=\{styles\.openers\}/.test(read("app/components/Agent.tsx")) },
+      {
+        // Was written as "never hide the openers", which forbade one
+        // implementation rather than testing the requirement. The requirement is
+        // that a visitor who has not asked anything can see what to ask; it says
+        // nothing about a visitor who already has. Keeping them on screen after
+        // an answer put the same four cards above every reply, which read as the
+        // block repeating itself and was reported as a bug.
+        //
+        // This asserts the outcome instead: the suggestions render, and they
+        // render for the empty state rather than behind a control.
+        id: "7.4",
+        need: "suggested questions visible before the first answer",
+        pass: (() => {
+          const src = read("app/components/Agent.tsx");
+          const rendersOpeners = /className=\{styles\.openers\}/.test(src);
+          const gatedOnEmptyOnly = /turns\.length === 0 &&/.test(src);
+          const behindAControl = /showOpeners|openersOpen|toggleOpeners/.test(src);
+          return rendersOpeners && gatedOnEmptyOnly && !behindAControl;
+        })(),
+      },
       { id: "7.5", need: "older answers collapse", pass: /styles\.past/.test(read("app/components/Agent.tsx")) },
     ],
   },
