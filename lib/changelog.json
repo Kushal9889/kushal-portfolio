@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Stop the model narrating itself, and give the hero one thing to look at"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Give the page a colour system, and fix what the fade was hiding"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-20",
       "subject": "Fix the keyless build, and lead the README with the evidence"
-    },
-    {
-      "date": "2026-08-20",
-      "subject": "Put the reasoning, the limits and the contact paths on the page"
     }
   ]
 }

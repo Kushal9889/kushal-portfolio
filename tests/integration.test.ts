@@ -183,3 +183,27 @@ describe("retrieval puts the answering section first", () => {
     assert.deepEqual(tokenize("What did he build at IMG Systems?"), ["build", "img", "systems"]);
   });
 });
+
+/**
+ * Retrieval precision, from a question a reader actually asked.
+ *
+ * Highlighting a phrase on the page sends `What does this mean: "..."`, and the
+ * wrapper words are common across the whole corpus. Combined with a top-k that
+ * behaved as a quota rather than a ceiling, a question about the retriever came
+ * back grounded in the achievements section, on the strength of the word "rank"
+ * appearing in "CodeChef global rank 64".
+ */
+test("a narrow question is not padded with unrelated sections", async () => {
+  const { chunks } = await retrieve('What does this mean: "the dense retriever overrules keyword rank"');
+  assert.ok(chunks.length >= 1);
+  assert.equal(chunks[0].title, "How retrieval on this page works");
+  assert.ok(
+    !chunks.some((c) => c.title === "Achievements"),
+    `achievements should not ground a retrieval question: ${chunks.map((c) => c.title).join(", ")}`,
+  );
+});
+
+test("a question the corpus answers broadly still gets several sections", async () => {
+  const { chunks } = await retrieve("What did he do at Growaza?");
+  assert.equal(chunks[0].title, "Growaza");
+});

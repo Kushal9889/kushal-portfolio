@@ -150,7 +150,54 @@ export type RetrievalTrace = {
   rows: FusionRow[];
 };
 
+/**
+ * The part of a question that is actually about the corpus.
+ *
+ * Select-to-ask wraps a highlighted phrase as `What does this mean: "..."`, and
+ * every word of that wrapper goes into BM25 as a term. Measured: asking about
+ * the dense retriever returned `Achievements` as a source, because the wrapper
+ * words are common across the corpus and diluted the phrase that carried the
+ * meaning. When a question wraps a quoted span of real length, that span is the
+ * query; the wrapper is grammar, not signal.
+ */
+function core(query: string): string {
+  const quoted = query.match(/["\u201c]([^"\u201d]{12,})["\u201d]/);
+  return quoted ? quoted[1] : query;
+}
+
+/**
+ * How far below the top result a chunk may score and still be sent to the model.
+ *
+ * `topK` used to be a promise as well as a ceiling: four chunks came back
+ * whether or not four were relevant, so a narrow question was answered with two
+ * good sections and two chosen by whatever scored above zero. Padding the
+ * context with unrelated text is how a grounded answer drifts, and it is what
+ * put an unrelated section under a question about retrieval.
+ */
+const RELEVANCE_FLOOR = 0.55;
+
+/**
+ * The same idea, applied to the keyword score when the dense half was skipped.
+ *
+ * Reciprocal rank fusion is deliberately flat: with one retriever running, rank
+ * one scores 1/61 and rank four scores 1/64, which is a spread of five percent.
+ * A floor expressed on the fused score therefore cannot cut anything on the
+ * short-circuit path, and that is exactly the path where cutting matters most,
+ * because nothing has cross-checked the keyword ranking.
+ *
+ * It showed: "why reciprocal rank fusion instead of a weighted blend" retrieved
+ * the achievements section second, on the strength of the word "rank" appearing
+ * in "CodeChef global rank 64". BM25 was working; the term is genuinely there.
+ * Nothing downstream knew the match was an accident of vocabulary.
+ *
+ * The short-circuit already asserts one chunk is 2.2x clear of the next, so a
+ * half-of-leader floor keeps whatever shares the leader's footing and drops
+ * what the short-circuit had already declared irrelevant.
+ */
+const LEXICAL_FLOOR = 0.5;
+
 export async function retrieve(query: string, topK = 4) {
+  query = core(query);
   const lexicalScores = bm25(query);
   const lexical = rankOf(lexicalScores);
 
@@ -203,7 +250,23 @@ export async function retrieve(query: string, topK = 4) {
     )
     .slice(0, topK);
 
-  const chosen = new Set(winners.map((w) => w.chunk.title));
+  // topK is a ceiling, not a quota. A chunk scoring far under the leader is
+  // not evidence, it is filler, and filler in the context window is how a
+  // grounded answer drifts off the question that was asked. The first result
+  // always survives: a weak best match is still the best match, and answering
+  // from it is better than answering from nothing.
+  const lead = winners[0]?.score ?? 0;
+  const lexLead = winners[0]?.lexicalScore ?? 0;
+  const kept = winners.filter((r, i) => {
+    if (i === 0) return true;
+    if (r.score < lead * RELEVANCE_FLOOR) return false;
+    // With the embedding call skipped, the keyword score is the only evidence
+    // there is, so it is what the floor has to read.
+    if (!dense.size && lexLead > 0 && r.lexicalScore < lexLead * LEXICAL_FLOOR) return false;
+    return true;
+  });
+
+  const chosen = new Set(kept.map((w) => w.chunk.title));
 
   const trace: RetrievalTrace = {
     k: RRF_K,
@@ -219,7 +282,7 @@ export async function retrieve(query: string, topK = 4) {
     })),
   };
 
-  return { chunks: winners.map((r) => r.chunk), trace };
+  return { chunks: kept.map((r) => r.chunk), trace };
 }
 
 /** Whether the dense half is actually available, for the trace panel to report honestly. */
