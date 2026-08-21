@@ -413,3 +413,49 @@ describe("answers carry no machine-written tells", () => {
     assert.equal(cleanAnswer("multi-agent, first-author, F-1"), "multi-agent, first-author, F-1");
   });
 });
+
+describe("reasoning welded into the answer paragraph", () => {
+  /**
+   * The paragraph-level strip only fires when the model puts its working in a
+   * paragraph of its own. This model does not always: an answer shipped as one
+   * paragraph containing both, so there was nothing for a split to separate and
+   * the reader was shown "We need to answer concisely ... So maybe:" in front of
+   * the real sentence.
+   */
+  const LEAKS: [string, string][] = [
+    [
+      'We need to answer concisely, lead with specific thing in one or two sentences, stop. So maybe: "He extended a Python document-parsing pipeline built on Apache Tika."',
+      "He extended a Python document-parsing pipeline built on Apache Tika.",
+    ],
+    [
+      'Question: "What did he do at Growaza?" So answer: He cut API response time 30 percent.',
+      "He cut API response time 30 percent.",
+    ],
+    [
+      "The user asks about Azure. The answer is: He shipped a document-intelligence assistant on Azure.",
+      "He shipped a document-intelligence assistant on Azure.",
+    ],
+  ];
+
+  for (const [raw, expected] of LEAKS) {
+    test(`cuts the working from "${raw.slice(0, 34)}..."`, () => {
+      assert.equal(cleanAnswer(raw), expected);
+    });
+  }
+
+  test("a real answer that happens to contain a handoff phrase is untouched", () => {
+    // The cut only applies when the paragraph OPENS as working. Without that
+    // guard this sentence loses its first half, which is the actual answer.
+    const real = "He built an agentic RAG platform. The answer is grounded in the corpus he wrote.";
+    assert.equal(cleanAnswer(real), real);
+  });
+
+  test("plain answers are never altered", () => {
+    for (const a of [
+      "He cut API response time by 30 percent using in-memory caching.",
+      "Compensation is worth discussing directly rather than through me.",
+    ]) {
+      assert.equal(cleanAnswer(a), a);
+    }
+  });
+});

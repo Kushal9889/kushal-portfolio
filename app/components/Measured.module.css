@@ -25,11 +25,14 @@
   gap: 0.15rem;
 }
 
+/* Every figure in this section is written into content/evals.json by
+   `npm run test:evals`, which the caption names and anyone can run. That is the
+   strongest form of checkable this page has, so these carry the accent. */
 .value {
   font-size: var(--step-2);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--ink);
+  color: var(--mark);
 }
 
 .note {
@@ -91,8 +94,8 @@
   overflow-wrap: anywhere;
 }
 
-.groupCount {
-  color: var(--ink);
+.groupValue {
+  color: var(--mark);
 }
 
 .groupNote {

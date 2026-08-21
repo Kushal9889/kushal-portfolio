@@ -68,10 +68,6 @@ export function listPrice(model: string, usage: { in: number; out: number }) {
   return (usage.in * rate.in + usage.out * rate.out) / 1_000_000;
 }
 
-/** The model id a provider is configured with, for the trace and the eval file. */
-export function modelId(name: ProviderName): string {
-  return PROVIDERS[name].model;
-}
 
 /**
  * Which providers are currently benched, and for how long.
@@ -121,7 +117,7 @@ function isCoolingOff(name: ProviderName) {
 }
 
 /** Every configured provider, preferred first. */
-export function availableProviders(): ProviderName[] {
+function availableProviders(): ProviderName[] {
   const preferred = process.env.LLM_PROVIDER as ProviderName | undefined;
   const configured = ORDER.filter((name) => PROVIDERS[name].key);
 
@@ -176,10 +172,6 @@ function build(name: ProviderName, streaming: boolean) {
   });
 }
 
-export function chatModel(streaming = true) {
-  const name = activeProvider();
-  return name ? build(name, streaming) : null;
-}
 
 /**
  * Calls the first working provider.

@@ -404,6 +404,47 @@ const domains: Domain[] = [
         })(),
       },
       {
+        // --mark means "an outsider can check this". Its whole value is that it
+        // appears rarely and always on the same kind of thing; the moment it
+        // becomes a general-purpose highlight it stops carrying information and
+        // the page is back to decoration with extra steps.
+        id: "12.10",
+        need: "the second accent stays on checkable claims",
+        pass: (() => {
+          const allowed =
+            /prose (strong|a)|proof|artifact|state|source|mark|metric|value|doi|cite|link/i;
+          const offenders: string[] = [];
+          for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
+            for (const block of stripComments(read(file)).split("}")) {
+              if (!/var\(--mark(-wash|-rule)?\)/.test(block)) continue;
+              const selector = block.split("{")[0];
+              if (/^\s*(:root|@media|@supports|@keyframes|html|--)/.test(selector)) continue;
+              if (!allowed.test(selector)) offenders.push(`${file}: ${selector.trim().slice(0, 40)}`);
+            }
+          }
+          return offenders.length === 0;
+        })(),
+      },
+      {
+        // The three text tones have to actually be three. They were derived off
+        // one mix axis, both got pushed up it independently to fix legibility on
+        // small labels, and the result measured 1.06:1 apart -- 1.00 being the
+        // same colour. The page claimed a hierarchy it did not have.
+        id: "12.11",
+        need: "the ink ramp has three distinguishable steps",
+        pass: (() => {
+          const css = read("app/globals.css");
+          const L = (token: string) => {
+            const m = css.match(new RegExp(`--${token}:\\s*oklch\\(([\\d.]+)`));
+            return m ? Number(m[1]) : null;
+          };
+          const ink = L("ink"), soft = L("ink-soft"), faint = L("ink-faint");
+          if (ink === null || soft === null || faint === null) return false;
+          // 0.08 in OKLCH L is roughly the smallest step that reads as a step.
+          return soft - ink >= 0.08 && faint - soft >= 0.08;
+        })(),
+      },
+      {
         // Hard rule 4 was enforced on code comments and nowhere else, so the
         // vocabulary it bans could ship in prose the reader actually sees.
         id: "12.9",

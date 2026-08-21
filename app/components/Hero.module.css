@@ -13,7 +13,11 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  padding-bottom: clamp(2.5rem, 10vh, 6rem);
+  /* Was clamp(2.5rem, 10vh, 6rem): 82px of padding under a single 22px line,
+     which cost more vertical space than any other decision in the hero. The
+     name and the location are a masthead, not a section, and the headline
+     below already carries all the separation the eye needs. */
+  padding-bottom: clamp(1.25rem, 4vh, 2.25rem);
 }
 
 .name {
@@ -37,8 +41,8 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 0.75rem;
-  margin-top: clamp(2rem, 7vh, 3.5rem);
-  padding-top: 1.25rem;
+  margin-top: clamp(1.5rem, 4vh, 2.25rem);
+  padding-top: 1.1rem;
   border-top: 1px solid var(--rule);
 }
 
@@ -68,7 +72,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 1.25rem;
-  margin-top: clamp(2rem, 6vh, 3rem);
+  margin-top: clamp(1.5rem, 3.5vh, 2rem);
 }
 
 /* One primary action, set noticeably larger than anything near it. Competing
@@ -115,9 +119,18 @@
   }
 }
 
+/* The agent has to start inside the first screen.
+ *
+ * The comment in Hero.tsx has always claimed the demo sits above the fold
+ * because an unseen proof persuades nobody. Measured at 1000x820 it started at
+ * y=863 against a 820px viewport -- 43px short, on the one element the whole
+ * page is built around. The hero was 1520px tall, and 145px of that was gap
+ * between the last four blocks.
+ *
+ * Every reduction above is to spacing. No content was cut. */
 .agentSlot {
-  margin-top: clamp(1.75rem, 5vh, 2.75rem);
-  padding-top: clamp(1.25rem, 3vh, 2rem);
+  margin-top: clamp(1.25rem, 3vh, 1.75rem);
+  padding-top: clamp(1rem, 2vh, 1.4rem);
   border-top: 1px solid var(--rule);
 }
 
@@ -226,7 +239,7 @@
    it. Uppercase was tried and rejected: four terms in caps at this width wrap
    into a block that looks like a navigation bar. */
 .focus {
-  margin: 1.1rem 0 0;
+  margin: 0.7rem 0 0;
   font-size: var(--step--1);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
@@ -237,7 +250,7 @@
    in the serif. A different voice carries further than a bigger size, and the
    size is already spoken for by the headline. */
 .proof {
-  margin: 1.15rem 0 0;
+  margin: 0.85rem 0 0;
   font-family: var(--font-serif), Georgia, serif;
   font-size: clamp(1.05rem, 0.98rem + 0.42vw, 1.3rem);
   line-height: 1.45;
@@ -246,7 +259,8 @@
 }
 
 .proof a {
-  text-decoration-color: var(--rule);
+  color: var(--mark);
+  text-decoration-color: var(--mark-rule);
   text-underline-offset: 0.22em;
 }
 
@@ -255,7 +269,7 @@
 }
 
 .available {
-  margin: 1.1rem 0 0;
+  margin: 0.7rem 0 0;
   font-size: var(--step--1);
   color: var(--ink-faint);
 }
@@ -306,7 +320,7 @@
    screen most of them see. Set at label scale so it reads as attribution rather
    than competing with the tagline above it. */
 .current {
-  margin: 0.9rem 0 0;
+  margin: 0.65rem 0 0;
   font-size: var(--step--1);
   color: var(--ink);
   font-weight: 500;

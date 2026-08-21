@@ -96,16 +96,62 @@ export default function PageMotion() {
         onEnter: (batch) => {
           const fresh = batch.filter(first);
           if (fresh.length === 0) return;
+          // 14px over 500ms was under the perceptual threshold for motion:
+          // spatial displacement and duration thresholds are proportional, and
+          // below the line there is no visible change at all. The animation
+          // system was running correctly and doing nothing anyone could see.
+          //
+          // 30px over 620ms clears it while staying well short of the 40-60px
+          // slide that reads as a template. The stagger does most of the work:
+          // it is what makes a dense section arrive as one movement instead of
+          // as twelve unrelated ones.
+          /**
+           * No `overwrite`, and the inline styles are removed on the way out.
+           *
+           * `overwrite: true` was killing tweens that were still running. A
+           * reader scrolling quickly crosses several batch boundaries in under
+           * a second, each new batch overwrote the last, and the elements whose
+           * tween was cancelled kept whatever opacity they had reached at that
+           * instant. Measured after one fast pass down the page: 34 elements
+           * stranded below full opacity, most of them at exactly 0 -- entire
+           * roles and prose blocks permanently invisible, with no error
+           * anywhere and nothing to see in the markup.
+           *
+           * It was also protecting against nothing. The `played` set above
+           * guarantees an element is tweened at most once, so there was never a
+           * second tween on the same target to overwrite.
+           *
+           * clearProps removes the inline opacity and transform when the tween
+           * finishes, so the settled page carries no animation state at all.
+           */
           gsap.from(fresh, {
             opacity: 0,
-            y: 14,
-            duration: 0.5,
-            stagger: 0.06,
-            overwrite: true,
+            y: 30,
+            duration: 0.62,
+            stagger: 0.075,
+            ease: "power3.out",
+            clearProps: "opacity,transform",
           });
         },
       });
     }
+
+    /**
+     * Nothing on this page is allowed to stay invisible.
+     *
+     * Everything above is a from(), so a tween that never completes leaves its
+     * target mid-flight. That should not happen now, but "should not" is not a
+     * guarantee, and the failure mode is the worst one available here: a
+     * recruiter reading a blank section and leaving. This sweeps once, a second
+     * after load, and restores anything the animation left behind.
+     */
+    setTimeout(() => {
+      for (const el of document.querySelectorAll<HTMLElement>("main *")) {
+        if (Number(getComputedStyle(el).opacity) < 1 && !el.closest("[data-state]")) {
+          gsap.set(el, { clearProps: "opacity,transform" });
+        }
+      }
+    }, 1000);
 
     /* --- The things worth clicking lean toward the cursor -------------------
      *

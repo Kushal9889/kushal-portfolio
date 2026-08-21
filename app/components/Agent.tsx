@@ -207,7 +207,18 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     // Streamed over Server-Sent Events. The answer is assembled here rather than
     // waiting on a settled response, so the first words appear roughly a second
     // before the last ones are written.
-    const source = new EventSource(`/api/agent/stream?q=${encodeURIComponent(question)}`);
+    // The last two settled exchanges travel with the question. The server keeps
+    // no session, which is the point of compiling the graph without a
+    // checkpointer, so the conversation has to live in the tab that is having it.
+    const history = turns
+      .filter((t) => t.result?.answer)
+      .slice(-2)
+      .map((t) => ({ question: t.question, answer: t.result!.answer }));
+
+    const source = new EventSource(
+      `/api/agent/stream?q=${encodeURIComponent(question)}` +
+        (history.length ? `&h=${encodeURIComponent(JSON.stringify(history))}` : ""),
+    );
     stream.current = source;
 
     let answer = "";
@@ -383,13 +394,27 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         <button
           className={styles.selectAsk}
           style={{ left: selection.x, top: selection.y }}
-          onClick={() => {
+          onClick={(event) => {
             const text = selection.text;
             setSelection(null);
             window.getSelection()?.removeAllRanges();
-            // submit() reveals the agent itself now, so this no longer reaches
-            // for an element by id that did not exist.
-            submit(`What does this mean: "${text}"`);
+            // Carry where the phrase came from.
+            //
+            // This sent the bare phrase wrapped in "What does this mean", with
+            // no section and no history, so retrieval saw a bag of words and
+            // the model answered generically. The one interaction that proves
+            // the agent is reading THIS page behaved like a search box.
+            //
+            // The nearest section heading is the context a person would have
+            // given out loud, so it travels with the question.
+            const section = (event.target as HTMLElement)
+              ?.closest?.("section")
+              ?.querySelector("h2")?.textContent?.trim();
+            submit(
+              section
+                ? `In the section "${section}", it says: "${text}". What does that mean and why does it matter?`
+                : `It says: "${text}". What does that mean and why does it matter?`,
+            );
           }}
         >
           Ask about this

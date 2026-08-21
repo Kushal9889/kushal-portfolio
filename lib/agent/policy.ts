@@ -150,6 +150,38 @@ export function looksLikeReasoning(partial: string): boolean {
   return /<think>/i.test(head) || META_OPENER.test(head);
 }
 
+/**
+ * Where the working stops and the answer starts, inside one paragraph.
+ *
+ * The paragraph-level strip below only fires when the model puts its reasoning
+ * in a paragraph of its own. This one does not always: a real answer shipped as
+ * `We need to answer concisely, lead with specific thing ... So maybe: "He
+ * extended a Python document-parsing pipeline ..."` -- one paragraph, working
+ * and answer welded together, so there was nothing for a paragraph split to
+ * separate and the whole thing reached the reader.
+ *
+ * These are the phrases a model uses to hand off from deliberating to
+ * answering. The cut is taken at the LAST one, because a model that talks
+ * itself through two options names the handoff twice.
+ */
+const HANDOFF = /\b(so (?:maybe|answer|the answer|i(?:'| a)?ll say|let(?:'|\u2019)?s say)|final answer|the answer (?:is|should be)|answer:)\s*:?\s*/gi;
+
+function cutWorking(paragraph: string): string {
+  if (!META_OPENER.test(paragraph.trimStart())) return paragraph;
+
+  let cut = -1;
+  for (const m of paragraph.matchAll(HANDOFF)) cut = m.index + m[0].length;
+  if (cut < 0) return paragraph;
+
+  // Models often quote the answer they just decided on. The quotes are part of
+  // the handoff, not part of the sentence.
+  return paragraph
+    .slice(cut)
+    .replace(/^["\u201c]\s*/, "")
+    .replace(/\s*["\u201d]\s*$/, "")
+    .trim();
+}
+
 export function cleanAnswer(text: string): string {
   let out = text.replace(THINK_BLOCK, "");
   if (/<\/think>/i.test(out)) out = out.replace(UNCLOSED_THINK, "");
@@ -158,6 +190,9 @@ export function cleanAnswer(text: string): string {
   // ones: a later paragraph opening this way is prose, not a leaked monologue.
   const paras = out.split(/\n{2,}/);
   while (paras.length > 1 && META_OPENER.test(paras[0].trim())) paras.shift();
+
+  // Whatever is left may still open with working welded onto the answer.
+  if (paras.length > 0) paras[0] = cutWorking(paras[0]);
 
   // Models emit non-breaking hyphens, directional quotes and em-dashes that do
   // not match the rest of the page. Normalised so an answer sits in the same

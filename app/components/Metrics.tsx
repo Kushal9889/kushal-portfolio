@@ -19,7 +19,7 @@ export default function Metrics({ items }: { items: Metric[] }) {
   return (
     <dl className={styles.grid}>
       {items.map((m) => (
-        <div key={m.label} className={styles.cell}>
+        <div key={m.label} className={styles.cell} data-sourced={m.source ? "" : undefined}>
           {/* Figures get display size; longer values are phrases rather than
               numbers, and setting them equally large makes them shout over the
               thing actually worth reading. */}

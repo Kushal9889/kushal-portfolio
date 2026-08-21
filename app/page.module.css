@@ -104,15 +104,6 @@
   border-top: 1px solid var(--rule);
 }
 
-.links {
-  list-style: none;
-  padding: 0;
-  margin: 1.5rem 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  font-size: var(--step-1);
-}
 
 .footer {
   padding-block: clamp(2.5rem, 8vh, 4rem);
@@ -291,8 +282,14 @@
   font-size: var(--step-0);
 }
 
-.role[data-past] {
-  opacity: 0.88;
+/* Opacity was the wrong instrument. Fading the whole article dimmed the
+   employer, the dates and the metrics equally, made the text muddy rather than
+   quiet, and left two of his three jobs looking like disabled UI. De-emphasis
+   is a typographic decision: the heading steps down a size, the body steps back
+   one tone, and everything stays at full opacity so nothing reads as broken. */
+.role[data-past] .roleBody,
+.role[data-past] .roleMeta {
+  color: var(--ink-soft);
 }
 
 /* Five dated lines, from git. Set at the smallest step on the page: this is a

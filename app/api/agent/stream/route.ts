@@ -1,4 +1,4 @@
-import { runStream } from "@/lib/agent/stream";
+import { runStream, type Exchange } from "@/lib/agent/stream";
 import { checkBudget } from "@/lib/agent/budget";
 
 import { loadContent } from "@/lib/content";
@@ -17,7 +17,35 @@ export const maxDuration = 30;
  */
 export async function GET(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const question = (new URL(req.url).searchParams.get("q") ?? "").slice(0, 500);
+  const url = new URL(req.url);
+  // 2000 to match the textarea, so a pasted job description is not truncated
+  // into nonsense halfway through the requirements list.
+  const question = (url.searchParams.get("q") ?? "").slice(0, 2000);
+
+  /**
+   * Prior turns, sent by the client because the server keeps no session.
+   *
+   * EventSource cannot send a body, so this rides in the query string as JSON.
+   * It is bounded twice -- here and again in runStream -- because this is a
+   * public endpoint and the length of the prompt is the half of the bill a
+   * stranger controls. Anything malformed is dropped rather than rejected: a
+   * bad history should cost the reader context, not their answer.
+   */
+  let history: Exchange[] = [];
+  try {
+    const raw = url.searchParams.get("h");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        history = parsed
+          .filter((e) => e && typeof e.question === "string" && typeof e.answer === "string")
+          .slice(-2)
+          .map((e) => ({ question: e.question.slice(0, 500), answer: e.answer.slice(0, 400) }));
+      }
+    }
+  } catch {
+    // Not JSON. The turn is answered without context.
+  }
 
   if (question.trim().length < 2) {
     return Response.json({ error: "ask something" }, { status: 400 });
@@ -47,7 +75,7 @@ export async function GET(req: Request) {
           return;
         }
 
-        for await (const event of runStream(question)) send(event);
+        for await (const event of runStream(question, history)) send(event);
       } catch {
         send({ type: "error", message: "Stream failed. Reach him directly by email." });
       } finally {

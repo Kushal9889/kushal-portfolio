@@ -82,12 +82,12 @@ async function load() {
   };
 }
 
-export type Kit = Awaited<ReturnType<typeof load>>;
+type Kit = Awaited<ReturnType<typeof load>>;
 
 let pending: ReturnType<typeof load> | null = null;
 
 /** One fetch per page, shared by every component that asks. */
-export function motionKit() {
+function motionKit() {
   return (pending ??= load());
 }
 

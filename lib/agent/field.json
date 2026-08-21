@@ -3,127 +3,127 @@
   "method": "classical-mds",
   "n": 17,
   "dims": 1024,
-  "stress": 0.378,
+  "stress": 0.3771,
   "eigenvalues": [
-    0.7161,
-    0.3888,
-    0.382
+    0.7213,
+    0.3931,
+    0.3804
   ],
   "points": [
     {
       "title": "Who he is",
       "source": "facts",
       "p": [
-        -0.0994,
-        0.7164,
-        -0.3654
+        -0.1193,
+        0.7855,
+        -0.5629
       ]
     },
     {
       "title": "What he is good at",
       "source": "facts",
       "p": [
-        0.6155,
-        0.3828,
-        -0.2019
+        0.6306,
+        0.493,
+        -0.3526
       ]
     },
     {
       "title": "What he does not do",
       "source": "facts",
       "p": [
-        -0.0412,
-        0.2276,
-        -0.5921
+        -0.062,
+        0.2655,
+        -0.7274
       ]
     },
     {
       "title": "Boston University, Questrom Computational Lab",
       "source": "facts",
       "p": [
-        0.1554,
-        0.4534,
-        -0.2931
+        0.1578,
+        0.5266,
+        -0.4536
       ]
     },
     {
       "title": "IMG Systems",
       "source": "facts",
       "p": [
-        0.0755,
-        -0.0886,
-        0.1712
+        0.078,
+        0.0433,
+        0.1082
       ]
     },
     {
       "title": "Growaza",
       "source": "facts",
       "p": [
-        -0.1328,
-        -0.1806,
-        0.2455
+        -0.1343,
+        -0.0437,
+        0.196
       ]
     },
     {
       "title": "BU Life AI",
       "source": "facts",
       "p": [
-        0.3467,
-        0.262,
-        -0.2947
+        0.3522,
+        0.3417,
+        -0.4289
       ]
     },
     {
       "title": "Open source, LangChain deepagents",
       "source": "facts",
       "p": [
-        0.9291,
-        -0.147,
-        -0.0636
+        0.9792,
+        -0.0362,
+        -0.1379
       ]
     },
     {
       "title": "Certifications",
       "source": "facts",
       "p": [
-        -0.4642,
-        0.7394,
-        0.0363
+        -0.498,
+        0.8128,
+        -0.1323
       ]
     },
     {
       "title": "Education",
       "source": "facts",
       "p": [
-        -0.9291,
-        0.2769,
-        -0.0224
+        -0.9792,
+        0.3579,
+        -0.1435
       ]
     },
     {
       "title": "Publications",
       "source": "facts",
       "p": [
-        0.4993,
-        0.2744,
-        -0.2051
+        0.5301,
+        0.3534,
+        -0.3439
       ]
     },
     {
       "title": "Skills",
       "source": "facts",
       "p": [
-        -0.1546,
-        0.7981,
-        0.0072
+        -0.1898,
+        0.9149,
+        -0.1785
       ]
     },
     {
       "title": "Achievements",
       "source": "facts",
       "p": [
-        -0.4549,
-        -0.2528,
+        -0.4667,
+        -0.0476,
         1
       ]
     },
@@ -131,17 +131,17 @@
       "title": "Availability",
       "source": "facts",
       "p": [
-        -0.5041,
-        0.4264,
-        -0.4996
+        -0.5456,
+        0.4622,
+        -0.6624
       ]
     },
     {
       "title": "Work authorisation",
       "source": "facts",
       "p": [
-        -0.9225,
-        -0.7981,
+        -0.947,
+        -0.9149,
         -1
       ]
     },
@@ -149,18 +149,18 @@
       "title": "This site",
       "source": "facts",
       "p": [
-        0.6559,
-        0.2239,
-        -0.3827
+        0.7275,
+        0.2154,
+        -0.4755
       ]
     },
     {
       "title": "Defects this page shipped and then fixed",
       "source": "defects",
       "p": [
-        0.9204,
-        -0.3328,
-        -0.1689
+        0.9709,
+        -0.3188,
+        -0.2022
       ]
     }
   ],

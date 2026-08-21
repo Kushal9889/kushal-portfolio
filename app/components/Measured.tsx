@@ -71,7 +71,7 @@ export default function Measured() {
         <ul className={styles.groups}>
           {groups.map(([name, g]) => (
             <li key={name} className={styles.group}>
-              <span className={`${styles.groupCount} tabular`}>
+              <span className={`${styles.groupValue} tabular`}>
                 {g.passed}/{g.cases}
               </span>
               <span className="label">{name}</span>

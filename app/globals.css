@@ -1,44 +1,86 @@
 /*
  * Design tokens.
  *
- * Four colours. Every surface in the app resolves to one of them; nothing
- * hardcodes a colour. `scripts/lint-tokens.ts` fails the build if a raw hex or
- * rgb() literal appears outside this file.
+ * Two accents and a three-step ink ramp. Every surface resolves to one of them;
+ * nothing hardcodes a colour, and `scripts/lint-tokens.ts` fails the build if a
+ * raw hex or rgb() literal appears outside this file.
  *
- * OKLCH rather than hex because L is perceptually uniform: --rule and --ink sit
- * at predictable relative brightness regardless of hue, so contrast holds when a
- * value is nudged.
+ * OKLCH rather than hex because L is perceptually uniform: a tone nudged by 0.05
+ * moves by the same visible amount at any hue, so a ramp built here stays a ramp
+ * after an edit.
  *
- * --signal is reserved for live state. If something is rendered in vermillion it
- * is happening right now: the agent is thinking, a request is in flight, a
- * measurement just landed. Using it decoratively would make the page lie.
+ * -------------------------------------------------------------------------
+ * The two accents mean different things, and that is the whole system.
  *
- * Contrast against --paper, measured in-browser 2026-08-09. Change a tone and
- * re-measure: the 13px labels are the smallest text here and have the least
- * headroom, so they are what any adjustment has to clear.
+ *   --signal   vermillion   HAPPENING NOW. The agent is thinking, a request is
+ *                           in flight, a measurement just landed. Never on
+ *                           static text.
+ *   --mark     deep indigo  CHECKABLE. A claim an outsider can verify: a merged
+ *                           pull request, a resolvable DOI, a figure a test
+ *                           produced. Never on decoration.
  *
- *   --ink        15.9:1   body prose
- *   --ink-soft            captions, metric labels, secondary links
- *   --ink-faint           small uppercase labels, unearned course rows
+ * Two accents rather than one because the page makes two different kinds of
+ * claim and had no way to distinguish them. Two rather than three because a
+ * third would stop either of them meaning anything. The audit enforces both
+ * rules; see checks 12.8 and 12.10.
  *
- * Measured with APCA rather than WCAG 2 ratios, because the small text here is
- * where a ratio passes and the text is still hard to read. An earlier pass at
- * 62%/58% measured Lc 59-65 on 12px labels against a target of 75; these values
- * lift the worst case above it. Re-measure after any change to --paper.
+ * The hues sit 242 degrees apart and were chosen by simulating protanopia,
+ * deuteranopia and tritanopia rather than by eye: the first pairing looked
+ * correct and collapsed to a single colour under two of the three. Both sit
+ * against a warm ground (hue 88), so neither reads as pasted on.
+ *
+ * -------------------------------------------------------------------------
+ * The ink ramp, and the bug that flattened it.
+ *
+ * These were derived as color-mix percentages off a single axis, and both got
+ * pushed up that axis independently to fix APCA legibility on 12px labels. The
+ * result measured 1.06:1 between --ink-soft and --ink-faint: a ratio of 1.00 is
+ * the same colour, so the page had two text tones while claiming three.
+ *
+ * The root error was one axis doing two jobs. Small labels need MORE contrast,
+ * not less; they earn their quietness from size, tracking and case. Tying
+ * "quiet" to "lighter" made those requirements fight, and legibility won, which
+ * is exactly how the ramp collapsed.
+ *
+ * So the steps are set explicitly now, and the third level of hierarchy is
+ * carried by hue and case rather than by fading further. Measured in-browser
+ * against --paper on 2026-08-21; re-measure after any change to --paper:
+ *
+ *   --ink        15.9:1   lead sentences, headings, figures
+ *   --ink-soft    7.6:1   body prose after the lead
+ *   --ink-faint   5.4:1   small uppercase labels, still comfortably AA
+ *   --mark        7.1:1   verified claims, emphasis inside prose
+ *   --signal      6.9:1   live state only
  */
 :root {
   --paper: oklch(0.972 0.009 88);
   --ink: oklch(0.225 0.014 62);
   --rule: oklch(0.86 0.006 88);
-  --signal: oklch(0.47 0.17 32);
 
-  /* Derived. Kept as separate tokens so intent is legible at the call site. */
-  --ink-soft: color-mix(in oklch, var(--ink) 78%, var(--paper));
-  /* 38% measured 2.6:1 against paper at 13px, which fails WCAG AA. The labels
-     using it are the smallest text on the page, so the tone is set by what is
-     readable rather than by what looks quiet: 58% measures above 4.5:1. */
-  --ink-faint: color-mix(in oklch, var(--ink) 76%, var(--paper));
+  /* Set explicitly rather than mixed, so the three steps stay three steps.
+     Chroma rises slightly as they lighten, which keeps a pale tone from
+     drifting toward grey and reading as disabled rather than as secondary. */
+  --ink-soft: oklch(0.44 0.016 62);
+  --ink-faint: oklch(0.53 0.018 62);
+
+  /* Live state. */
+  --signal: oklch(0.47 0.17 32);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
+
+  /* Checkable claim. Deep enough to sit in running prose without shouting,
+     saturated enough that a scanning eye stops on it.
+
+     Indigo rather than the teal this started as. Teal reads well to normal
+     vision and sits 172 degrees from vermillion, but red against green is the
+     one pair colour-blind readers actually confuse: simulated, the two accents
+     came out 23 apart under tritanopia and 41 under deuteranopia, where under
+     about 60 they are the same colour. Indigo measures 150 in the worst of the
+     three simulations. It is also the colour a reader already associates with
+     a citation, which is exactly what a mark on this page is. */
+  --mark: oklch(0.45 0.13 274);
+  --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
+
   --paper-sunk: color-mix(in oklch, var(--ink) 3.5%, var(--paper));
 
   /* Motion. Two curves: things arriving decelerate, things confirming overshoot. */
@@ -110,10 +152,23 @@
   --paper: oklch(0.185 0.008 88);
   --ink: oklch(0.95 0.01 88);
   --rule: oklch(0.485 0.01 88);
-  --signal: oklch(0.78 0.12 32);
 
-  --ink-soft: oklch(0.9 0.01 88);
-  --ink-faint: oklch(0.88 0.01 88);
+  /* The ramp had collapsed here too: 0.9 against 0.88 is a step nobody can see.
+     Dark grounds need wider spacing than light ones, not narrower, because the
+     eye loses discrimination faster as tones darken. */
+  --ink-soft: oklch(0.84 0.012 88);
+  --ink-faint: oklch(0.72 0.014 88);
+
+  /* Both accents lift and lose chroma on a dark ground. Held at the same hue so
+     the page reads as the same paper under different light: raising lightness
+     without dropping chroma makes vermillion fluoresce and teal go acid. */
+  --signal: oklch(0.78 0.12 32);
+  --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
+
+  --mark: oklch(0.80 0.10 274);
+  --mark-wash: color-mix(in oklch, var(--mark) 14%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 45%, var(--paper));
+
   --paper-sunk: oklch(0.225 0.008 88);
 }
 
@@ -316,34 +371,6 @@ hr {
  * Still no colour. --signal means live, and spending it here would cost that
  * word its meaning everywhere else on the page.
  */
-.prose strong {
-  font-size: 1.06em;
-  font-weight: 700;
-  letter-spacing: -0.006em;
-  color: var(--ink);
-}
-
-/* A link in prose should look like somewhere to go before it is read, and at
-   rest it says so with weight rather than with colour: a 2px rule in ink is
-   visible at scanning distance without spending the accent, which means live.
-   Hovering is a live state, so that is where the accent is allowed. */
-.prose a {
-  color: var(--ink);
-  font-weight: 500;
-  text-decoration-thickness: 2px;
-  text-decoration-color: var(--ink-faint);
-  text-underline-offset: 0.18em;
-  transition:
-    text-decoration-color var(--t-fast) var(--ease-standard),
-    background-color var(--t-fast) var(--ease-standard);
-}
-
-.prose a:hover,
-.prose a:focus-visible {
-  text-decoration-color: var(--signal);
-  background: var(--signal-wash);
-}
-
 /* Identifiers keep the mono face so a symbol read on the page matches the
    symbol typed into an editor. Sized down because mono runs optically larger
    than the serif around it at the same nominal size. */
@@ -359,15 +386,102 @@ hr {
 
 /* Emphasis inside prose.
  *
- * Body text sits at --ink-soft so that bolded text can step up to full --ink and
- * gain weight at the same time. Two axes moving together is what makes a claim
- * register at scanning distance; weight alone on an already-dark paragraph does
- * not read from a metre away.
+ * A reader scanning a text-heavy page follows an F-pattern and hunts for bolded
+ * phrases. This page gave them nothing to find: body text sat at --ink-soft, a
+ * lead sentence at --ink, and a <strong> inside that lead differed from its
+ * surroundings by 6% size and one weight step with no change of colour at all.
+ * Three axes were nominally in play and none of them moved far enough to see.
+ *
+ * So emphasis moves on three axes at once -- weight, colour and a rule beneath
+ * the phrase -- and it moves to --mark, which means "checkable" rather than
+ * "important". That distinction is what keeps this from being decoration: the
+ * marks in the corpus are authored one per paragraph on the sentence a reader
+ * should stop at, and every one of them is a claim with evidence behind it.
+ *
+ * Mechanical bolding of keywords stays banned. It is a machine-writing tell and
+ * no code here generates a mark; Prose only renders the ones written by hand.
  */
+.prose strong {
+  font-size: 1.06em;
+  font-weight: 700;
+  letter-spacing: -0.006em;
+  color: var(--mark);
+  /* Under the text rather than behind it. A wash on every bold phrase reads as
+     a highlighter pen at this density; a rule reads as typesetting, and it is
+     what keeps a run of marks in one section from looking striped.
 
-/* Links in prose are underlined rather than coloured. Colour here would collide
-   with --signal, which means "live" everywhere else on the page, and an
-   underline is the older and more legible signal for "this opens somewhere". */
+     Drawn on a pseudo-element with a solid fill rather than as a two-stop
+     gradient. Same pixels either way, but a gradient of one colour is still a
+     gradient to the audit, and hard rule 4 is worth more than the convenience
+     of animating background-size. */
+  position: relative;
+}
+
+.prose strong::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0.02em;
+  width: 100%;
+  height: 0.3em;
+  background: var(--mark-wash);
+  z-index: -1;
+}
+
+/*
+ * The claim underlines itself as it arrives.
+ *
+ * Scroll-driven, so it costs no JavaScript and runs on the compositor. It is
+ * the one piece of motion on this page that carries meaning rather than
+ * polish: the mark is drawn under the sentence at the moment the sentence
+ * becomes readable, which is the same gesture a person makes with a pen.
+ *
+ * animation-range ends at 45% so the wipe finishes while the phrase is still
+ * arriving rather than after it has settled -- a highlight that completes below
+ * the fold has already missed the reader it was for.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes mark-in {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    .prose strong::after {
+      transform-origin: left center;
+      animation: mark-in linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 45%;
+    }
+  }
+}
+
+/* Links in prose carry the same colour as emphasis, because they are the same
+   claim: something an outsider can open and check. The underline stays -- it is
+   the older and more legible signal for "this goes somewhere" -- and the colour
+   is what makes it survive a scan that never slows down enough to read. */
+.prose a {
+  color: var(--mark);
+  font-weight: 500;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--mark-rule);
+  text-underline-offset: 0.18em;
+  transition:
+    text-decoration-color var(--t-fast) var(--ease-out),
+    background-color var(--t-fast) var(--ease-out);
+}
+
+/* Hover is a live state, so this is one of the few places both accents meet:
+   the link is checkable, and right now it is also being touched. */
+.prose a:hover,
+.prose a:focus-visible {
+  text-decoration-color: var(--signal);
+  background: var(--signal-wash);
+}
 
 /* Inline emphasis for a figure inside running prose, for the cases where pulling
    it into the metric strip would strip its context. Weight and tracking only:

@@ -1,22 +1,22 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document-intelligence assistant on Azure that uses Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React and Cosmos DB, providing question-answering, cross-document comparison and template-driven generation over a private corpus.",
+    "answer": "He shipped a document-intelligence assistant for an enterprise consulting client on Azure, end-to-end from ingestion through deployment.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 398,
-      "answer": 4113
+      "retrieve": 405,
+      "answer": 4270
     },
-    "total": 4537,
+    "total": 4702,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
-      "What he is good at",
-      "Defects this page shipped and then fixed"
+      "This site",
+      "What he is good at"
     ],
     "usage": {
-      "in": 1054,
-      "out": 263
+      "in": 1660,
+      "out": 185
     },
     "trace": {
       "k": 60,
@@ -33,7 +33,7 @@
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 2.3807,
+          "lexicalScore": 1.9877,
           "lexicalRank": 4,
           "denseRank": 9,
           "fused": 0.030118,
@@ -49,7 +49,7 @@
         },
         {
           "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 3.3138,
+          "lexicalScore": 3.3307,
           "lexicalRank": 1,
           "denseRank": 4,
           "fused": 0.032018,
@@ -67,8 +67,8 @@
           "title": "Growaza",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 6,
-          "fused": 0.015152,
+          "denseRank": 7,
+          "fused": 0.014925,
           "selected": false
         },
         {
@@ -113,7 +113,7 @@
         },
         {
           "title": "Skills",
-          "lexicalScore": 2.965,
+          "lexicalScore": 2.9814,
           "lexicalRank": 2,
           "denseRank": 1,
           "fused": 0.032522,
@@ -145,39 +145,39 @@
         },
         {
           "title": "This site",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 7,
-          "fused": 0.014925,
-          "selected": false
+          "lexicalScore": 0.7168,
+          "lexicalRank": 5,
+          "denseRank": 6,
+          "fused": 0.030536,
+          "selected": true
         },
         {
           "title": "Defects this page shipped and then fixed",
-          "lexicalScore": 2.7957,
+          "lexicalScore": 2.3338,
           "lexicalRank": 3,
           "denseRank": 15,
           "fused": 0.029206,
-          "selected": true
+          "selected": false
         }
       ]
     },
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "He discovered a silent failure in the LangChain production SDK that static analysis missed, and he found it by manually inspecting the code.",
+    "answer": "He discovered a silent failure in the LangChain SDK that produced no exception or stack trace. He identified it manually.",
     "route": "answer",
     "timings": {
       "route": 1,
       "retrieve": 0,
-      "answer": 4857
+      "answer": 3655
     },
-    "total": 4864,
+    "total": 3662,
     "sources": [
       "Publications"
     ],
     "usage": {
       "in": 541,
-      "out": 340
+      "out": 328
     },
     "trace": {
       "k": 60,
@@ -266,7 +266,7 @@
         },
         {
           "title": "Publications",
-          "lexicalScore": 2.3819,
+          "lexicalScore": 2.4036,
           "lexicalRank": 1,
           "denseRank": null,
           "fused": 0.016393,
@@ -325,14 +325,14 @@
     "provider": "nvidia"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He adopts a multi-agent supervisor when heterogeneous intents would cause retrieval contamination or redundant LLM calls, and the need for domain-specific state isolation outweighs the added orchestration complexity.",
+    "answer": "two sentences: \"He adopts a multi-agent architecture when heterogeneous intents across distinct domains would cause retrieval contamination and reasoning drift in a single-prompt agent. He then evaluates whether the added orchestration complexity is offset by the measurable gains of state isolation and a 70 percent reduction in redundant LLM calls.\" That's two sentences. Provide answer only.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 328,
-      "answer": 5771
+      "retrieve": 238,
+      "answer": 4899
     },
-    "total": 6106,
+    "total": 5143,
     "sources": [
       "BU Life AI",
       "This site",
@@ -340,8 +340,8 @@
       "Skills"
     ],
     "usage": {
-      "in": 1872,
-      "out": 387
+      "in": 1937,
+      "out": 400
     },
     "trace": {
       "k": 60,
@@ -374,7 +374,7 @@
         },
         {
           "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 2.4943,
+          "lexicalScore": 2.5135,
           "lexicalRank": 1,
           "denseRank": 6,
           "fused": 0.031545,
@@ -398,7 +398,7 @@
         },
         {
           "title": "BU Life AI",
-          "lexicalScore": 1.6017,
+          "lexicalScore": 1.6188,
           "lexicalRank": 3,
           "denseRank": 1,
           "fused": 0.032266,
@@ -438,7 +438,7 @@
         },
         {
           "title": "Skills",
-          "lexicalScore": 2.1191,
+          "lexicalScore": 2.1358,
           "lexicalRank": 2,
           "denseRank": 8,
           "fused": 0.030835,
@@ -470,7 +470,7 @@
         },
         {
           "title": "This site",
-          "lexicalScore": 1.5366,
+          "lexicalScore": 1.4707,
           "lexicalRank": 4,
           "denseRank": 2,
           "fused": 0.031754,

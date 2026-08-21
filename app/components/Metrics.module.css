@@ -69,3 +69,14 @@ a.source:hover {
   color: var(--ink);
   border-bottom-color: var(--ink);
 }
+
+/* A figure carries the accent when, and only when, it carries a source.
+ *
+ * Colouring every number would flood the page and cost the accent its meaning,
+ * which is the failure this whole system is built to avoid. Colouring the ones
+ * a reader can go and check turns the palette into information: indigo here
+ * means "there is a link under this", and the SOURCE tag beside it says where.
+ * A figure whose only witness is a former employer stays in ink, honestly. */
+.cell[data-sourced] .value {
+  color: var(--mark);
+}

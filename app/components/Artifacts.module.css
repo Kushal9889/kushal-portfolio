@@ -92,3 +92,13 @@
     justify-self: start;
   }
 }
+
+/* "merged" and "closed" are the states verify:links checks against the GitHub
+   API on every run, which makes them the most literally checkable strings on
+   the page. Merged gets the accent; closed stays quiet, because a closed issue
+   is context and a merged fix is the evidence. */
+.state[data-state="merged"] {
+  color: var(--mark);
+  border-color: var(--mark-rule);
+  background: var(--mark-wash);
+}

@@ -129,7 +129,7 @@ const LEXICAL_CONFIDENCE = 2.2;
  * it. Every field is a number this function computed on the way to an answer;
  * nothing is derived for display.
  */
-export type FusionRow = {
+type FusionRow = {
   title: string;
   /** Raw BM25, unbounded. */
   lexicalScore: number;
@@ -224,4 +224,3 @@ export async function retrieve(query: string, topK = 4) {
 
 /** Whether the dense half is actually available, for the trace panel to report honestly. */
 export const hasDense = idx.vectors !== null;
-export const chunkCount = idx.chunks.length;

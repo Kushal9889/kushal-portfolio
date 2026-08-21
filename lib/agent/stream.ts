@@ -52,14 +52,61 @@ export type StreamEvent =
 
 type Warm = Record<string, { answer: string; sources: string[]; timings: Record<string, number> }>;
 
-export async function* runStream(question: string): AsyncGenerator<StreamEvent> {
+/**
+ * What was already said in this conversation.
+ *
+ * The graph's own comment claimed "conversation history is passed in per
+ * request instead", and it was not: nothing accepted history, so every
+ * follow-up was answered as if it were the first thing anyone had asked. A
+ * reader who asked "what did he do at IMG Systems" and then "why did he do it
+ * that way" got a generic answer to the second question, which reads exactly
+ * like a page that does not know what it is talking about.
+ *
+ * Held in the browser tab and sent per request, which is the design the
+ * checkpointer decision assumed. Bounded to the last two exchanges: enough to
+ * resolve "it", "that" and "why", short enough that the prompt does not grow
+ * without limit on a public endpoint someone else is paying for.
+ */
+export type Exchange = { question: string; answer: string };
+
+const HISTORY_TURNS = 2;
+const HISTORY_ANSWER_CHARS = 400;
+
+function historyMessages(history: Exchange[]) {
+  return history.slice(-HISTORY_TURNS).flatMap((h) => [
+    { role: "user", content: h.question },
+    { role: "assistant", content: h.answer.slice(0, HISTORY_ANSWER_CHARS) },
+  ]);
+}
+
+/**
+ * Retrieval sees the conversation too, not just the latest question.
+ *
+ * "Why did he do it that way" has no retrievable terms of its own. Searching
+ * the corpus for it returns whatever is generically closest, which is how a
+ * follow-up ended up grounded in the wrong section. Prepending the previous
+ * question puts the subject back into the query without letting an old topic
+ * outweigh the new one.
+ */
+function retrievalQuery(question: string, history: Exchange[]) {
+  const previous = history.at(-1)?.question;
+  return previous ? `${previous} ${question}` : question;
+}
+
+export async function* runStream(
+  question: string,
+  history: Exchange[] = [],
+): AsyncGenerator<StreamEvent> {
   const started = Date.now();
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is
   // the difference between an instant demo and a three second wait on the one
   // interaction most visitors have.
-  const warm = (prewarm as Warm)[question.toLowerCase().trim()];
+  // Only on a first turn. A cached answer cannot take the conversation into
+  // account, and serving one mid-thread is how a follow-up gets answered with
+  // the opener's reply.
+  const warm = history.length === 0 ? (prewarm as Warm)[question.toLowerCase().trim()] : undefined;
   if (warm) {
     yield { type: "route", route: "answer", ms: 0 };
     yield { type: "sources", titles: warm.sources, ms: 0 };
@@ -94,7 +141,7 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
   }
 
   const retrieveStart = Date.now();
-  const { chunks, trace } = await retrieve(question);
+  const { chunks, trace } = await retrieve(retrievalQuery(question, history));
   yield {
     type: "sources",
     titles: chunks.map((c) => c.title),
@@ -140,6 +187,7 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
     for await (const token of streamWithFailover(
       [
         { role: "system", content: systemPrompt(context) },
+        ...historyMessages(history),
         { role: "user", content: question },
       ],
       (u) => {

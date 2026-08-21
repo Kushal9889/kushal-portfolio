@@ -22,6 +22,18 @@ import {
  * wrong one here: a Postgres saver costs 20-50ms per write, and this graph runs
  * three nodes to answer a question in a conversation that lives in the browser
  * tab. Conversation history is passed in per request instead.
+ *
+ * That last sentence was false for as long as it was written here. Nothing
+ * accepted history, so the trade being described -- durability given up for
+ * latency, with the conversation carried by the client -- was only half
+ * implemented: the durability was gone and the conversation was too. The
+ * streaming path in stream.ts now takes the history the browser holds, which is
+ * what makes the decision above an actual decision rather than an omission with
+ * a paragraph attached.
+ *
+ * This graph stays single-turn on purpose. It backs the eval suite and the
+ * hero's measured trace, where a settled answer to one stated question is
+ * exactly what should be asserted against.
  */
 
 const State = Annotation.Root({

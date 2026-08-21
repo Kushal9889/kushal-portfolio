@@ -309,8 +309,12 @@ to the default.
 node by default, which is right for a long-running stateful agent and wrong here.
 A Postgres saver costs 20 to 50 milliseconds per write, and this graph runs three
 nodes to answer one question in a conversation that lives in a browser tab.
-Conversation history is passed per request instead, which trades durability he
-does not need for latency the reader can feel.
+Conversation history rides with each request from the browser tab that is having
+the conversation, which trades durability he does not need for latency the reader
+can feel. That half was missing for a while: the graph shipped with the decision
+written down and the history never implemented, so every follow-up question was
+answered as though it were the first. It is in `content/notes/defects.md` with
+the rest.
 
 **When every model provider fails, the answer degrades rather than erroring.**
 With no provider reachable, the agent returns the retrieved source paragraph
