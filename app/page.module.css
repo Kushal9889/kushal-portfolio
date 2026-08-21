@@ -265,3 +265,14 @@
   gap: 0.5rem;
   min-height: 44px;
 }
+
+
+/* A project that runs but is not the argument.
+   Separated from the credentials above it by a rule rather than a heading level,
+   so it reads as an appendix to this section instead of competing with the work
+   that earned its own. */
+.alsoBuilt {
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+  padding-top: clamp(1.25rem, 3vh, 2rem);
+  border-top: 1px solid var(--rule);
+}

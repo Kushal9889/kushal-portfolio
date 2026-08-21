@@ -46,7 +46,7 @@ export default function Palette({
     },
     { label: "A bug in LangChain", hint: "section", run: go("opensource") },
     { label: "Work", hint: "section", run: go("work") },
-    { label: "BU Life AI", hint: "section", run: go("projects") },
+    { label: "Research and publications", hint: "section", run: go("research") },
     { label: "Proof and certifications", hint: "section", run: go("proof") },
     { label: "Get in touch", hint: "section", run: go("contact") },
     {

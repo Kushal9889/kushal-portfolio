@@ -214,8 +214,21 @@ June 2024. India.
 
 ## Publications
 
-IEEE ICAICCIT 2024, first author. Deep Learning for Contextual Bug Detection and Automated Fixes in
-Software Systems, pages 624 to 629.
+@metric 91.4% | combined transformer and GNN accuracy
+@metric 88.2% | transformer alone
+@metric 13.5s | detect and fix, against 25.4s for static analysis
+
+**He published research on finding bugs automatically, then found one by hand in
+a production SDK.** The IEEE paper is about contextual bug detection: a
+transformer reads the code, a graph neural network reads the structure around it,
+and the combination reaches 91.4% accuracy where the transformer alone reaches
+88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5
+seconds against 25.4 for static analysis.
+
+The LangChain defect in section 01 is the same problem outside the lab. It was a
+silent failure with no exception and no stack trace, which is precisely the class
+static analysis does not catch and the class the paper argues context is needed
+for. First author, pages 624 to 629.
 [doi:10.1109/ICAICCIT64383.2024.10912101](https://doi.org/10.1109/ICAICCIT64383.2024.10912101)
 and [the code](https://github.com/Kushal9889/Deep-Learning-for-Contextual-Bug-Detection-and-Automated-Fixes-in-Software-Systems),
 which carries a CITATION.cff so GitHub renders a citation button.

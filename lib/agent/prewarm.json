@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document-intelligence assistant on Azure that answers questions over a private corpus, using Azure OpenAI GPT-4o, Azure AI Search and a LangGraph agent with hybrid retrieval, streaming FastAPI endpoints and a React front-end.",
+    "answer": "We need to answer using only context. The context mentions \"architected a document intelligence assistant for an enterprise consulting client, on Azure, owned from ingestion through deployment.\" It also mentions \"Streaming FastAPI endpoints over Server-Sent Events with a React single-page app.\" It mentions \"Azure OpenAI GPT-4o, Azure AI Search, Cosmos DB Gremlin\". It mentions \"Azure Blob Storage metadata\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage metadata\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o\". It mentions \"Azure AI Search\". It mentions \"Azure Blob Storage\". It mentions \"Azure AI Search\". It mentions \"Azure OpenAI GPT-4o",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 316,
-      "answer": 2625
+      "retrieve": 369,
+      "answer": 2531
     },
-    "total": 2971,
+    "total": 2928,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "What he is good at",
@@ -16,38 +16,38 @@
     ],
     "usage": {
       "in": 927,
-      "out": 318
+      "out": 400
     }
   },
   "what broke in production and how did he find it?": {
-    "answer": "The production issue was that the `CompositeBackend.ls(\"/\")` and `als(\"/\")` calls in LangChain's deepagents SDK silently swallowed backend errors, returning a seemingly healthy but nearly empty filesystem instead of propagating the failure. He discovered it by noticing that the behavior contradicted the SDK's documented invariant—errors must not be treated as partial success— and by tracing the code path that bypassed the error-checking logic used elsewhere.",
+    "answer": "A silent bug in LangChain's deepagents SDK caused a backend error to be swallowed, returning a seemingly healthy but nearly empty filesystem that violated the codebase's documented invariant. He discovered it by closely reading the system and noticing that the behavior contradicted the explicitly stated invariant in `_merge_glob_results`.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 347,
-      "answer": 2069
+      "retrieve": 349,
+      "answer": 1078
     },
-    "total": 2426,
+    "total": 1436,
     "sources": [
-      "What he is good at",
       "Open source, LangChain deepagents",
-      "Who he is",
-      "This site"
+      "What he is good at",
+      "Publications",
+      "Who he is"
     ],
     "usage": {
-      "in": 1267,
-      "out": 294
+      "in": 1149,
+      "out": 202
     }
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He adopts a multi-agent architecture when heterogeneous domains cause retrieval contamination and reasoning drift, and the gain in state isolation and the ~70 % reduction in redundant LLM calls outweighs the added orchestration complexity.",
+    "answer": "He adopts a multi-agent design only when heterogeneous queries cause retrieval contamination and state sharing becomes a bottleneck, weighing the 70 percent reduction in redundant LLM calls against the added orchestration complexity.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 255,
-      "answer": 4868
+      "retrieve": 241,
+      "answer": 3940
     },
-    "total": 5131,
+    "total": 4187,
     "sources": [
       "This site",
       "Who he is",
@@ -56,7 +56,7 @@
     ],
     "usage": {
       "in": 1263,
-      "out": 390
+      "out": 371
     }
   }
 }

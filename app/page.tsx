@@ -172,20 +172,33 @@ export default function Page() {
           />
         </Section>
 
-        <Section id="projects" index="05" title="BU Life AI">
-          <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-          <Metrics items={section("BU Life AI").metrics} />
-          <Prose body={section("BU Life AI").body} fold="always" />
+        {/* Research took this section from BU Life AI.
+            The paper is first-author work with measured numbers and a DOI, and
+            it sat in a one-third column under Credentials while a side project
+            held a top-level heading. It also completes the thread section 01
+            opens: the paper argues context is needed to catch bugs static
+            analysis misses, and the LangChain defect was exactly that shape. */}
+        <Section id="research" index="05" title="Research">
+          <Metrics items={section("Publications").metrics} />
+          <Prose body={section("Publications").body} />
           <AskAbout
             email={profile.email}
             site={profile.site.replace("https://", "")}
             context="projects"
-            label="Email him about BU Life AI"
+            label="Email him about the paper"
           />
         </Section>
 
+
         <Section id="proof" index="06" title="Credentials" data-tone="sunk">
           <Certifications certifications={certs} />
+          {/* Demoted from its own section. Still live, still measured, and no
+              longer occupying a top-level heading it did not earn. */}
+          <div className={styles.alsoBuilt}>
+            <h3 className={styles.subhead}>Also running</h3>
+            <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
+            <Prose body={section("BU Life AI").body} fold="always" />
+          </div>
           <div className={styles.split}>
             <div>
               <h3 className={styles.subhead}>Publications</h3>
