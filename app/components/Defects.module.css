@@ -1,0 +1,70 @@
+.wrap {
+  margin-block-start: 1.6rem;
+  padding-block-start: 1.1rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.head {
+  margin: 0 0 0.9rem;
+  font-size: var(--step--1);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.list {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+/* Symptom left, guard right, so the eye reads "this broke -> this catches it"
+   as one movement. Stacked below the break, where two columns would leave four
+   words per line. */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1.6rem;
+  align-items: baseline;
+}
+
+.symptom {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.guard {
+  margin: 0;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* The arrow is drawn, not typed: a glyph here would be one more character to
+   go missing in a font fallback. */
+.guard::before {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 1px;
+  margin-inline-end: 0.5em;
+  vertical-align: middle;
+  background: var(--rule);
+}
+
+.note {
+  margin: 1rem 0 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 42em;
+}
+
+@media (max-width: 46rem) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

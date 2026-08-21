@@ -65,7 +65,8 @@ describe("pages", () => {
   });
 
   test("the share card renders as a real PNG at the right size", async () => {
-    const res = await fetch(`${BASE}/opengraph-image`);
+    // The card moved to a route when it started carrying the shared question.
+    const res = await fetch(`${BASE}/og`);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get("content-type"), "image/png");
     const buf = Buffer.from(await res.arrayBuffer());
@@ -150,8 +151,25 @@ describe("streaming endpoint", () => {
     const tokens = events.filter((e) => e.type === "token");
     const done = events.at(-1);
 
-    assert.ok(tokens.length > 1, "answer arrived in one lump, not streamed");
     assert.equal(done.type, "done");
+
+    // Every provider on this account is a free tier, and they exhaust. When they
+    // all do, the correct behaviour is the one the corpus claims: serve the
+    // retrieved source unsummarised and say so. That is a pass, not a failure,
+    // and asserting streaming through it produced a red CI badge that meant
+    // "OpenRouter's daily cap" rather than "this is broken" -- which is worse
+    // than no badge, because the badge is a claim on the README.
+    if (done.degraded) {
+      assert.ok(tokens.length >= 1, "degraded path served nothing at all");
+      assert.match(
+        tokens.map((t) => t.text).join(""),
+        /unsummarised/,
+        "the degraded answer must say that it is degraded",
+      );
+      return;
+    }
+
+    assert.ok(tokens.length > 1, "answer arrived in one lump, not streamed");
     assert.ok(done.usage, "usage missing from done event");
     assert.ok(done.usage.in > 0 && done.usage.out > 0);
   });
@@ -198,5 +216,77 @@ describe("accessibility and markup", () => {
     const person = graph.find((n) => n["@type"] === "Person") as Record<string, string>;
     assert.equal(person.name, "Kushal Gaddamwar");
     assert.ok(person.jobTitle, "Person node has no jobTitle");
+  });
+});
+
+describe("no javascript", () => {
+  /**
+   * The corpus has to be readable with the bundle blocked.
+   *
+   * A recruiter on a locked-down corporate laptop, a text browser, and every
+   * crawler that is not a full browser all see exactly this HTML. If the page
+   * needs React to say who he is, then for that reader it says nothing, and the
+   * failure is invisible from any machine where JavaScript works.
+   */
+  test("the server-rendered HTML carries the load-bearing facts", async () => {
+    const html = await (await fetch(BASE)).text();
+
+    // The strongest claim, the one that gates a reply, and the address.
+    assert.match(html, /merged the fix in 57 hours/i);
+    // React puts a comment node between a literal and an interpolation, so the
+    // serialised markup reads "Available <!-- -->January 2027".
+    assert.match(html, /Available (<!--.*?-->)?January 2027/i);
+    assert.match(html, /kushal7887pd@gmail\.com/);
+  });
+
+  test("every role heading is in the HTML, not assembled on the client", async () => {
+    const html = await (await fetch(BASE)).text();
+    for (const employer of ["Questrom Computational Lab", "IMG Systems", "Growaza"]) {
+      assert.ok(html.includes(employer), `${employer} is missing from the server render`);
+    }
+  });
+
+  test("the measured figures render server-side, from the eval file", async () => {
+    const html = await (await fetch(BASE)).text();
+    assert.match(html, /assertions pass/);
+    // The four groups, which is the split that makes 16/16 mean something.
+    for (const group of ["grounding", "policy", "authorisation", "out-of-corpus"]) {
+      assert.ok(html.includes(group), `eval group "${group}" is missing`);
+    }
+  });
+
+  test("the compiled graph topology is drawn in the HTML", async () => {
+    const html = await (await fetch(BASE)).text();
+    assert.match(html, /conditional/);
+    assert.ok(html.includes("deflect"), "the deflect node is part of the claim");
+  });
+
+  test("the publications carry a resolvable identifier", async () => {
+    const html = await (await fetch(BASE)).text();
+    assert.match(html, /10\.1109\/ICAICCIT64383\.2024\.10912101/);
+  });
+});
+
+describe("share card", () => {
+  test("carries the shared question when the link has one", async () => {
+    const res = await fetch(`${BASE}/og?q=${encodeURIComponent("What broke in production?")}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("content-type"), "image/png");
+    // Satori renders text into pixels, so the assertion is that a question
+    // produces a different image than no question, not that the words are
+    // readable from the bytes.
+    const withQ = (await res.arrayBuffer()).byteLength;
+    const plain = (await (await fetch(`${BASE}/og`)).arrayBuffer()).byteLength;
+    assert.notEqual(withQ, plain, "the question is not reaching the card");
+  });
+
+  test("/ask renders the same page as /", async () => {
+    const res = await fetch(`${BASE}/ask?q=test`);
+    assert.equal(res.status, 200);
+    const html = await res.text();
+    assert.match(html, /Kushal Gaddamwar/);
+    // Canonical points home: this route exists to carry a card, not to become a
+    // second copy of the page in an index.
+    assert.match(html, /rel="canonical"/);
   });
 });

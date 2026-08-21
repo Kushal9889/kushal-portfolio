@@ -1,7 +1,11 @@
 import { runStream } from "@/lib/agent/stream";
 import { checkBudget } from "@/lib/agent/budget";
 
+import { loadContent } from "@/lib/content";
+
 export const runtime = "nodejs";
+
+const { profile } = loadContent();
 export const maxDuration = 30;
 
 /**
@@ -32,7 +36,12 @@ export async function GET(req: Request) {
           send({ type: "route", route: "deflect", ms: 0 });
           send({
             type: "token",
-            text: "That is the daily limit for this demo. Reach him directly at kushal7887pd@gmail.com.",
+            // The address was typed here while every other surface reads it
+            // from the corpus, so a change to his email would have left one
+            // dead route behind. The reason ships with the limit: a public LLM
+            // endpoint with no ceiling is a stranger spending someone else's
+            // credit, and saying so turns a wall into a decision.
+            text: `That is the token ceiling for this demo. It is capped on purpose: this endpoint is public and uncapped inference on a free tier is a stranger spending his credit. He answers faster than the agent anyway, at ${profile.email}.`,
           });
           send({ type: "done", total: 0, usage: null });
           return;

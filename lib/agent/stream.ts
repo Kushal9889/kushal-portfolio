@@ -1,7 +1,15 @@
-import { streamWithFailover } from "./model";
+import { streamWithFailover, listPrice, failoverState } from "./model";
 import type { RetrievalTrace } from "./retrieve";
 import { retrieve } from "./retrieve";
-import { classify, systemPrompt, cleanAnswer, deflection, AUTHORISATION_ANSWER } from "./policy";
+import {
+  classify,
+  systemPrompt,
+  cleanAnswer,
+  deflection,
+  looksLikeReasoning,
+  AUTHORISATION_ANSWER,
+  POLICY_PREVIEW,
+} from "./policy";
 import prewarm from "./prewarm.json";
 
 /**
@@ -21,7 +29,25 @@ export type StreamEvent =
   | { type: "route"; route: string; ms: number }
   | { type: "sources"; titles: string[]; ms: number; trace?: RetrievalTrace }
   | { type: "token"; text: string }
-  | { type: "done"; total: number; usage: { in: number; out: number } | null }
+  | {
+      type: "done";
+      total: number;
+      usage: { in: number; out: number } | null;
+      /** Which provider actually produced the tokens, and on what model. */
+      provider?: string | null;
+      model?: string | null;
+      /** What the same tokens cost at that model's published list rate. */
+      listPrice?: number | null;
+      /** Providers currently benched by a rate limit, with seconds remaining. */
+      failover?: { name: string; coolingOffFor: number }[];
+      /** True when the turn was answered from the build-time cache. */
+      warm?: boolean;
+      /** True when no provider was reachable and the retrieved source was
+       *  served unsummarised instead of failing. */
+      degraded?: boolean;
+      /** The system prompt, context elided. Shown on request in the trace. */
+      policy?: string;
+    }
   | { type: "error"; message: string };
 
 type Warm = Record<string, { answer: string; sources: string[]; timings: Record<string, number> }>;
@@ -38,7 +64,16 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
     yield { type: "route", route: "answer", ms: 0 };
     yield { type: "sources", titles: warm.sources, ms: 0 };
     yield { type: "token", text: warm.answer };
-    yield { type: "done", total: Date.now() - started, usage: null };
+    // Flagged rather than served silently. A zero-millisecond answer with no
+    // explanation reads as a canned script, which is the exact opposite of what
+    // this box is trying to demonstrate; labelled, it reads as a cache.
+    yield {
+      type: "done",
+      total: Date.now() - started,
+      usage: null,
+      warm: true,
+      policy: POLICY_PREVIEW,
+    };
     return;
   }
 
@@ -51,7 +86,10 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
     const text = route === "authorisation" ? AUTHORISATION_ANSWER : deflection(question);
     yield { type: "sources", titles: [], ms: 0 };
     yield { type: "token", text };
-    yield { type: "done", total: Date.now() - started, usage: null };
+    // No provider is named here because none was called. That is the point of
+    // the deflection path and the trace should show it rather than imply a model
+    // considered the question and declined.
+    yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
     return;
   }
 
@@ -69,21 +107,60 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
   const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");
 
   try {
-    // Reasoning has to be stripped before a token reaches the browser, and the
-    // markers arrive split across chunks. Text is held back until it is known
-    // not to be part of a think block, which costs a little smoothness at the
-    // start and avoids showing a visitor the model's working.
+    /**
+     * Reasoning has to be stripped before a token reaches the browser.
+     *
+     * The previous version applied cleanAnswer to the buffer on every chunk and
+     * emitted whatever was longer than last time, which cannot work: a token
+     * already sent cannot be taken back. cleanAnswer removes a leading
+     * reasoning paragraph, but it can only recognise one once a *second*
+     * paragraph exists, and by then the first had already been streamed. A
+     * visitor asking about Growaza was shown the model deliberating -- "So
+     * answer: ... Probably focus on his contributions ... We must lead with" --
+     * which is the single worst thing this box can display and the exact defect
+     * the corpus claims is guarded.
+     *
+     * So nothing is emitted until it is safe to emit. The opening is held while
+     * it still looks like working; the moment a paragraph break arrives, or
+     * enough text has accumulated to show the answer started immediately, the
+     * cleaned text is released and the rest streams normally. The cost is a
+     * short delay on the first words of an answer that begins with reasoning,
+     * which is the only case where the delay exists at all.
+     */
     let buffer = "";
     let emitted = 0;
-    let usage: { in: number; out: number } | null = null;
+    let releasing = false;
 
-    for await (const token of streamWithFailover([
-      { role: "system", content: systemPrompt(context) },
-      { role: "user", content: question },
-    ], (u) => {
-      usage = u;
-    })) {
+    // Long enough to tell an answer from an opening like "We need to", short
+    // enough that a normal answer starts streaming almost immediately.
+    const DECIDE_AFTER = 48;
+    let usage: { in: number; out: number } | null = null;
+    let served: { provider: string; model: string } | null = null;
+
+    for await (const token of streamWithFailover(
+      [
+        { role: "system", content: systemPrompt(context) },
+        { role: "user", content: question },
+      ],
+      (u) => {
+        usage = u;
+      },
+      (provider, model) => {
+        served = { provider, model };
+      },
+    )) {
       buffer += token;
+
+      if (!releasing) {
+        const hasBreak = /\n{2,}/.test(buffer) || /<\/think>/i.test(buffer);
+        // A paragraph boundary is what cleanAnswer needs to judge the opening.
+        // Failing that, text this long that does not read as working is the
+        // answer itself and should not be held any longer.
+        if (hasBreak) releasing = true;
+        else if (buffer.length >= DECIDE_AFTER && !looksLikeReasoning(buffer)) releasing = true;
+        else continue;
+      }
+
       const clean = cleanAnswer(buffer);
       if (clean.length > emitted) {
         yield { type: "token", text: clean.slice(emitted) };
@@ -91,8 +168,60 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
       }
     }
 
-    yield { type: "done", total: Date.now() - started, usage };
+    // A short answer that never reached the release threshold still has to be
+    // sent. Cleaned first, because this is the path a fully-buffered reply from
+    // a non-streaming provider takes.
+    const final = cleanAnswer(buffer);
+    if (final.length > emitted) {
+      yield { type: "token", text: final.slice(emitted) };
+      emitted = final.length;
+    }
+
+    const settled = served as { provider: string; model: string } | null;
+    yield {
+      type: "done",
+      total: Date.now() - started,
+      usage,
+      provider: settled?.provider ?? null,
+      model: settled?.model ?? null,
+      listPrice: usage && settled ? listPrice(settled.model, usage) : null,
+      failover: failoverState(),
+      policy: POLICY_PREVIEW,
+    };
   } catch {
+    /**
+     * Every provider is down, and the answer degrades rather than erroring.
+     *
+     * The corpus has claimed exactly this since the site was built -- "with no
+     * provider reachable, the agent returns the retrieved source paragraph
+     * instead of a failure" -- and it was true of the non-streaming graph, which
+     * backs the evals, and false of the streaming path, which is the only one a
+     * visitor ever touches. So the page described a degradation it did not
+     * perform, and the reader who hit it got "The model is unavailable" on a
+     * page whose whole argument is that it stays useful when things break.
+     *
+     * The retrieval already succeeded; only the summarising failed. Serving the
+     * top chunk unsummarised gives the reader the grounded material and says
+     * plainly that it is unsummarised, which is worth more than an apology.
+     */
+    const grounded = chunks[0]?.body.split("\n\n").find((p) => p.trim().length > 0);
+
+    if (grounded) {
+      yield {
+        type: "token",
+        text: `${grounded.replace(/\*\*/g, "")}\n\nThat is the source text, unsummarised: every model provider is rate-limited right now. Retrieval still ran, and the sources above are the ones it chose.`,
+      };
+      yield {
+        type: "done",
+        total: Date.now() - started,
+        usage: null,
+        degraded: true,
+        failover: failoverState(),
+        policy: POLICY_PREVIEW,
+      };
+      return;
+    }
+
     yield { type: "error", message: "The model is unavailable. Reach him directly by email." };
   }
 }

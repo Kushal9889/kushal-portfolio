@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./Palette.module.css";
 import { track } from "@/lib/analytics";
+import { ASK_EVENT } from "./Agent";
 
 type Command = { label: string; hint: string; run: () => void };
 
@@ -18,10 +19,13 @@ export default function Palette({
   email,
   github,
   repo,
+  asks,
 }: {
   email: string;
   github: string;
   repo: string;
+  /** Questions the corpus marks as answerable, for the copy-out command. */
+  asks: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -61,8 +65,11 @@ export default function Palette({
       // Strips the page to headings, metrics and links for a reader who has
       // seven seconds rather than two minutes. Toggled rather than a separate
       // route so nothing has to be maintained twice.
-      label: "Recruiter mode",
-      hint: "condense the page",
+      // Was "Recruiter mode". Naming the reader's category back at them is a
+      // guess about who they are, and it is wrong for the engineer on the
+      // hiring panel who is the other half of this audience. Say what it does.
+      label: "Condense this page",
+      hint: "headings, metrics and links only",
       run: () => document.documentElement.classList.toggle("condensed"),
     },
     { label: "Print or save as PDF", hint: "uses the print stylesheet", run: () => window.print() },
@@ -71,9 +78,25 @@ export default function Palette({
     // The prop feeding "Open GitHub" used to be called `resume`, from a time
     // when no resume existed. There is one now, so it gets its own entry.
     {
-      label: "Download resume",
-      hint: "pdf",
-      run: () => window.open("/kushal-gaddamwar-resume.pdf", "_blank"),
+      // Hands an interviewer the prep list rather than making them invent one.
+      // The questions are written in the corpus beside the sections that answer
+      // them, so this cannot drift from what the agent can actually handle.
+      label: "Copy the questions worth asking",
+      hint: `${asks.length} from the corpus`,
+      run: () => {
+        navigator.clipboard?.writeText(asks.map((a) => `- ${a}`).join("\n"));
+        track("contact", "palette-asks");
+      },
+    },
+    {
+      // Was "Download resume", and it was the only path on the page that forced
+      // a file onto someone who had asked to read one. The contact block opens
+      // the PDF in the browser, which is what a reader deciding whether to keep
+      // reading actually wants; the viewer has its own download button for the
+      // reader who wants the file. Both paths now do the same thing.
+      label: "Open resume",
+      hint: "pdf, opens in the browser",
+      run: () => window.open("/kushal-gaddamwar-resume.pdf", "_blank", "noopener"),
     },
   ];
 
@@ -131,8 +154,8 @@ export default function Palette({
           ref={inputRef}
           className={styles.input}
           value={query}
-          placeholder="Jump to"
-          aria-label="Jump to"
+          placeholder="Jump to, or ask a question"
+          aria-label="Jump to, or ask a question"
           onChange={(e) => {
             setQuery(e.target.value);
             setCursor(0);
@@ -146,6 +169,16 @@ export default function Palette({
               setCursor((c) => Math.max(c - 1, 0));
             } else if (e.key === "Enter") {
               e.preventDefault();
+              // A palette that only filters commands throws away the most
+              // natural thing someone types into a box on this page. A trailing
+              // question mark is unambiguous: no command label contains one.
+              if (query.trim().endsWith("?")) {
+                window.dispatchEvent(
+                  new CustomEvent<string>(ASK_EVENT, { detail: query.trim() }),
+                );
+                setOpen(false);
+                return;
+              }
               choose(cursor);
             }
           }}
@@ -163,7 +196,13 @@ export default function Palette({
               </button>
             </li>
           ))}
-          {matches.length === 0 && <li className={styles.empty}>Nothing matches that.</li>}
+          {matches.length === 0 && (
+            <li className={styles.empty}>
+              {query.trim().endsWith("?")
+                ? "Press Enter to ask the agent this."
+                : "Nothing matches that. End with a question mark to ask the agent instead."}
+            </li>
+          )}
         </ul>
       </div>
     </div>

@@ -48,6 +48,47 @@ const PROVIDERS: Record<ProviderName, { baseURL?: string; key?: string; model: s
 const ORDER: ProviderName[] = ["openrouter", "nvidia", "azure", "openai"];
 
 /**
+ * Published list prices, US dollars per million tokens.
+ *
+ * The trace has printed "$0.00 on a free tier" since it was built, which is true
+ * and says nothing: every number on that panel is measured except the one that
+ * matters to whoever pays the bill. These rates are what the same traffic costs
+ * at list price, so the free tier reads as a decision with a known value rather
+ * than as an absence of one. Unlisted models fall back to null and the line is
+ * omitted rather than guessed.
+ */
+const RATES: Record<string, { in: number; out: number }> = {
+  "nvidia/nemotron-3-nano-30b-a3b": { in: 0.04, out: 0.16 },
+  "gpt-4o-mini": { in: 0.15, out: 0.6 },
+};
+
+export function listPrice(model: string, usage: { in: number; out: number }) {
+  const rate = RATES[model.replace(/:free$/, "")];
+  if (!rate) return null;
+  return (usage.in * rate.in + usage.out * rate.out) / 1_000_000;
+}
+
+/** The model id a provider is configured with, for the trace and the eval file. */
+export function modelId(name: ProviderName): string {
+  return PROVIDERS[name].model;
+}
+
+/**
+ * Which providers are currently benched, and for how long.
+ *
+ * Failover is the most production-shaped thing on this page and it has been
+ * completely invisible: the reader sees an answer whether it came from the
+ * primary or from the third fallback. Exposed read-only so the trace can say so.
+ */
+export function failoverState() {
+  const now = Date.now();
+  return ORDER.filter((n) => PROVIDERS[n].key).map((n) => ({
+    name: n,
+    coolingOffFor: Math.max(0, Math.round(((coolingOff.get(n) ?? 0) - now) / 1000)),
+  }));
+}
+
+/**
  * Providers that recently refused, and when they may be retried.
  *
  * Free tiers fail for a day at a time, not for a request. Without this the
@@ -197,6 +238,7 @@ export async function invokeWithFailover(
 export async function* streamWithFailover(
   messages: { role: string; content: string }[],
   onUsage?: (usage: { in: number; out: number }) => void,
+  onProvider?: (provider: ProviderName, model: string) => void,
 ): AsyncGenerator<string> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -205,6 +247,10 @@ export async function* streamWithFailover(
   for (const name of providers) {
     try {
       const stream = await build(name, true).stream(messages);
+      // Reported once the provider has actually produced a stream rather than
+      // when it was selected, so a provider that fails on connect is never
+      // credited with an answer it did not give.
+      onProvider?.(name, PROVIDERS[name].model);
       for await (const chunk of stream) {
         const text = typeof chunk.content === "string" ? chunk.content : "";
         if (text) yield text;

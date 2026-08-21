@@ -3,7 +3,19 @@ import { join } from "node:path";
 
 const CONTENT_DIR = join(process.cwd(), "content");
 
-export type Metric = { value: string; label: string };
+export type Metric = { value: string; label: string; source?: string };
+
+/**
+ * A question the corpus can already answer well, marked where it is answerable.
+ *
+ * A reader who does not know what to ask asks nothing, and the openers in the
+ * hero can only carry three. These sit at the close of the section that answers
+ * them, so the prompt appears exactly where the curiosity does.
+ */
+export type Ask = { question: string; source: string };
+
+/** A failure this codebase shipped, and the thing that now stops it returning. */
+export type Defect = { symptom: string; guard: string };
 
 /**
  * A public thing a reader can open, with the state it is actually in upstream.
@@ -27,6 +39,10 @@ export type Section = {
   stack: string[];
   /** Openable proof, rendered as its own row rather than buried in a sentence. */
   artifacts: Artifact[];
+  /** Questions this section answers, offered to the agent in one click. */
+  asks: Ask[];
+  /** Failures, each paired with the test or gate that holds it down. */
+  defects: Defect[];
   /** "Role: ... " line. Rendered as the section heading, so it is kept out of the
    *  prose to avoid printing it twice, and folded back into the retrieval text. */
   role: string;
@@ -104,6 +120,8 @@ function splitSections(body: string, source: string): Section[] {
       // read the same numbers, which is the only way they cannot disagree.
       const metrics: Metric[] = [];
       const artifacts: Artifact[] = [];
+      const asks: Ask[] = [];
+      const defects: Defect[] = [];
       let stack: string[] = [];
       let role = "";
 
@@ -117,9 +135,34 @@ function splitSections(body: string, source: string): Section[] {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        const metric = line.match(/^@metric\s+(.+?)\s*\|\s*(.+)$/);
+        // `@metric value | label` or `value | label | source`, where source is a
+        // URL or the literal `resume`. Optional rather than required: the audit
+        // reports how many carry one, so the gap is visible without a bulk edit
+        // turning every line into a citation exercise at once.
+        const metric = line.match(/^@metric\s+(.+?)\s*\|\s*([^|]+?)\s*(?:\|\s*(\S+)\s*)?$/);
         if (metric) {
-          metrics.push({ value: metric[1].trim(), label: metric[2].trim() });
+          metrics.push({
+            value: metric[1].trim(),
+            label: metric[2].trim(),
+            ...(metric[3] ? { source: metric[3].trim() } : {}),
+          });
+          continue;
+        }
+
+        // `@ask question | where the answer lives`. The second field is the
+        // section title, so a seed can point at a section other than its own.
+        const seed = line.match(/^@ask\s+(.+?)\s*\|\s*(.+)$/);
+        if (seed) {
+          asks.push({ question: seed[1].trim(), source: seed[2].trim() });
+          continue;
+        }
+
+        // `@defect symptom | guard`. Paired on one line on purpose: a defect
+        // without the thing that now catches it is an apology, and a guard
+        // without the defect it was written for is a boast.
+        const defect = line.match(/^@defect\s+(.+?)\s*\|\s*(.+)$/);
+        if (defect) {
+          defects.push({ symptom: defect[1].trim(), guard: defect[2].trim() });
           continue;
         }
 
@@ -167,6 +210,8 @@ function splitSections(body: string, source: string): Section[] {
         metrics,
         stack,
         artifacts,
+        asks,
+        defects,
         role,
         roleParts: splitRole(role),
       };

@@ -1,6 +1,6 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
 import { invokeWithFailover, activeProvider } from "./model";
-import { retrieve, type Chunk } from "./retrieve";
+import { retrieve, type Chunk, type RetrievalTrace } from "./retrieve";
 import {
   classify,
   systemPrompt,
@@ -37,6 +37,26 @@ const State = Annotation.Root({
     reducer: (_, next) => next,
     default: () => null,
   }),
+  /**
+   * The fusion the retriever performed, carried on the state rather than thrown
+   * away at the node boundary.
+   *
+   * retrieve() has always built a complete trace and the streaming path has
+   * always forwarded it, but the graph dropped it on the floor, so anything not
+   * driven by a browser -- the eval suite, the prewarm script, a future export --
+   * could not see which half of the hybrid retriever decided the answer. The
+   * suite now counts how often the embedding round trip was skipped, which is a
+   * number the page publishes.
+   */
+  trace: Annotation<RetrievalTrace | null>({
+    reducer: (_, next) => next,
+    default: () => null,
+  }),
+  /** Which provider served the answer. Failover is real and was never visible. */
+  provider: Annotation<string | null>({
+    reducer: (_, next) => next,
+    default: () => null,
+  }),
   /** Per-node wall time, surfaced in the trace panel and the hero. */
   timings: Annotation<Record<string, number>>({
     reducer: (prev, next) => ({ ...prev, ...next }),
@@ -59,9 +79,10 @@ const route = timed("route", async (state) => ({
   intent: classify(state.question),
 }));
 
-const retrieveNode = timed("retrieve", async (state) => ({
-  chunks: (await retrieve(state.question)).chunks,
-}));
+const retrieveNode = timed("retrieve", async (state) => {
+  const { chunks, trace } = await retrieve(state.question);
+  return { chunks, trace };
+});
 
 const answer = timed("answer", async (state) => {
   const context = state.chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");
@@ -72,12 +93,13 @@ const answer = timed("answer", async (state) => {
   const fallback = () => ({
     reply: state.chunks[0]?.body.split("\n\n")[0] ?? deflection(state.question),
     usage: null,
+    provider: null,
   });
 
   if (!activeProvider()) return fallback();
 
   try {
-    const { text, usage } = await invokeWithFailover([
+    const { text, usage, provider } = await invokeWithFailover([
       { role: "system", content: systemPrompt(context) },
       { role: "user", content: state.question },
     ]);
@@ -86,6 +108,7 @@ const answer = timed("answer", async (state) => {
       // is transport, and reasoning leakage is a property of the answer.
       reply: cleanAnswer(state.intent === "handoff" ? handoffAnswer(text) : text),
       usage,
+      provider,
     };
   } catch {
     return fallback();
@@ -122,5 +145,7 @@ export async function ask(question: string) {
     total: Math.round(performance.now() - started),
     sources: result.chunks.map((c) => c.title),
     usage: result.usage,
+    trace: result.trace,
+    provider: result.provider,
   };
 }

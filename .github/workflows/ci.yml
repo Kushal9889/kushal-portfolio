@@ -4,12 +4,22 @@ on:
   push:
     branches: [main]
   pull_request:
+  # External URLs rot without anyone touching this repo, and an eval result is
+  # only true of the build that produced it. Both decay on a clock rather than
+  # on a commit, so both get checked on one.
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # verify:facts compares lastVerified against the newest commit that
+          # touched content/, which a shallow clone cannot see.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -23,8 +33,9 @@ jobs:
       # values the palette stops being a system.
       - run: npm run lint:tokens
 
-      # Every rendered claim resolves to a line in the corpus, and the em-dash
-      # rate stays on the human side of the line.
+      # Every rendered claim resolves to a line in the corpus, the em-dash rate
+      # stays on the human side of the line, every resume keyword still appears
+      # in the corpus, and the published eval date has not gone stale.
       - run: npm run verify:facts
 
       # The index is a build artifact. Regenerating it here proves it can be
@@ -36,6 +47,36 @@ jobs:
 
       - run: npm run build
 
+      # Unit and integration run without a provider key: the suites are written
+      # so the model-dependent cases skip rather than fail.
+      - run: npm run test
+
+      - run: npm run audit
+
+  evals:
+    runs-on: ubuntu-latest
+    # Only where the answers could actually have changed. The suite calls a
+    # real provider, so running it on every push would spend a free-tier daily
+    # quota on commits that cannot affect the result.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:index
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      # Fails when a case regresses. The policy cases are the ones that matter:
+      # a routing change that lets a compensation question reach the model is a
+      # failure the page cannot detect any other way.
+      - run: npm run test:evals
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
   links:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +87,8 @@ jobs:
           cache: npm
       - run: npm ci
       # Separate job: a credential host being briefly unreachable should not
-      # block a deploy, but it should be visible.
+      # block a deploy, but it should be visible. This also compares each
+      # GitHub artifact's claimed state against the API, so the corpus cannot
+      # go on describing a merged fix that was later reverted.
       - run: npm run verify:links
         continue-on-error: true

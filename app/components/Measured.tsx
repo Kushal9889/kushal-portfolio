@@ -13,6 +13,22 @@ import styles from "./Measured.module.css";
  * eval result is only true of the build that produced it. A stale date is
  * information too.
  */
+
+/**
+ * What each group of cases proves, in one line.
+ *
+ * "16/16 passed" is four different claims wearing one number, and the strongest
+ * of them is the least visible: six of those cases are attempts to make the
+ * agent misbehave, and passing means the model was never reached at all. Split
+ * out, the total stops being a score and starts being a description.
+ */
+const GROUPS: Record<string, string> = {
+  grounding: "answers reproduce a figure that exists in the corpus",
+  policy: "compensation, personal life and prompt overrides never reach the model",
+  authorisation: "asked, it answers exactly; unasked, it never raises the subject",
+  "out-of-corpus": "a question the corpus cannot answer produces no invention",
+};
+
 const ROWS = [
   {
     value: `${evals.passed}/${evals.cases}`,
@@ -32,6 +48,11 @@ const ROWS = [
 ];
 
 export default function Measured() {
+  const groups = Object.entries(evals.groups ?? {});
+  const cases = evals.cases_detail ?? [];
+  const skipped = evals.lexicalDecisive ?? 0;
+  const retrievals = evals.retrievals ?? 0;
+
   return (
     <div className={styles.wrap}>
       <dl className={styles.grid}>
@@ -45,6 +66,69 @@ export default function Measured() {
           </div>
         ))}
       </dl>
+
+      {groups.length > 0 && (
+        <ul className={styles.groups}>
+          {groups.map(([name, g]) => (
+            <li key={name} className={styles.group}>
+              <span className={`${styles.groupCount} tabular`}>
+                {g.passed}/{g.cases}
+              </span>
+              <span className="label">{name}</span>
+              <span className={styles.groupNote}>{GROUPS[name]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Every assertion, written by the runner from the cases it executes.
+          Behind a disclosure because sixteen rows is a wall on a page that has
+          to be skimmable, and open in one click because the reader who wants
+          this is the one worth keeping. */}
+      {cases.length > 0 && (
+        <details className={styles.cases}>
+          <summary className={styles.summary}>
+            Read all {cases.length} assertions
+            <span className="label"> written by the runner, not typed here</span>
+          </summary>
+          <ol className={styles.caseList}>
+            {cases.map((c) => (
+              <li key={c.name} className={styles.case} data-pass={c.pass}>
+                <span className={styles.caseQ}>{c.name}</span>
+                <span className={styles.caseA}>{c.asserts}</span>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+
+      {/* The limits of the thing above, stated by the thing above.
+          A suite that only publishes its score is advertising; one that
+          publishes what it cannot see is evidence. */}
+      <div className={styles.limits}>
+        <h3 className={styles.limitHead}>What these sixteen cases cannot catch</h3>
+        <ul className={styles.limitList}>
+          <li>
+            Assertions are substring and route checks. Nothing here grades whether an answer reads
+            well, only whether it is grounded and routed correctly.
+          </li>
+          <li>
+            There is no LLM judge, deliberately. At sixteen cases with known correct behaviour, a
+            judge adds cost, latency, and a second thing to trust.
+          </li>
+          <li>
+            One provider is measured per run. This one was served by{" "}
+            <span className={styles.provider}>{evals.provider ?? "the first reachable provider"}</span> on{" "}
+            <code>{evals.model}</code>, after the primary returned a daily rate limit.
+          </li>
+          {retrievals > 0 && (
+            <li>
+              The lexical short-circuit fired on {skipped} of {retrievals} retrievals, skipping the
+              embedding round trip entirely. The other {retrievals - skipped} paid for it.
+            </li>
+          )}
+        </ul>
+      </div>
 
       <p className={styles.foot}>
         Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { mailtoLink, linkedinNote, type ReachContext } from "@/lib/reach";
+import { mailtoLink, linkedinNote, forwardBlurb, type ReachContext } from "@/lib/reach";
 import { track } from "@/lib/analytics";
 import { GitHubMark, LinkedInMark, MailMark } from "./Mark";
 import styles from "./Reach.module.css";
@@ -29,6 +29,7 @@ export default function Reach({
   site,
   resumeHref,
   context = "general",
+  forward,
 }: {
   email: string;
   /** In the corpus since the start and rendered nowhere. One tap on a phone. */
@@ -41,8 +42,12 @@ export default function Reach({
   site: string;
   resumeHref: string;
   context?: ReachContext;
+  /** The three lines an internal employee forwards. Built on the server so the
+   *  client bundle never pulls in the corpus loader. */
+  forward: Parameters<typeof forwardBlurb>[0] & { evals: Parameters<typeof forwardBlurb>[1] };
 }) {
   const [copied, setCopied] = useState(false);
+  const [forwarded, setForwarded] = useState(false);
 
   async function openLinkedIn() {
     track("contact", "linkedin");
@@ -127,6 +132,42 @@ export default function Reach({
           </a>
         </li>
       </ul>
+
+      {/* Most hires that start with a portfolio do not come from the person who
+          found it. They come from that person pasting something into a channel,
+          and what gets pasted is whatever is short enough to paste. */}
+      <button
+        type="button"
+        className={styles.forward}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(forwardBlurb(forward, forward.evals));
+            setForwarded(true);
+            setTimeout(() => setForwarded(false), 6000);
+            track("contact", "forward");
+          } catch {
+            // Clipboard blocked. Every address below is still selectable.
+          }
+        }}
+      >
+        {forwarded
+          ? "Copied. Three lines and a link, ready to paste into a channel."
+          : "Copy three lines to forward to a colleague"}
+      </button>
+
+      {/* An address in a page lives as long as the tab. This one goes into an
+          address book and is still there in six weeks, which is the timescale
+          a hiring process actually runs on. */}
+      <p className={styles.plain}>
+        <a
+          className={styles.address}
+          href="/contact.vcf"
+          onClick={() => track("contact", "vcard")}
+        >
+          Save him as a contact
+        </a>
+        <span className={styles.sub}> vcf, opens in Contacts</span>
+      </p>
 
       {/* Plain strings stay reachable. Someone forwarding this to a colleague
           needs something they can paste, not a link they must click. */}

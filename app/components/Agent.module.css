@@ -25,10 +25,15 @@
   min-width: 0;
   font: inherit;
   font-size: var(--step-0);
+  line-height: 1.5;
   color: inherit;
   background: none;
   border: none;
   padding: 0.6rem 0;
+  /* Height follows the content, so the native handle would fight it. */
+  resize: none;
+  overflow-y: auto;
+  max-height: 200px;
 }
 
 .input:focus-visible {
@@ -455,4 +460,71 @@
    fill read as live before voice was ever turned on. */
 .voiceToggle input:checked {
   accent-color: var(--signal);
+}
+
+/* What an opener demonstrates, set under the question it belongs to. */
+.shows {
+  display: block;
+  margin-block-start: 0.3rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The attack, offered deliberately. Set apart from the openers because it is a
+   different kind of invitation: the others ask for information, this one asks
+   the reader to try to make the page fail. */
+.adversarial {
+  justify-self: start;
+  margin-block-start: 0.9rem;
+  text-align: left;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  border: 1px dashed var(--rule);
+  padding: 0.45em 0.8em;
+  transition:
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+.adversarial:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Considered and not chosen. Struck through rather than merely dimmed: dim
+   reads as "less important", struck reads as "ranked and rejected", which is
+   the claim being made. */
+.rejected {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  color: var(--ink-faint);
+}
+
+.rejected + .rejected::before {
+  content: ", ";
+  text-decoration: none;
+}
+
+.policyToggle {
+  font-size: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.policy {
+  margin: 0.6rem 0 0;
+  padding: 0.8rem 0.9rem;
+  background: var(--paper-sunk);
+  border-radius: 3px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 20rem;
+  overflow-y: auto;
 }

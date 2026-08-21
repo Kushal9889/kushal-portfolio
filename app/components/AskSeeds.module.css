@@ -1,0 +1,38 @@
+.seeds {
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+}
+
+/* Deliberately quieter than a call to action. This is a suggestion at the end of
+   something the reader has just finished, not a button competing with the prose
+   above it. */
+.seed {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  text-align: left;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  padding: 0.35em 0;
+  border-bottom: 1px solid transparent;
+  transition:
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.seed:hover {
+  color: var(--ink);
+  border-bottom-color: var(--rule);
+}
+
+.mark {
+  flex: none;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}

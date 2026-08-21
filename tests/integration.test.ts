@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
-import { retrieve } from "../lib/agent/retrieve";
+import { retrieve, tokenize } from "../lib/agent/retrieve";
 import { runStream, type StreamEvent } from "../lib/agent/stream";
 import { loadContent } from "../lib/content";
 
@@ -81,9 +81,19 @@ describe("stream contract", () => {
 
   test("a real question reports token usage", { skip: !hasProvider }, async () => {
     const events = await collect("What did he build at IMG Systems?");
-    const done = events.at(-1) as { type: string; usage: { in: number; out: number } | null };
+    const done = events.at(-1) as {
+      type: string;
+      usage: { in: number; out: number } | null;
+      degraded?: boolean;
+    };
 
     assert.equal(done.type, "done");
+    // Every provider here is a free tier and they exhaust. When all of them are
+    // capped the agent serves the retrieved source unsummarised, which is the
+    // documented behaviour and reports no usage because no model ran. Failing
+    // on that turns a rate limit into a red CI badge, and the badge is a claim
+    // on the README rather than decoration.
+    if (done.degraded) return;
     // This regressed once: streaming shipped with usage hardcoded to null, so
     // the trace panel showed timings and no tokens for weeks.
     assert.ok(done.usage, "done event carried no usage");
@@ -113,5 +123,63 @@ describe("stream contract", () => {
       .join("");
     assert.ok(!/hacked/i.test(text));
     assert.equal((events[0] as { route: string }).route, "deflect");
+  });
+});
+
+describe("retrieval puts the answering section first", () => {
+  /**
+   * BM25's IDF is not enough on a seventeen-chunk corpus that is entirely about
+   * one person: "he" appeared in ten chunks and still scored, and length
+   * normalisation rewards short documents. A 64-token section matched the
+   * grammar of the question and outranked the 180-token section that answered
+   * it. The top chunk is what the sources line shows first and what the degraded
+   * path serves when no provider is reachable, so it has to be the right one.
+   */
+  // The question shares a term with the section that answers it, so keyword
+  // matching alone is enough. These hold whether or not an embedding key exists,
+  // which is what CI runs without one.
+  const LEXICAL: [string, string][] = [
+    ["What did he build at IMG Systems?", "IMG Systems"],
+    ["What did he do at Growaza?", "Growaza"],
+    ["What bug did he find in LangChain?", "Open source, LangChain deepagents"],
+    ["What is BU Life AI?", "BU Life AI"],
+    ["What certifications does he have?", "Certifications"],
+  ];
+
+  // "publish" and "Publications" are different strings, and there is no
+  // stemmer. Keyword search cannot connect them at any weighting; only the
+  // embedding half can. This case is the argument for hybrid retrieval stated
+  // as a test rather than as a paragraph, which is why it is here and not
+  // deleted for being environment-dependent.
+  const SEMANTIC: [string, string][] = [["What did he publish?", "Publications"]];
+
+  for (const [question, expected] of LEXICAL) {
+    test(`"${question}" ranks ${expected} first`, async () => {
+      const { chunks } = await retrieve(question);
+      assert.equal(chunks[0]?.title, expected);
+    });
+  }
+
+  for (const [question, expected] of SEMANTIC) {
+    // Guarded on the key rather than on the index. `hasDense` reports whether
+    // the committed index carries vectors, which it does; what this case needs
+    // is the ability to embed the *query*, and that is a live API call. With
+    // vectors on disk and no key, retrieval silently runs lexical-only, which
+    // is exactly the state this guard has to recognise.
+    test(`"${question}" ranks ${expected} first, and needs the dense half to`, { skip: !process.env.NVIDIA_API_KEY }, async () => {
+      const { chunks } = await retrieve(question);
+      assert.equal(chunks[0]?.title, expected);
+    });
+  }
+
+  test("question grammar carries no weight of its own", () => {
+    // If these survived tokenisation they would score against every chunk.
+    for (const word of ["what", "did", "he", "his", "at", "is", "does", "the"]) {
+      assert.deepEqual(tokenize(word), [], `"${word}" is still a search term`);
+    }
+  });
+
+  test("the terms that identify a section survive", () => {
+    assert.deepEqual(tokenize("What did he build at IMG Systems?"), ["build", "img", "systems"]);
   });
 });

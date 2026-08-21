@@ -3,7 +3,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { classify, cleanAnswer, deflection, AUTHORISATION_ANSWER } from "../lib/agent/policy";
+import {
+  classify,
+  cleanAnswer,
+  deflection,
+  isJobDescription,
+  looksLikeReasoning,
+  AUTHORISATION_ANSWER,
+} from "../lib/agent/policy";
+import { mailtoLink, forwardBlurb, SUBJECT, OPENER } from "../lib/reach";
 import { tokenize } from "../lib/agent/retrieve";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
 
@@ -171,3 +179,237 @@ describe("keyless build", () => {
   });
 });
 
+
+describe("corpus directives", () => {
+  test("@ask seeds parse and point at a real section", () => {
+    const { sections } = loadContent();
+    const titles = new Set(sections.map((s) => s.title));
+    const seeds = sections.flatMap((s) => s.asks);
+
+    assert.ok(seeds.length >= 3, "the corpus should mark questions worth asking");
+    for (const seed of seeds) {
+      assert.ok(seed.question.endsWith("?"), `"${seed.question}" is not a question`);
+      assert.ok(titles.has(seed.source), `@ask points at a missing section: ${seed.source}`);
+    }
+  });
+
+  test("directives never leak into rendered prose", () => {
+    // The parser strips these lines out. When a regex stops matching, the page
+    // renders "@metric 57 hours | from his report" as a paragraph, which is the
+    // exact failure this catches before a reader does.
+    for (const s of loadContent().sections) {
+      assert.ok(!/^@(metric|artifact|ask|defect)\b/m.test(s.body), `directive leaked in "${s.title}"`);
+    }
+  });
+
+  test("a metric source is a URL or the literal resume", () => {
+    for (const m of loadContent().sections.flatMap((s) => s.metrics)) {
+      if (!m.source) continue;
+      assert.ok(
+        m.source === "resume" || m.source.startsWith("https://"),
+        `metric "${m.label}" has an unusable source: ${m.source}`,
+      );
+    }
+  });
+
+  test("every defect ships with the guard that catches it", () => {
+    const defects = section("Defects this page shipped and then fixed").defects;
+    assert.ok(defects.length >= 4);
+    for (const d of defects) {
+      assert.ok(d.symptom.length > 20, "a defect needs describing, not naming");
+      assert.ok(d.guard.length > 20, `"${d.symptom}" has no guard`);
+    }
+  });
+});
+
+describe("reach", () => {
+  test("every context has a distinct subject and opener", () => {
+    // Subject lines are what makes a reply thread a thread. Two contexts sharing
+    // one subject forks a conversation in his inbox; two sharing one opener
+    // makes the draft generic, which is the whole problem this file exists for.
+    const subjects = Object.values(SUBJECT);
+    const openers = Object.values(OPENER);
+    assert.equal(new Set(subjects).size, subjects.length, "duplicate subject line");
+    assert.equal(new Set(openers).size, openers.length, "duplicate opener");
+  });
+
+  test("the draft asks the sender to name times", () => {
+    const draft = decodeURIComponent(mailtoLink("a@b.co", "site.test", "work"));
+    assert.match(draft, /name two times/i);
+  });
+
+  test("a mailto encodes spaces as %20, never as plus", () => {
+    // URLSearchParams emits "+", which several clients render literally in a
+    // subject line and ship a draft reading "Your+work+at+the+Questrom+Lab".
+    const link = mailtoLink("a@b.co", "site.test", "opensource");
+    assert.ok(!link.includes("+"), "a plus in a mailto renders literally");
+    assert.ok(link.includes("%20"));
+  });
+
+  test("the forward blurb carries the proof and the condensed link", () => {
+    const { profile } = loadContent();
+    const blurb = forwardBlurb(
+      { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
+      { passed: 16, cases: 16, p50: 977 },
+    );
+    assert.ok(blurb.includes(profile.proof), "the strongest claim has to travel with it");
+    assert.ok(blurb.includes("?mode=condensed"));
+    assert.ok(blurb.split("\n").length === 4, "four lines or it does not get pasted");
+  });
+});
+
+describe("job description routing", () => {
+  // A pasted req almost always contains the word "salary", and the deflection
+  // rules ran first, so the single most valuable thing a hiring manager could
+  // do with the box was answered with a refusal to discuss pay.
+  const JD = [
+    "About the role: we are looking for an Agentic AI Engineer to build production LLM systems.",
+    "Responsibilities include retrieval pipelines, evaluation harnesses and multi-agent orchestration.",
+    "Requirements: 2+ years of experience with Python and LangGraph.",
+    "Salary range $150,000 to $190,000 plus equity.",
+  ].join(" ");
+
+  test("a pasted job description retrieves rather than deflecting", () => {
+    assert.ok(isJobDescription(JD));
+    assert.equal(classify(JD), "answer");
+  });
+
+  test("the plain compensation question still deflects", () => {
+    assert.equal(classify("What salary does he want?"), "deflect");
+    assert.ok(!isJobDescription("What salary does he want?"));
+  });
+
+  test("long prose without requirement vocabulary is not a job description", () => {
+    assert.ok(!isJobDescription("a".repeat(400)));
+  });
+});
+
+describe("published artifacts", () => {
+  test("the graph topology is read off the compiled graph", () => {
+    const topology = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/topology.json"), "utf8"));
+    assert.ok(topology.nodes.includes("route"));
+    assert.ok(topology.nodes.includes("deflect"));
+    // Two conditional edges out of route are the entire reason this is a graph
+    // rather than a pipeline, and the reason a deflection never reaches a model.
+    assert.equal(topology.conditional, 2, "route must branch, or the policy layer is decorative");
+  });
+
+  test("the eval file carries groups that sum to the total", () => {
+    const evals = JSON.parse(readFileSync(join(process.cwd(), "content/evals.json"), "utf8"));
+    const summed = Object.values(evals.groups as Record<string, { cases: number }>).reduce(
+      (a, g) => a + g.cases,
+      0,
+    );
+    assert.equal(summed, evals.cases, "a case belongs to exactly one group");
+    assert.equal(evals.cases_detail.length, evals.cases);
+  });
+
+  test("the publications are openable artifacts, not links in a paragraph", () => {
+    const artifacts = section("Publications").artifacts;
+    assert.ok(artifacts.length >= 2);
+    assert.ok(
+      artifacts.some((a) => a.url.includes("doi.org")),
+      "the paper needs a resolvable identifier",
+    );
+  });
+});
+
+describe("embedding windows", () => {
+  // A section that grew past the model's 512-token limit returned 400, and the
+  // builder answered by dropping vectors for every chunk in the corpus. The
+  // site then served keyword-only retrieval with no error anywhere.
+  test("every chunk carries exactly one vector, however long the section", () => {
+    const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+    if (!index.vectors) return; // keyless build, covered by its own suite
+    assert.equal(index.vectors.length, index.chunks.length);
+  });
+
+  test("a pooled vector is unit length, so cosine stays comparable", () => {
+    const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+    if (!index.vectors) return;
+    for (const v of index.vectors as number[][]) {
+      const norm = Math.hypot(...v);
+      assert.ok(Math.abs(norm - 1) < 0.01, `vector norm ${norm.toFixed(3)} is not unit length`);
+    }
+  });
+
+  test("the longest section is well past one window, and still embedded", () => {
+    const longest = Math.max(...loadContent().sections.map((s) => s.body.length));
+    assert.ok(longest > 1400, "this test stops meaning anything if no section is long");
+  });
+});
+
+describe("streamed reasoning never reaches the browser", () => {
+  /**
+   * The streaming path cannot retract a token it has sent. cleanAnswer can only
+   * recognise a leading reasoning paragraph once a second paragraph exists, so
+   * applying it per-chunk shipped the model's working to the visitor and then
+   * quietly stopped shipping it. A reader asking about Growaza was shown
+   * "So answer: ... Probably focus ... We must lead with", live.
+   */
+  const OBSERVED = [
+    'Question: "What did he do at Growaza?" So answer: he cut latency.',
+    "So answer: he cut API response time 30 percent.",
+    "We must lead with the specific thing in one or two sentences.",
+    "Probably focus on his contributions: the dashboard.",
+    "Okay, so the user wants to know about Azure.",
+    "<think>let me check the context</think>He shipped it.",
+  ];
+
+  test("every leak observed in production is recognised before emitting", () => {
+    for (const sample of OBSERVED) {
+      assert.ok(looksLikeReasoning(sample), `not held back: ${sample.slice(0, 40)}`);
+    }
+  });
+
+  test("a real answer is never mistaken for reasoning", () => {
+    // The cost of a false positive here is a delayed first word, not a wrong
+    // one, but a matcher that holds every answer has turned streaming off.
+    const answers = [
+      "He cut API response time by 30 percent using in-memory caching.",
+      "At IMG Systems he extended a Python document-parsing pipeline.",
+      "Kushal shipped a document-intelligence assistant on Azure.",
+      "Compensation is worth discussing directly rather than through me.",
+    ];
+    for (const a of answers) {
+      assert.ok(!looksLikeReasoning(a), `held back a real answer: ${a.slice(0, 40)}`);
+    }
+  });
+
+  test("cleanAnswer removes what looksLikeReasoning flags, given a paragraph break", () => {
+    // The two have to agree. Anything held back must also be something
+    // cleanAnswer would drop, or the answer is delayed and then shown anyway.
+    const withBreak = "So answer: he cut latency.\n\nHe cut API response time by 30 percent.";
+    assert.ok(looksLikeReasoning(withBreak));
+    assert.equal(cleanAnswer(withBreak), "He cut API response time by 30 percent.");
+  });
+});
+
+describe("answers carry no machine-written tells", () => {
+  // The corpus fails its own build when the em-dash rate goes above two per
+  // thousand words, and the one surface that genuinely is machine-written was
+  // exempt from that rule. A reader could hold a gated page in one hand and a
+  // live answer full of em-dashes in the other.
+  test("em and en dashes never reach the reader", () => {
+    const samples = [
+      "He noticed silent data loss—documents that were atypical were discarded.",
+      "He shipped it on Azure — with retrieval and evals.",
+      "Two things happened – both of them measured.",
+    ];
+    for (const s of samples) {
+      const out = cleanAnswer(s);
+      assert.ok(!/[—–]/.test(out), `dash survived: ${out}`);
+    }
+  });
+
+  test("the replacement reads as a sentence, not as a gap", () => {
+    assert.equal(
+      cleanAnswer("He shipped it on Azure — with retrieval and evals."),
+      "He shipped it on Azure, with retrieval and evals.",
+    );
+  });
+
+  test("an ordinary hyphen is untouched", () => {
+    assert.equal(cleanAnswer("multi-agent, first-author, F-1"), "multi-agent, first-author, F-1");
+  });
+});

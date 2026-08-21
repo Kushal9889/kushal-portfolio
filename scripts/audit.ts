@@ -247,7 +247,13 @@ const domains: Domain[] = [
       { id: "9.3", need: "secrets gitignored", pass: /\.env\.local/.test(read(".gitignore")) },
       { id: "9.4", need: "CI runs the gates", pass: /verify:facts|npm run check/.test(read(".github/workflows/ci.yml")) },
       { id: "9.5", need: "llms.txt served", pass: has("app/llms.txt/route.ts") },
-      { id: "9.6", need: "share card generated from facts", pass: has("app/opengraph-image.tsx") },
+      { id: "9.6", need: "share card generated from facts", pass: has("app/og/route.tsx") && /loadContent/.test(read("app/og/route.tsx")) },
+      // The card renders a question a stranger supplied. Unbounded, that is a
+      // stranger choosing how much text appears on an image served from his domain.
+      { id: "9.8", need: "share card bounds the question it renders", pass: /slice\(0,\s*120\)/.test(read("app/og/route.tsx")) },
+      // A passage over the embedder's limit used to take the whole index down to
+      // keyword-only, silently. This is what stops that returning.
+      { id: "9.9", need: "oversized passages are windowed, not dropped", pass: /WINDOW_CHARS/.test(read("scripts/build-index.ts")) && /pool\(/.test(read("scripts/build-index.ts")) },
       { id: "9.7", need: "decisions recorded as ADRs", pass: readdirSync(join(root, "docs")).filter((f) => f.startsWith("adr-")).length >= 2 },
     ],
   },
@@ -355,6 +361,59 @@ const domains: Domain[] = [
       },
       { id: "12.5", need: "no font-size outside the scale", pass: countOf(builtCss, /font-size:\s*\d+px/g) <= 3, note: `${countOf(builtCss, /font-size:\s*\d+px/g)} raw px` },
       { id: "12.6", need: "every section uses the same heading component", pass: countOf(read("app/page.tsx"), /<Section /g) === countOf(read("app/page.tsx"), /index="/g) },
+      {
+        // --signal is the page's one accent, and it is spent on states rather
+        // than on things: something happening now, something the reader is
+        // touching, or the defect line in the diff. Nothing enforced that, so a
+        // new component could reach for it as emphasis on static text and the
+        // colour would quietly stop meaning anything anywhere else.
+        //
+        // The allowlist is written out rather than inferred. Enumerating the
+        // legitimate uses is the point: it makes this pass today by
+        // construction and fail the moment something outside the list wants
+        // the accent, which is exactly the decision worth reviewing.
+        id: "12.8",
+        need: "the accent is spent on state, never on static text",
+        pass: (() => {
+          const offenders: string[] = [];
+          for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
+            const src = stripComments(read(file));
+            for (const block of src.split("}")) {
+              if (!/var\(--signal\)/.test(block)) continue;
+              const selector = block.split("{")[0];
+              // globals.css defines and themes the token itself, and the print
+              // block pins it so a dark-mode print does not put lifted
+              // vermillion on white paper. Neither is a component using it.
+              if (/^\s*(:root|@media|@supports|html|--)/.test(selector)) continue;
+              const isState =
+                // Happening now.
+                /live|running|data-state|data-live|pulse|progress|dot|\.stop\b|\.on\b/i.test(selector) ||
+                // The reader is touching it.
+                /:hover|:focus|:focus-visible|:focus-within|:active|:checked|On\b/.test(selector) ||
+                // Measured, and redrawn per answer.
+                /traceBar/i.test(selector) ||
+                // The defect line in the diff, which is the one static thing on
+                // the page the accent is allowed to mark: it is the failure.
+                /\.bad\b/.test(selector);
+              if (!isState) {
+                offenders.push(`${file}: ${selector.trim().slice(0, 40)}`);
+              }
+            }
+          }
+          return offenders.length === 0;
+        })(),
+      },
+      {
+        // Hard rule 4 was enforced on code comments and nowhere else, so the
+        // vocabulary it bans could ship in prose the reader actually sees.
+        id: "12.9",
+        need: "banned vocabulary appears in no shipped text",
+        pass: (() => {
+          const banned = /\b(psycholog|persuasion architecture|dark pattern|neuro|dopamine|growth hack)\w*/i;
+          const shipped = [facts, read("README.md"), read("lib/reach.ts"), ...sourceFiles.map(read)];
+          return !shipped.some((t) => banned.test(stripComments(t)));
+        })(),
+      },
       { id: "12.7", need: "voice degrades, never goes silent", pass: /speakBuiltIn/.test(read("lib/voice/speech.ts")) && /speakNeural/.test(read("lib/voice/speech.ts")) },
     ],
   },

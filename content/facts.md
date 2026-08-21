@@ -58,6 +58,8 @@ Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
 @metric BM25 + vector | hybrid retrieval, Cohere reranked
 @metric LLM-as-a-Judge | hallucination and retrieval scoring
 
+@ask When is multi-agent orchestration worth the coordination cost? | Boston University, Questrom Computational Lab
+
 He architected a document intelligence assistant for an enterprise consulting client, on Azure,
 **owned from ingestion through deployment.**
 
@@ -83,10 +85,12 @@ corpus the exact terms are client names, project codes, and document titles. The
 
 Role: Software Engineering Intern. August 2024 to April 2025. Remote.
 
-@metric +20% | extraction accuracy
-@metric 95% | schema accuracy, up from 75-78%
+@metric +20% | extraction accuracy | resume
+@metric 95% | schema accuracy, up from 75-78% | resume
 @metric 5,000+ | profiles parsed per month
 @metric -25% | REST API latency
+
+@ask What did he over-engineer at IMG, and how did he find out? | IMG Systems
 
 **He extended a Python document-parsing pipeline built on Apache Tika, raising extraction accuracy 20
 percent** across more than 5,000 candidate profiles a month and cutting recruiter screening time 15
@@ -111,7 +115,7 @@ turned silent data loss into a visible signal.
 
 Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
 
-@metric -30% | API response time
+@metric -30% | API response time | resume
 @metric +22% | engagement, 1,000+ daily users
 @metric 2,000+ | SKUs tracked live
 
@@ -160,9 +164,11 @@ pooling. He has not needed it yet and has not pretended otherwise.
 
 He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK.
 
-@metric 57 hours | from his report to a merged fix
-@metric 3 | places the file already contradicted itself
-@metric credited | in the merged pull request body
+@metric 57 hours | from his report to a merged fix | https://github.com/langchain-ai/deepagents/pull/4925
+@metric 3 | places the file already contradicted itself | https://github.com/langchain-ai/deepagents/issues/4846
+@metric credited | in the merged pull request body | https://github.com/langchain-ai/deepagents/pull/4925
+
+@ask What did the maintainer change that he did not propose? | Open source, LangChain deepagents
 
 @artifact Issue he filed | closed | langchain-ai/deepagents#4846 | https://github.com/langchain-ai/deepagents/issues/4846
 @artifact Fix a maintainer wrote | merged | langchain-ai/deepagents#4925 | https://github.com/langchain-ai/deepagents/pull/4925
@@ -214,9 +220,12 @@ June 2024. India.
 
 ## Publications
 
-@metric 91.4% | combined transformer and GNN accuracy
-@metric 88.2% | transformer alone
-@metric 13.5s | detect and fix, against 25.4s for static analysis
+@metric 91.4% | combined transformer and GNN accuracy | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+@metric 88.2% | transformer alone | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+@metric 13.5s | detect and fix, against 25.4s for static analysis | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+
+@artifact IEEE ICAICCIT 2024, first author | published | Deep Learning for Contextual Bug Detection and Automated Fixes | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+@artifact IGI Global 2024, co-author | published | Cyber-Physical Systems: Security and Optimization Strategies | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities
 
 **He published research on finding bugs automatically, then found one by hand in
 a production SDK.** The IEEE paper is about contextual bug detection: a
@@ -238,20 +247,20 @@ IGI Global 2024, co-author. Cyber-Physical Systems: Security and Optimization St
 
 ## Skills
 
-Languages: Python, SQL, TypeScript, JavaScript, C++.
+Languages: Python, SQL, TypeScript, JavaScript, C++. Data structures and algorithms.
 
 Agentic AI: multi-agent orchestration, ReAct, tool calling, function calling, structured outputs,
-context engineering, prompt engineering, Model Context Protocol.
+context engineering, prompt engineering, Model Context Protocol, natural language processing.
 
-Frameworks: LangChain, LangGraph, LangSmith, LlamaIndex, NVIDIA NIM.
+Frameworks: LangChain, LangGraph, LangSmith, LlamaIndex, NVIDIA NIM, OpenAI API, Azure OpenAI.
 
 Retrieval: RAG, agentic RAG, hybrid search, BM25, reranking, embeddings, semantic search, chunking
 strategies, pgvector, ChromaDB, Azure AI Search, NV-Embed.
 
-Evaluation and reliability: LLM-as-a-Judge, guardrails, grounding, hallucination reduction, PII
-redaction, LLM observability, tracing.
+Evaluation and reliability: LLM evaluation, LLM-as-a-Judge, guardrails, grounding, hallucination
+reduction, PII redaction, LLM observability, tracing.
 
-Backend and MLOps: FastAPI, REST, microservices, async Python, Pydantic, Docker, GitHub Actions,
+Backend and MLOps: FastAPI, RESTful APIs, microservices, async Python, Pydantic, Docker, GitHub Actions,
 CI/CD, model deployment, low-latency inference, Server-Sent Events.
 
 Databases: PostgreSQL, MySQL, MongoDB, Redis, Neo4j, Cosmos DB.
@@ -261,6 +270,10 @@ Cloud: AWS EC2, S3, Lambda, API Gateway. Microsoft Azure. Google Cloud Platform.
 Frontend: React, Redux, Next.js.
 
 ## Achievements
+
+@metric 99.1 percentile | JEE Mains 2020, of 1.2 million candidates | resume
+@metric 70+ | members in the coding community he co-founded
+@metric GSoC and Kickstart top 200 | where his mentees landed
 
 JEE Mains 2020: 99.1 percentile of 1.2 million candidates, top 0.9 percent nationally.
 
@@ -320,6 +333,22 @@ add cost, latency, and a second thing to trust, to grade questions whose right
 answer is already written down. The technique is not better than the check; it is
 what you reach for when a check is not available.
 
+
+**Nothing here is independent of anything else, and pretending otherwise would be
+the first dishonest line on the page.** It runs on Netlify functions, answers
+through free-tier inference with failover across four providers, and stores
+nothing: no database, no session, no conversation history on the server. When a
+provider caps, the next one serves. When all four are gone, the retrieved
+paragraph is served unsummarised.
+
+**The site refuses to ship claims it cannot support, and the refusal is
+automated.** A link checker resolves every external URL and fails on a dead one.
+A facts gate fails the build when the page renders a section the corpus lacks,
+when a metric carries no source, when the availability date has passed, or when
+a resume keyword has gone missing from this file. A token linter fails on a
+colour written outside the stylesheet. An audit runs ninety-eight structural
+checks. The evaluation suite runs sixteen. None of it makes the work better; all
+of it stops the page describing work that is not there.
 
 The page you are reading is the work sample. The agent answering questions runs a LangGraph graph
 with four nodes, hybrid BM25 and dense retrieval over this file and his engineering notes, a policy

@@ -47,3 +47,25 @@
   color: var(--ink-soft);
   max-width: 22ch;
 }
+
+/* Attached to the label, not the figure: it is a footnote about provenance and
+   should never compete with the number it qualifies. */
+.source {
+  display: inline-block;
+  margin-inline-start: 0.45em;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  vertical-align: 0.35em;
+}
+
+a.source {
+  border-bottom: 1px solid var(--rule);
+  transition: color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+
+a.source:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}

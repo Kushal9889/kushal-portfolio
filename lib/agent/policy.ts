@@ -33,8 +33,27 @@ const HIRING = /\b(hir(e|ing)|recruit|role|position|opening|interview|available|
 const OVERRIDE =
   /\b(ignore (all )?(your |previous |prior )?(instructions|rules|prompt)|disregard (the|your) (above|instructions)|you are now|new instructions|system prompt|reveal your (prompt|instructions)|pretend (to be|you are)|act as if)\b/i;
 
+/**
+ * A pasted job description, rather than a question.
+ *
+ * Long text carrying requirement vocabulary is someone checking fit, and it has
+ * to be recognised before the deflection rules run. Almost every real job
+ * description contains the word "salary" or "compensation", so without this the
+ * single most valuable thing a hiring manager can do with the box -- paste the
+ * req and watch the retriever map it -- was answered with a refusal to discuss
+ * pay. Length is required as well as vocabulary, so the ordinary question "what
+ * salary does he want" still deflects.
+ */
+const REQUIREMENTS =
+  /\b(responsibilit|requirement|qualification|you will|we are looking|years of experience|about the role|what you.{0,3}ll do|nice to have|minimum qualification)\w*/i;
+
+export function isJobDescription(text: string): boolean {
+  return text.length > 200 && REQUIREMENTS.test(text);
+}
+
 export function classify(question: string): Route {
   if (OVERRIDE.test(question)) return "deflect";
+  if (isJobDescription(question)) return "answer";
   if (AUTHORISATION.test(question)) return "authorisation";
   if (COMPENSATION.test(question) || PERSONAL.test(question) || OTHER_EMPLOYERS.test(question)) {
     return "deflect";
@@ -91,6 +110,18 @@ ${context}`;
 }
 
 /**
+ * The system prompt as a reader may see it, with the retrieved context removed.
+ *
+ * The agent refuses to reveal this when asked, which is correct: an instruction
+ * that can be talked out of the model is not a constraint. Refusing to hand it
+ * over on request and publishing it deliberately are different acts, and only
+ * the second one is worth anything to someone deciding whether the routing is
+ * real. The context block is elided because it is the retrieved corpus, which
+ * changes per question and is already named in the sources line above.
+ */
+export const POLICY_PREVIEW = systemPrompt("<the retrieved sections, named in the sources line above>");
+
+/**
  * Removes reasoning a model emits alongside its answer.
  *
  * Reasoning models return their working either inside <think> tags or, when a
@@ -104,7 +135,20 @@ ${context}`;
 const THINK_BLOCK = /<think>[\s\S]*?<\/think>/gi;
 const UNCLOSED_THINK = /^[\s\S]*?<\/think>/i;
 const META_OPENER =
-  /^(we need to|the user (asks|wants|is asking)|the question:|okay,? (so )?the user|let me|first,? (i|we) (need|should)|i should|thinking:)/i;
+  /^(we (need|must|should)|the user (asks|wants|is asking)|(the )?question:|okay,? (so )?(the user)?|let me|first,? (i|we) (need|should)|i should|thinking:|so (the )?answer|probably|the answer (is|should)|answer:|hmm)/i;
+
+/**
+ * Whether a partial stream is still inside the model's working.
+ *
+ * The streaming path cannot retract a token it has already sent, so it has to
+ * decide before emitting rather than after. This is that decision, kept beside
+ * cleanAnswer because the two have to agree: anything this calls reasoning must
+ * be something cleanAnswer would have removed.
+ */
+export function looksLikeReasoning(partial: string): boolean {
+  const head = partial.trimStart();
+  return /<think>/i.test(head) || META_OPENER.test(head);
+}
 
 export function cleanAnswer(text: string): string {
   let out = text.replace(THINK_BLOCK, "");
@@ -115,14 +159,23 @@ export function cleanAnswer(text: string): string {
   const paras = out.split(/\n{2,}/);
   while (paras.length > 1 && META_OPENER.test(paras[0].trim())) paras.shift();
 
-  // Models emit non-breaking hyphens and directional quotes that do not match
-  // the rest of the page. Normalised so an answer sits in the same typography as
-  // the prose around it.
+  // Models emit non-breaking hyphens, directional quotes and em-dashes that do
+  // not match the rest of the page. Normalised so an answer sits in the same
+  // typography as the prose around it.
+  //
+  // The em-dash is not a typographic preference. The corpus is gated on its
+  // rate because it is the most reliable single tell of machine-written prose,
+  // and the one surface that actually is machine-written was exempt: a reader
+  // could hold a gated page in one hand and a live answer full of em-dashes in
+  // the other. Replaced with the comma or the spaced hyphen the surrounding
+  // prose would have used, depending on whether the model spaced it.
   return paras
     .join("\n\n")
     .replace(/\u2011/g, "-")
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\s+[\u2014\u2013]\s+/g, ", ")
+    .replace(/[\u2014\u2013]/g, ", ")
     .trim();
 }
 

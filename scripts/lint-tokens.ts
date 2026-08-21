@@ -18,7 +18,11 @@ import { join, extname } from "node:path";
  */
 const ALLOWED = new Set([
   "app/globals.css",
-  "app/opengraph-image.tsx",
+  // Satori renders the share card with no access to the stylesheet and does not
+  // resolve custom properties, so the tokens have to be written literally. The
+  // route replaced app/opengraph-image.tsx when the card started carrying the
+  // shared question, and the exemption moved with it.
+  "app/og/route.tsx",
   // Brand marks. These hex values are NVIDIA's, GitHub's and LinkedIn's, not
   // this palette's, and a logo rendered in the wrong colour stops being the
   // logo. Exempt because they are not design tokens and must never be

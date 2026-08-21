@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:index && npm run build:graph && npm run build:field && npm run prewarm && next build",
+    "build": "npm run build:index && npm run build:graph && npm run build:field && npm run build:topology && npm run build:changelog && npm run prewarm && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -27,7 +27,10 @@
     "test:system": "npm run build && tsx --test --test-timeout=120000 tests/system.test.ts",
     "test": "npm run test:unit && npm run test:integration",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:system",
-    "build:field": "tsx scripts/build-field.ts"
+    "build:field": "tsx scripts/build-field.ts",
+    "build:topology": "tsx scripts/build-topology.ts",
+    "build:readme": "tsx scripts/build-profile-readme.ts",
+    "build:changelog": "tsx scripts/build-changelog.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",

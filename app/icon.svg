@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The graph, at 32 pixels. Three nodes on a rail: the same route, retrieve,
+       answer the hero draws, reduced to what survives a browser tab. Monochrome
+       on purpose - the accent is reserved for live state, and a favicon is never
+       live. -->
+  <rect width="32" height="32" rx="6" fill="#2b2621"/>
+  <g stroke="#f7f5ef" stroke-width="1.6" fill="none">
+    <path d="M8 16h16"/>
+  </g>
+  <g fill="#f7f5ef">
+    <circle cx="8" cy="16" r="2.6"/>
+    <circle cx="16" cy="16" r="2.6"/>
+    <circle cx="24" cy="16" r="2.6"/>
+  </g>
+</svg>

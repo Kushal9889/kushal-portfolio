@@ -18,12 +18,42 @@ type IndexShape = {
 // generated index, which does not structurally match the declared shape.
 const idx = index as unknown as IndexShape;
 
+/**
+ * Words that carry no signal in a corpus that is entirely about one person.
+ *
+ * BM25 down-weights common terms through IDF, and on a seventeen-chunk corpus
+ * that is not nearly enough: "he" appears in ten of them and still scores 0.54,
+ * "what" in seven and scores 0.88. Combined with length normalisation, which
+ * rewards short documents, a 64-token section could outrank the 180-token
+ * section that actually answers the question purely on the strength of matching
+ * the question's grammar.
+ *
+ * It showed on "What did he build at IMG Systems?", where "What he does not do"
+ * took the top rank -- three "what"s, five "he"s and one passing "IMG" beat two
+ * "IMG"s and three "Systems". The answer was still right, because the model
+ * sees all four retrieved chunks, but the top chunk is what the sources line
+ * shows first and what the degraded path serves when no provider is reachable.
+ *
+ * Pronouns are in the list for a reason specific to this corpus rather than to
+ * English: every chunk is about the same person, so "he" and "his" are closer
+ * to punctuation than to content.
+ */
+const STOPWORDS = new Set([
+  "the", "and", "for", "are", "but", "not", "you", "all", "can", "had", "her", "was", "one",
+  "our", "out", "day", "get", "has", "him", "his", "how", "its", "new", "now", "old", "see",
+  "two", "way", "who", "did", "yes", "let", "put", "say", "she", "too", "use", "that", "with",
+  "this", "have", "from", "they", "been", "were", "what", "when", "there", "their", "would",
+  "about", "which", "them", "than", "then", "into", "only", "some", "just", "over", "also",
+  "does", "doing", "done", "any", "his", "he", "at", "in", "on", "of", "to", "is", "it", "as",
+  "an", "by", "or", "be", "do", "we", "if", "so", "up", "me", "my", "us", "tell",
+]);
+
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9+#.\-\s]/g, " ")
     .split(/\s+/)
-    .filter((t) => t.length > 1);
+    .filter((t) => t.length > 1 && !STOPWORDS.has(t));
 }
 
 const K1 = 1.5;
@@ -140,12 +170,37 @@ export async function retrieve(query: string, topK = 4) {
     const l = lexical.get(i);
     const d = dense.get(i);
     const score = (l ? 1 / (RRF_K + l) : 0) + (d ? 1 / (RRF_K + d) : 0);
-    return { chunk, score };
+    // Best single rank, kept for the tiebreak below.
+    const best = Math.min(l ?? Infinity, d ?? Infinity);
+    return { chunk, score, best, lexicalScore: lexicalScores[i] };
   });
 
+  /**
+   * Reciprocal rank fusion produces exact ties, and the tiebreak was corpus order.
+   *
+   * RRF is symmetric: a chunk ranked 1 by keyword and 2 by embedding scores
+   * exactly what a chunk ranked 2 and 1 scores. That is the formula working
+   * correctly, and it left `sort` to break the tie, which for a stable sort
+   * means whichever section appears earlier in facts.md wins -- a ranking
+   * signal that is really just file layout.
+   *
+   * It showed: "What did he build at IMG Systems?" tied "IMG Systems" against
+   * "What he does not do" at 0.032522, and the scope-limits section won because
+   * it is written three headings higher. The answer was still correct, because
+   * the model saw all four chunks, but the top chunk is what the page shows
+   * first and what the degraded path serves when no provider is reachable --
+   * so a visitor asking about IMG Systems could be handed "He has no PyTorch or
+   * TensorFlow training experience".
+   *
+   * Ties break on the better single rank -- being any retriever's first choice
+   * beats being two retrievers' second -- and then on keyword score, which is
+   * the sharper signal on a corpus this small.
+   */
   const winners = fused
     .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort(
+      (a, b) => b.score - a.score || a.best - b.best || b.lexicalScore - a.lexicalScore,
+    )
     .slice(0, topK);
 
   const chosen = new Set(winners.map((w) => w.chunk.title));

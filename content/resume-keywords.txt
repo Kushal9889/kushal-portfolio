@@ -1,0 +1,105 @@
+# Every keyword present in the original resume Kushal supplied.
+# ats_check.py asserts each one still appears in the compiled PDF text layer.
+# Nothing may be dropped from this list to make a check pass; if a term is gone,
+# restore it to the resume instead.
+Python
+SQL
+TypeScript
+JavaScript
+C++
+AI Agents
+Multi-Agent Orchestration
+Prompt Engineering
+Context Engineering
+Tool Calling
+Function Calling
+ReAct
+Model Context Protocol (MCP)
+OpenAI API
+Azure OpenAI
+LangChain
+LangGraph
+LangSmith
+LlamaIndex
+NVIDIA NIM
+Retrieval-Augmented Generation (RAG)
+Agentic RAG
+Vector Databases
+Embeddings
+Semantic Search
+Hybrid Search
+Reranking
+pgvector
+ChromaDB
+Azure AI Search
+NV-Embed
+LLM Evaluation
+LLM-as-a-Judge
+Guardrails
+Grounding
+Hallucination Reduction
+PII Redaction
+LLM Observability
+Tracing
+FastAPI
+RESTful APIs
+Microservices
+Async Python
+Pydantic
+Structured Outputs
+Docker
+Git
+GitHub Actions
+CI/CD
+MLOps
+Model Deployment
+Low-Latency Inference
+Server-Sent Events (SSE)
+PostgreSQL
+MySQL
+MongoDB
+Redis
+Neo4j
+Cosmos DB
+Amazon Web Services (AWS)
+EC2
+S3
+Lambda
+API Gateway
+Microsoft Azure
+Google Cloud Platform (GCP)
+React
+Redux
+Next.js
+Artificial Intelligence (AI)
+Machine Learning (ML)
+Natural Language Processing (NLP)
+Deep Learning
+Data Structures
+Algorithms
+Apache Tika
+JSON Schema
+GPT-4o
+Cohere
+BM25
+SHA-256
+Azure Blob Storage
+JWT
+RBAC
+IEEE
+Boston University
+Questrom Computational Lab
+IMG Systems
+Growaza
+IIIT-DM Jabalpur
+NVIDIA-Certified Professional
+NCP-AAI
+AWS Cloud Technical Essentials
+IBM RAG and Agentic AI
+Google Cloud Fundamentals
+JEE Mains
+CodeChef
+BITBYTE
+Tarang Fest
+Code Rumble
+Google Kickstart

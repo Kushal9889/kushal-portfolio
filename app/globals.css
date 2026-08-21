@@ -516,6 +516,34 @@ hr {
   body {
     font-size: 10pt;
   }
+
+  /* A printed page leaves the browser, so it has to carry its own provenance:
+     where it came from and when it was last checked. Without this it is an
+     undated stack of claims with no way back to the source.
+
+     A running footer needs @page margin boxes, which no browser implements for
+     HTML. The footer element repeating on every sheet is the closest thing that
+     actually prints, so the stamp is placed there and kept whole. */
+  footer {
+    break-inside: avoid;
+    border-top: 1px solid var(--rule);
+    padding-top: 6pt;
+  }
+
+  /* The contact block is the reason someone printed this. Buttons are hidden
+     above, which would have taken the copy-to-forward control with them and
+     left a paper page whose only addresses were in link text. */
+  .plain,
+  .plain a {
+    display: inline !important;
+    color: black !important;
+  }
+
+  /* Five dated commit lines are screen furniture; on paper they push the
+     addresses onto a second sheet. */
+  .changelog {
+    display: none;
+  }
 }
 
 /*
@@ -527,6 +555,15 @@ hr {
  */
 :root.condensed .prose p:not(:first-child) {
   display: none;
+}
+
+/* What he is not, kept in the condensed read.
+   The rule above keeps only the first paragraph of any prose block, and the
+   scope limits are three short paragraphs in one block, so condensing removed
+   two thirds of the one section whose value is that it narrows the claim. A
+   page that condenses away its own limits is advertising. */
+:root.condensed [data-keep="all"] .prose p {
+  display: block;
 }
 
 :root.condensed .prose p:first-child {

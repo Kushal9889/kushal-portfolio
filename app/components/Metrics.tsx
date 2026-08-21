@@ -32,7 +32,28 @@ export default function Metrics({ items }: { items: Metric[] }) {
           >
             {m.value}
           </dt>
-          <dd className={styles.label}>{m.label}</dd>
+          <dd className={styles.label}>
+            {m.label}
+            {/* Where the figure comes from, attached to the figure.
+                A number on a portfolio is worth exactly as much as the reader's
+                willingness to believe it, and "resume" is an honest answer for
+                a figure whose only witness is a former employer. A URL is a
+                better one, and it is the reason this is a link when it can be. */}
+            {m.source &&
+              (m.source.startsWith("http") ? (
+                <a
+                  className={styles.source}
+                  href={m.source}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={m.source}
+                >
+                  source
+                </a>
+              ) : (
+                <span className={styles.source}>{m.source}</span>
+              ))}
+          </dd>
         </div>
       ))}
     </dl>

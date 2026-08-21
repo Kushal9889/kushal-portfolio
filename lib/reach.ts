@@ -24,18 +24,22 @@ export type ReachContext =
   | "measured"
   | "approach"
   | "work"
+  | "research"
   | "projects";
 
 /**
  * Subject lines are the part a recruiter's inbox shows before anything else, so
  * they carry the role and the specific hook rather than a greeting.
  */
-const SUBJECT: Record<ReachContext, string> = {
+export const SUBJECT: Record<ReachContext, string> = {
   general: "Your portfolio, and a role I think fits",
   opensource: "The deepagents bug you reported",
   measured: "Your eval suite",
   approach: "How your retrieval fusion works",
   work: "Your work at the Questrom Computational Lab",
+  // Section 05 became Research and kept pointing at the projects context, so a
+  // reader who had just read about the IEEE paper got a draft about BU Life AI.
+  research: "Your paper on contextual bug detection",
   projects: "BU Life AI",
 };
 
@@ -48,7 +52,7 @@ const SUBJECT: Record<ReachContext, string> = {
  * point, with the specific reference already in place so the message is not
  * generic on arrival.
  */
-const OPENER: Record<ReachContext, string> = {
+export const OPENER: Record<ReachContext, string> = {
   general: "I came across your portfolio and wanted to get in touch.",
   opensource:
     "I read about the CompositeBackend error-swallowing bug you reported to LangChain, and the fix a maintainer merged 57 hours later.",
@@ -57,6 +61,8 @@ const OPENER: Record<ReachContext, string> = {
   approach:
     "I spent a while on the retrieval figure on your site, watching the dense retriever overrule keyword rank.",
   work: "I read about the agentic RAG platform you shipped on Azure at the Questrom Computational Lab.",
+  research:
+    "I read your ICAICCIT paper on contextual bug detection, and the point that the LangChain defect you found was the same class of silent failure.",
   projects: "I had a look at BU Life AI and the multi-agent routing behind it.",
 };
 
@@ -65,7 +71,10 @@ function body(context: ReachContext, site: string) {
   return [
     OPENER[context],
     "",
-    "I am hiring for a role I think could be a fit, and wanted to see whether you are open to a short conversation.",
+    // Choosing a time is the work in a reply, and a message that leaves it open
+    // gets answered with "sure, when?" and then not answered again. Naming two
+    // is one line for the sender and removes the whole round trip.
+    "I am hiring for a role I think could be a fit, and wanted to see whether you are open to a short conversation. If so, name two times that suit you and I will take one.",
     "",
     `(Sent from ${site})`,
     "",
@@ -101,4 +110,30 @@ export function mailtoLink(email: string, site: string, context: ReachContext = 
  */
 export function linkedinNote(context: ReachContext = "general") {
   return `${OPENER[context]} I am hiring for a role I think could be a fit and wanted to see whether you are open to a short conversation.`;
+}
+
+/**
+ * The three lines an internal employee forwards, rather than the page a
+ * recruiter reads.
+ *
+ * Most hires that come from a portfolio do not come from the person who found
+ * it. They come from that person pasting something into a channel, and what
+ * they paste is whatever is short enough to paste. A URL alone forces the next
+ * reader to open a tab before they know whether it is worth one, so the three
+ * strongest facts travel with it, and the link is the condensed view, which is
+ * the version that survives being opened on a phone in a meeting.
+ *
+ * Generated from the corpus like everything else here. Nothing in it is a
+ * second copy of a fact.
+ */
+export function forwardBlurb(
+  profile: { name: string; current: string; proof: string; site: string },
+  evals: { passed: number; cases: number; p50: number },
+) {
+  return [
+    `${profile.name} - ${profile.current}.`,
+    profile.proof,
+    `His site runs a live agent over his own resume: ${evals.passed}/${evals.cases} eval assertions pass, ${evals.p50}ms median answer.`,
+    `${profile.site}?mode=condensed`,
+  ].join("\n");
 }

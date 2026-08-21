@@ -55,6 +55,8 @@ export default function Hero({
   const [trace, setTrace] = useState<Trace>({});
   const [active, setActive] = useState<NodeName | null>(null);
   const [done, setDone] = useState(false);
+  /** Set when the demo endpoint could not be reached, so the caption says so. */
+  const [unreachable, setUnreachable] = useState(false);
   const started = useRef(false);
 
   useEffect(() => {
@@ -69,7 +71,10 @@ export default function Hero({
     (async () => {
       try {
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setUnreachable(true);
+          return;
+        }
         const measured: Trace = await res.json();
 
         if (calm) {
@@ -93,9 +98,13 @@ export default function Hero({
         }
         setActive(null);
         setDone(true);
-      } catch {
-        // Offline, blocked, or the route is not deployed. The structure below
-        // still tells the story; it just does so without numbers.
+      } catch (err) {
+        // Offline, blocked, or the route is not deployed. The structure above
+        // still tells the story; it just does so without numbers. Stated rather
+        // than left hanging: the caption used to sit on "ask anything below" for
+        // ever, which reads as a page still loading rather than one whose demo
+        // endpoint is down.
+        if ((err as Error)?.name !== "AbortError") setUnreachable(true);
       }
     })();
 
@@ -142,6 +151,12 @@ export default function Hero({
           <a href="#opensource">{proof}</a>
         </p>
 
+        {/* The two facts that decide whether a recruiter writes at all, kept
+            deliberately quiet. Moved above the graph block: on a 13-inch laptop
+            it sat below three cells and a caption, which put the one number
+            that gates a reply outside the first screen. */}
+        <p className={styles.available}>Available {available}</p>
+
         {/* The graph, drawn rather than written.
             Each node is a cell with a rail running through it; the rail fills as
             that node completes, so the row reads as a system executing instead of
@@ -172,6 +187,8 @@ export default function Hero({
               <span className="live-dot" /> answered in{" "}
               <span className="tabular">{total}ms</span>, measured on this page load
             </>
+          ) : unreachable ? (
+            <>the demo endpoint is unreachable right now; the box below still answers</>
           ) : (
             <>ask anything below and this graph runs again</>
           )}
@@ -185,12 +202,6 @@ export default function Hero({
             {credential.label}
           </a>
         </div>
-
-        {/* The two facts that decide whether a recruiter writes at all, kept
-            deliberately quiet. They gate the reply, so hiding them below six
-            sections costs replies; setting them loud would make the page sound
-            like it is asking rather than showing. */}
-        <p className={styles.available}>Available {available}</p>
 
         {/* The demo sits above the fold because it is the strongest thing on the
             page and an unseen proof persuades nobody. Everything below it is

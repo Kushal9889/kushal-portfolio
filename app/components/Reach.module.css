@@ -102,3 +102,22 @@
     display: none;
   }
 }
+
+/* Quiet, and deliberately not one of the four rows above. Those are ways for
+   the reader to act; this is a way for them to hand the page to someone else,
+   which is a different intention and should not compete for the same glance. */
+.forward {
+  justify-self: start;
+  margin-block-start: 1rem;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  padding-block-end: 0.2rem;
+  transition: color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+
+.forward:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}

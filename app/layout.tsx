@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Martian_Mono, Newsreader } from "next/font/google";
-import { loadContent, loadCertifications } from "@/lib/content";
+import { loadContent, loadCertifications, section } from "@/lib/content";
 import "./globals.css";
 
 // Self-hosted by next/font at build time. The previous site loaded two of its
@@ -25,7 +25,10 @@ const { profile } = loadContent();
 export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
   title: `${profile.name} — ${profile.role}`,
-  description: profile.tagline,
+  // The description is the line a search result quotes and an assistant
+  // paraphrases. The tagline alone carried neither the role nor the institution,
+  // which are the two strings someone who half-remembers him will type.
+  description: `${profile.tagline} ${profile.role} at Boston University. ${profile.proof}`,
   authors: [{ name: profile.name, url: profile.site }],
   openGraph: {
     type: "profile",
@@ -33,11 +36,13 @@ export const metadata: Metadata = {
     description: `${profile.tagline} ${profile.proof}`,
     url: profile.site,
     siteName: profile.name,
+    images: [{ url: "/og", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${profile.name} — ${profile.role}`,
     description: `${profile.tagline} ${profile.proof}`,
+    images: ["/og"],
   },
   alternates: { canonical: profile.site },
   robots: { index: true, follow: true },
@@ -70,6 +75,27 @@ function knowsAbout() {
     "Multi-Agent Orchestration",
   ];
   return [...new Set([...disciplines, ...fromCorpus])];
+}
+
+/**
+ * The two publications, as entities rather than as links in prose.
+ *
+ * Generated from the `@artifact` lines on the Publications section, which the
+ * link checker already resolves and the page already renders, so a paper cannot
+ * appear in one surface and not the others. This was the last identifier class
+ * the graph lacked: it carried an ORCID and no works for the ORCID to point at.
+ */
+function publications() {
+  return section("Publications").artifacts.map((a) => ({
+    "@type": "ScholarlyArticle",
+    name: a.label,
+    url: a.url,
+    author: { "@id": `${profile.site}/#person` },
+    ...(a.url.includes("doi.org")
+      ? { identifier: a.url.replace("https://doi.org/", "doi:") }
+      : {}),
+    publisher: { "@type": "Organization", name: a.kind.split(",")[0] },
+  }));
 }
 
 function structuredData() {
@@ -110,7 +136,9 @@ function structuredData() {
             recognizedBy: { "@type": "Organization", name: c.issuer },
             url: c.url,
           })),
+        subjectOf: publications(),
       },
+      ...publications(),
       {
         "@type": "WebSite",
         "@id": `${profile.site}/#website`,
@@ -126,6 +154,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${mono.variable} ${serif.variable}`}>
       <head>
+        {/* The condensed view was a keystroke nobody finds. As a URL it is a
+            second, shorter read of the same page that can be sent in a reply,
+            and applying it here rather than in an effect means the full page
+            never paints first and then collapses under the reader. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(new URLSearchParams(location.search).get("mode")==="condensed")document.documentElement.classList.add("condensed")}catch(e){}',
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }}

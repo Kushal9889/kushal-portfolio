@@ -1,3 +1,6 @@
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { inflateSync } from "node:zlib";
 import { allLinks, loadContent } from "../lib/content";
 
 /**
@@ -21,11 +24,103 @@ async function check(url: string) {
   }
 }
 
+/**
+ * A GitHub issue or pull request has a state, and the corpus asserts one.
+ *
+ * `@artifact ... | merged | ...` is the strongest claim on this site: it says an
+ * outsider acted on his work. A 200 from the URL proves the page exists, not
+ * that it still says what he claims. A maintainer can revert a merge or close an
+ * issue as not-planned, and the site would go on describing a merged fix with a
+ * link that resolves perfectly.
+ *
+ * The unauthenticated API allows 60 requests an hour, which is far more than the
+ * two artifacts here need. A rate limit or an outage reports as unknown rather
+ * than as a failure: not being able to check is different from checking and
+ * finding a lie.
+ */
+async function checkArtifactStates() {
+  const artifacts = loadContent()
+    .sections.flatMap((s) => s.artifacts)
+    .filter((a) => /github\.com\/[^/]+\/[^/]+\/(issues|pull)\/\d+/.test(a.url));
+
+  const wrong: string[] = [];
+
+  for (const a of artifacts) {
+    const m = a.url.match(/github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/)!;
+    const api = `https://api.github.com/repos/${m[1]}/${m[2]}/${m[3] === "pull" ? "pulls" : "issues"}/${m[4]}`;
+
+    try {
+      const res = await fetch(api, { headers: { accept: "application/vnd.github+json" } });
+      if (!res.ok) {
+        console.log(`  ?    ${res.status} could not verify state of ${a.url}`);
+        continue;
+      }
+      const json = (await res.json()) as { state: string; merged?: boolean };
+      // "merged" and "closed" are the same state field to the API and opposite
+      // claims to a reader, which is why the corpus writes the state out.
+      const actual = json.merged ? "merged" : json.state;
+      const claimed = a.state.toLowerCase();
+
+      if (actual !== claimed && !(claimed === "closed" && actual === "closed")) {
+        wrong.push(`${a.url} is "${actual}", corpus claims "${claimed}"`);
+      } else {
+        console.log(`  ok   ${actual.padEnd(6)} ${a.url}`);
+      }
+    } catch {
+      console.log(`  ?    unreachable, could not verify state of ${a.url}`);
+    }
+  }
+
+  return wrong;
+}
+
+/**
+ * The resume carries its own URLs, and nothing was checking them.
+ *
+ * A dead link on the page fails this build. The same dead link on the PDF a
+ * recruiter downloads has always been invisible here, which is backwards: the
+ * PDF is the artifact that outlives the tab, gets forwarded, and is opened by
+ * someone who cannot ask him what the link was meant to be.
+ *
+ * Extraction is best-effort. Without pdftotext this contributes nothing rather
+ * than failing the build on a missing local tool.
+ */
+function resumeLinks(): string[] {
+  const pdf = join(process.cwd(), "public/kushal-gaddamwar-resume.pdf");
+  if (!existsSync(pdf)) return [];
+
+  // The text layer is the wrong place to look, and finding that out was the
+  // point: the resume shows "LinkedIn" and "GitHub" as words, with the actual
+  // destinations held in link annotations. pdftotext extracts none of them, so
+  // an ATS that reads only the text layer sees a resume with no links at all.
+  //
+  // The annotations live inside Flate-compressed object streams, so the file is
+  // walked and each stream inflated. zlib ships with Node; a PDF library for
+  // eleven regex matches would be a dependency for nothing.
+  const raw = readFileSync(pdf);
+  const found = new Set<string>();
+
+  for (const match of raw.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)endstream/g)) {
+    let body: string;
+    try {
+      body = inflateSync(Buffer.from(match[1], "latin1")).toString("latin1");
+    } catch {
+      // Not a Flate stream, or an image. Nothing to read here.
+      continue;
+    }
+    for (const uri of body.matchAll(/\/URI\s*\((https?:[^)]+)\)/g)) found.add(uri[1]);
+  }
+
+  return [...found];
+}
+
 async function main() {
   // The site's own URL is skipped: it 404s until the first deploy, and failing
   // the build that produces the deploy would be a loop with no exit.
   const self = loadContent().profile.site;
-  const links = allLinks().filter((url) => !url.startsWith(self));
+  const fromResume = resumeLinks();
+  if (fromResume.length) console.log(`including ${fromResume.length} URLs from the shipped resume`);
+  const links = [...new Set([...allLinks(), ...fromResume])].filter((url) => !url.startsWith(self));
   const results = await Promise.all(links.map(check));
   const broken = results.filter((r) => !r.ok);
 
@@ -34,7 +129,12 @@ async function main() {
   }
 
   console.log(`\n${links.length} links, ${broken.length} broken`);
-  if (broken.length) process.exit(1);
+
+  console.log("\nartifact states, against the GitHub API:");
+  const wrongStates = await checkArtifactStates();
+  for (const w of wrongStates) console.error(`  FAIL ${w}`);
+
+  if (broken.length || wrongStates.length) process.exit(1);
 }
 
 main();

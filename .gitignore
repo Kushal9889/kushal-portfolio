@@ -22,3 +22,9 @@ docs/
 
 # Research written about the reader. Never public.
 NOTES.private.md
+
+# Session context and handoff notes. Local working files, not part of the
+# work sample: a reader opening this repo should find the project, not the
+# notes someone kept while building it.
+CLAUDE.md
+HANDOFF.md
