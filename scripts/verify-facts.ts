@@ -83,4 +83,30 @@ if (problems.length) {
   for (const p of problems) console.error(`  ${p}`);
   process.exit(1);
 }
+/**
+ * Availability decays on a schedule nobody is watching.
+ *
+ * "Full-time from January 2027" is a strong line until January 2027, and then it
+ * quietly becomes evidence that nothing here is maintained. A date is the one
+ * kind of claim that can rot without anyone editing the file, so the build fails
+ * once it is in the past rather than waiting for a reader to notice.
+ */
+const availability = profile.available ?? "";
+const month = availability.match(
+  /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i,
+);
+if (month) {
+  const stated = new Date(`${month[1]} 1, ${month[2]}`);
+  if (stated < new Date()) {
+    problems.push(
+      `availability "${availability}" is in the past; update content/facts.md frontmatter`,
+    );
+  }
+}
+
+if (problems.length) {
+  for (const p of problems) console.error(`  ${p}`);
+  process.exit(1);
+}
+
 console.log("facts ok");

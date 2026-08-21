@@ -30,6 +30,10 @@ export type Section = {
   /** "Role: ... " line. Rendered as the section heading, so it is kept out of the
    *  prose to avoid printing it twice, and folded back into the retrieval text. */
   role: string;
+  /** The Role line, split. Components rendered these as string literals until
+   *  2026-08-20, which is exactly the duplication hard rule 1 exists to stop:
+   *  editing a date in the corpus left the heading showing the old one. */
+  roleParts: { title: string; dates: string; location: string };
 };
 
 export type Profile = Record<string, string>;
@@ -56,6 +60,37 @@ function parseFrontmatter(raw: string): { profile: Profile; body: string } {
  * being one coherent topic rather than an arbitrary 1000 characters that can cut
  * a sentence, or worse, separate a claim from the number that supports it.
  */
+/**
+ * "AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA."
+ * becomes title, dates and location.
+ *
+ * Split on sentence boundaries rather than commas, because both the title and
+ * the location contain commas and a comma split puts "Graduate Researcher" in
+ * the date field. The middle clause is whichever piece carries a year; anything
+ * after it is location. A Role line that does not match simply yields empty
+ * strings, so a malformed corpus degrades to a missing date rather than a
+ * wrong one.
+ */
+function splitRole(role: string) {
+  const empty = { title: "", dates: "", location: "" };
+  if (!role) return empty;
+
+  const parts = role
+    .split(".")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return empty;
+
+  const dateAt = parts.findIndex((p) => /\b(19|20)\d{2}\b|present/i.test(p));
+  if (dateAt < 0) return { title: parts[0], dates: "", location: parts.slice(1).join(", ") };
+
+  return {
+    title: parts.slice(0, dateAt).join(". "),
+    dates: parts[dateAt],
+    location: parts.slice(dateAt + 1).join(", "),
+  };
+}
+
 function splitSections(body: string, source: string): Section[] {
   return body
     .split(/^## /m)
@@ -133,6 +168,7 @@ function splitSections(body: string, source: string): Section[] {
         stack,
         artifacts,
         role,
+        roleParts: splitRole(role),
       };
     })
     .filter((s) => s.body.length > 0);

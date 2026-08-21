@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { RetrievalTrace } from "@/lib/agent/retrieve";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import styles from "./Agent.module.css";
@@ -27,6 +28,17 @@ const OPENERS = [
   "What broke in production and how did he find it?",
   "How does he decide when multi-agent is worth it?",
 ];
+
+/**
+ * Announces the fusion the retriever just performed.
+ *
+ * The figure that draws it sits three sections down the page while this lives in
+ * the hero, and page.tsx is a server component, so there is no shared parent to
+ * hold the state without turning the whole document into a client component. An
+ * event costs nothing, keeps the server boundary intact, and the listener simply
+ * never fires when the figure is not mounted.
+ */
+export const RETRIEVAL_EVENT = "corpus:retrieval";
 
 export default function Agent({ email, linkedin }: { email: string; linkedin: string }) {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -173,6 +185,11 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         timings.route = data.ms;
       } else if (data.type === "sources") {
         sources = data.titles;
+        if (data.trace) {
+          window.dispatchEvent(
+            new CustomEvent<RetrievalTrace>(RETRIEVAL_EVENT, { detail: data.trace }),
+          );
+        }
         timings.retrieve = data.ms;
       } else if (data.type === "token") {
         answer += data.text;
@@ -392,6 +409,15 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         </li>
         <li>
           <span className={styles.keys} aria-hidden="true">
+            <span className={styles.gesture}>plot</span>
+          </span>
+          <span>
+            <b>Watch the retrieval figure redraw.</b> Three sections down, it replots from your
+            question: keyword rank, embedding rank, and how the two fuse.
+          </span>
+        </li>
+        <li>
+          <span className={styles.keys} aria-hidden="true">
             <span className={styles.gesture}>trace</span>
           </span>
           <span>
@@ -442,7 +468,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
 
             {!turn.result ? (
               <p className={styles.thinking}>
-                <span className="live-dot" /> <span className="live">running the graph</span>
+                <span className="live-dot" data-state="running" /> <span className="live">running the graph</span>
               </p>
             ) : (
               <>

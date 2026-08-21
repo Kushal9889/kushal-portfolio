@@ -395,6 +395,18 @@ hr {
   border-radius: 50%;
   background: var(--signal);
   vertical-align: 0.08em;
+}
+
+/*
+ * The dot only moves while something actually is.
+ *
+ * It used to blink everywhere it appeared, including beside "answered in
+ * 2876ms", which is a finished measurement and not a live one. A blink on a
+ * settled number is decoration pretending to be status, and it trains the
+ * reader to ignore the one place the movement is real. Now the animation is
+ * opt-in and marks work in flight.
+ */
+.live-dot[data-state="running"] {
   animation: pulse 2s var(--ease-out) infinite;
 }
 
@@ -475,8 +487,24 @@ hr {
 
   .no-print,
   form,
-  button {
+  button,
+  .progress,
+  [data-print="hide"] {
     display: none !important;
+  }
+
+  /* Paper has no controls, so every disclosure prints open with its toggle gone. */
+  .more > summary {
+    display: none;
+  }
+
+  .more > *:not(summary) {
+    display: block !important;
+  }
+
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 
   a[href^="http"]::after {
@@ -517,9 +545,11 @@ hr {
  * 40px slide most sites use reads as a template, and it is the single most
  * common motion tell on generated pages.
  *
- * Safari has not shipped animation-timeline, so the @supports block is the real
- * behaviour for a meaningful share of visitors: content is simply already there.
- * Nothing is hidden without a guarantee it can be revealed.
+ * The @supports guard stays, but not for the reason it was written. Safari 26
+ * shipped scroll-driven animations in September 2025, so the browser this was
+ * hedging against now supports it and the guard covers only Firefox, where the
+ * feature is still behind a flag. Content is already painted either way, so a
+ * visitor without it loses the entrance and never the text.
  */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
@@ -596,29 +626,6 @@ hr {
  * agent box that cannot work on paper, so the interactive parts are dropped and
  * link targets are written out where the reader can actually use them.
  */
-@media print {
-  .progress,
-  [data-print="hide"] {
-    display: none !important;
-  }
-
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
-
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.85em;
-    color: #555;
-  }
-
-  body {
-    background: #fff;
-    color: #000;
-  }
-}
-
 /* Anchored sections need room above the heading. Without this a jump from the
    command palette lands the heading flush against the viewport edge, which reads
    as a broken scroll rather than an arrival. */
@@ -715,17 +722,6 @@ button {
 
 .more[open] .more-close {
   display: inline;
-}
-
-@media print {
-  /* Paper has no controls. Everything is open and the toggle is gone. */
-  .more > summary {
-    display: none;
-  }
-
-  .more > *:not(summary) {
-    display: block !important;
-  }
 }
 
 /* On a wide screen a short section is left whole: a toggle that saves one line

@@ -26,25 +26,25 @@ async function collect(question: string): Promise<StreamEvent[]> {
 
 describe("retrieval", () => {
   test("a rare term lands its own section first", async () => {
-    const hits = await retrieve("Growaza");
+    const { chunks: hits } = await retrieve("Growaza");
     assert.ok(hits.length > 0);
     assert.equal(hits[0].title, "Growaza");
   });
 
   test("an acronym resolves to the credential section", async () => {
-    const hits = await retrieve("NCP-AAI");
+    const { chunks: hits } = await retrieve("NCP-AAI");
     assert.ok(hits.some((h) => /certification/i.test(h.title)));
   });
 
   test("an intent question still returns something grounded", async () => {
-    const hits = await retrieve("how does he decide when multi-agent is worth it");
+    const { chunks: hits } = await retrieve("how does he decide when multi-agent is worth it");
     assert.ok(hits.length > 0);
     assert.ok(hits.every((h) => h.body.length > 0));
   });
 
   test("retrieved chunks are real sections of the corpus", async () => {
     const titles = new Set(loadContent().sections.map((s) => s.title));
-    for (const hit of await retrieve("Azure")) {
+    for (const hit of (await retrieve("Azure")).chunks) {
       assert.ok(titles.has(hit.title), `invented section: ${hit.title}`);
     }
   });

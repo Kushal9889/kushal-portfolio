@@ -92,6 +92,34 @@ const RRF_K = 60;
  */
 const LEXICAL_CONFIDENCE = 2.2;
 
+/**
+ * One chunk's position in both retrievers and in the fusion.
+ *
+ * Exposed so the page can draw the actual fusion rather than an impression of
+ * it. Every field is a number this function computed on the way to an answer;
+ * nothing is derived for display.
+ */
+export type FusionRow = {
+  title: string;
+  /** Raw BM25, unbounded. */
+  lexicalScore: number;
+  /** 1-based rank in the lexical retriever, null when it scored zero. */
+  lexicalRank: number | null;
+  /** 1-based rank in the dense retriever, null when dense was skipped or scored zero. */
+  denseRank: number | null;
+  /** The reciprocal rank fusion total that decides the ordering. */
+  fused: number;
+  selected: boolean;
+};
+
+export type RetrievalTrace = {
+  k: number;
+  /** True when the lexical hit was clear enough that the embedding call was skipped. */
+  lexicalDecisive: boolean;
+  denseUsed: boolean;
+  rows: FusionRow[];
+};
+
 export async function retrieve(query: string, topK = 4) {
   const lexicalScores = bm25(query);
   const lexical = rankOf(lexicalScores);
@@ -115,11 +143,28 @@ export async function retrieve(query: string, topK = 4) {
     return { chunk, score };
   });
 
-  return fused
+  const winners = fused
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map((r) => r.chunk);
+    .slice(0, topK);
+
+  const chosen = new Set(winners.map((w) => w.chunk.title));
+
+  const trace: RetrievalTrace = {
+    k: RRF_K,
+    lexicalDecisive: decisive,
+    denseUsed: dense.size > 0,
+    rows: idx.chunks.map((chunk, i) => ({
+      title: chunk.title,
+      lexicalScore: +lexicalScores[i].toFixed(4),
+      lexicalRank: lexical.get(i) ?? null,
+      denseRank: dense.get(i) ?? null,
+      fused: +fused[i].score.toFixed(6),
+      selected: chosen.has(chunk.title),
+    })),
+  };
+
+  return { chunks: winners.map((r) => r.chunk), trace };
 }
 
 /** Whether the dense half is actually available, for the trace panel to report honestly. */

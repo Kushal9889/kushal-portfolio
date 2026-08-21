@@ -13,6 +13,9 @@ type Props = {
   name: string;
   tagline: string;
   location: string;
+  /** Where he works right now. A recruiter scans for employer and title before
+   *  anything else, and the hero named neither. */
+  current: string;
   /** What he builds, in the words a 2026 role is written in. */
   focus: string;
   /** The least fakeable thing he owns, stated before the first scroll. */
@@ -41,6 +44,7 @@ export default function Hero({
   name,
   tagline,
   location,
+  current,
   focus,
   proof,
   available,
@@ -120,6 +124,7 @@ export default function Hero({
             The headline is the voice; this is the scan. Someone deciding in
             twenty seconds is looking for these four words before they read a
             sentence, and search engines read them too. */}
+        <p className={styles.current}>{current}</p>
         <p className={styles.focus}>{focus}</p>
 
         {/* The strongest claim, above the fold, where it is the second thing

@@ -1,33 +1,33 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document-intelligence assistant on Azure, built from ingestion through deployment for an enterprise consulting client.",
-    "route": "answer",
-    "timings": {
-      "route": 0,
-      "retrieve": 357,
-      "answer": 2084
-    },
-    "total": 2455,
-    "sources": [
-      "Boston University, Questrom Computational Lab",
-      "What he is good at",
-      "What he does not do",
-      "Skills"
-    ],
-    "usage": {
-      "in": 925,
-      "out": 168
-    }
-  },
-  "what broke in production and how did he find it?": {
-    "answer": "At 10× traffic the Render free tier started throttling CPU and producing cold-starts, and Neon's connection pool hit its limit, breaking the service; he discovered the failure by",
+    "answer": "He shipped a document-intelligence assistant for an enterprise consulting client on Azure, built with Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React, and Cosmos DB Gremlin.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 241,
-      "answer": 4265
+      "retrieve": 318,
+      "answer": 2756
     },
-    "total": 4512,
+    "total": 3102,
+    "sources": [
+      "Boston University, Questrom Computational Lab",
+      "What he is good at",
+      "Skills",
+      "What he does not do"
+    ],
+    "usage": {
+      "in": 927,
+      "out": 222
+    }
+  },
+  "what broke in production and how did he find it?": {
+    "answer": "The production issue was that a backend error was silently swallowed, causing the system to return a seemingly healthy but nearly empty directory listing instead of propagating the failure. He discovered it by tracing the code path and noticing that the behavior contradicted the documented invariant that backend errors must not be treated as partial success.",
+    "route": "answer",
+    "timings": {
+      "route": 1,
+      "retrieve": 177,
+      "answer": 2143
+    },
+    "total": 2330,
     "sources": [
       "What he is good at",
       "Open source, LangChain deepagents",
@@ -35,28 +35,28 @@
       "BU Life AI"
     ],
     "usage": {
-      "in": 1168,
-      "out": 400
+      "in": 1154,
+      "out": 215
     }
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He decides to employ a multi-agent architecture when heterogeneous, domain-specific queries create retrieval contamination and reasoning drift, because the resulting state isolation and the ~70 percent drop in redundant LLM calls outweigh the added orchestration complexity.",
+    "answer": "He weighs the 70 % reduction in redundant LLM calls and state isolation against the added orchestration complexity.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 348,
-      "answer": 2146
+      "retrieve": 149,
+      "answer": 2918
     },
-    "total": 2498,
+    "total": 3075,
     "sources": [
-      "Who he is",
+      "This site",
       "BU Life AI",
-      "What he does not do",
-      "What he is good at"
+      "Who he is",
+      "What he does not do"
     ],
     "usage": {
-      "in": 874,
-      "out": 276
+      "in": 1090,
+      "out": 277
     }
   }
 }

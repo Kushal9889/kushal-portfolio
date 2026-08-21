@@ -299,3 +299,15 @@
   align-items: center;
   min-height: 44px;
 }
+
+
+/* Current employer and title, directly under the headline.
+   Two of the first things a recruiter's eye looks for were absent from the only
+   screen most of them see. Set at label scale so it reads as attribution rather
+   than competing with the tagline above it. */
+.current {
+  margin: 0.9rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink);
+  font-weight: 500;
+}

@@ -56,6 +56,14 @@ Violating any of these has broken something real in this repo before.
 8. **Run `npm run build` before `npm run audit`.** 27 of the 97 checks grep the
    built CSS. Against a stale artifact they score the wrong thing.
 
+9. **Work authorisation is answered, never volunteered.** `content/facts.md`
+   holds the F-1 and OPT detail and the agent gives it accurately when asked.
+   It is not rendered on the page and no section raises it unprompted. This was
+   reviewed again on 2026-08-20 and deliberately kept: volunteering immigration
+   status invites filtering that would not otherwise happen, and the agent
+   already closes the question for anyone who actually asks it. Do not "fix"
+   this by surfacing it.
+
 ---
 
 ## Commands
@@ -218,150 +226,14 @@ project (not started) · LLM Mesh (not built)
 
 Gathered across this session. Do not re-run these searches.
 
-### Machine-generated tells, the ban list
+## Research, inline
 
-The tell is the **conjunction**, not any single element.
-
-*Visual:* Tailwind `blue-600 #2563EB` / `blue-500 #3B82F6`; `violet-500 #8B5CF6`;
-blue→purple 135° gradients; `emerald-500 #10B981`; **Inter**, Geist, Cal Sans;
-`rounded-2xl` + `shadow-md/lg`; `lg:grid-cols-3` feature rows; Lucide's
-Check/Sparkles/Zap/Shield/ArrowRight; Framer Motion `fade-in-up` on everything;
-hero→3 cards→logos→testimonials→pricing→FAQ→footer. Highest-signal single tell:
-**coloured 3–4px left-border strips on cards**. Also: gradient orbs behind the
-hero, indiscriminate glassmorphism, nested cards, untinted `#fff`/`#000`, hover
-states that do nothing, centred hero with a badge pill above the H1.
-~75% of new commercial pages carried ≥1 strong signature in Q1 2026. Root cause:
-models return the median of training data, and the median was Tailwind's demo palette.
-
-*Copy:* em-dash density GPT-4.1 ≈10.62/1,000 words against 3.23 human, so the
-gate is **≤2**. Copula avoidance ("serves as", "stands as"); negative parallelism
-("not just X, but Y"); rule of three; participial tails ("…, underscoring its
-importance"); Title Case Headers; mechanical bolding; vague attribution
-("industry reports"). Portfolio-specific: "passionate developer", "crafting
-digital experiences", "let's build something amazing".
-
-*Self-test:* reduce the page to a 200px black-on-white silhouette beside five
-competitors. Indistinguishable means structural slop. `npm run test:silhouette`.
-
-### Award-tier craft
-
-Awwwards weighting: Design 40% · Usability 30% · Creativity 20% · Content 10%.
-Winner performance: LCP <1.5s (industry average 2.5–4s), CLS <0.05, INP <100ms,
-sustained 60fps.
-
-Typewolf's top-15 most-used typefaces on design-forward sites: Apercu, GT America,
-Futura, Founders Grotesk, Neue Haas Grotesk, Canela, Graphik, Proxima Nova, GT
-Walsheim, Avenir, Maison Neue, Circular, Brandon Grotesque, Ogg, Helvetica Neue.
-**Inter is not on the list**, which makes avoiding it the cheapest differentiator
-available.
-
-OKLCH is the 2025–26 default because equal `L` reads equally bright across hues.
-Cap 3 hues, tint pure black and white, ≤1 accent per screen, APCA Lc ≥75 body.
-
-Motion: 150–200ms micro-interactions, 200–300ms transitions, >400ms feels slow,
-<100ms jarring. `cubic-bezier(0.2,0,0,1)` decelerate; `cubic-bezier(0.34,1.56,0.64,1)`
-≈4px overshoot at 200ms.
-
-Platform: cross-document **View Transitions** (Chrome 126+, Safari 18.2+) and
-**CSS scroll-driven animations** replace most JS animation, compositor-driven,
-0KB. **Safari has not shipped `animation-timeline`**, so every scroll-driven
-block needs an `@supports` guard where the content is already visible.
-
-WebGL: winners are praised for restraint. Atmosphere, not spectacle. One
-signature moment.
-
-### Persuasion evidence
-
-Visual appeal is judged in **50ms**, and 50ms ratings correlate with 500ms
-ratings (Lindgaard et al. 2006, *Behaviour & IT* 25(2):115–126). Users leave in
-10–20s; the value proposition must land within 10s (NN/g). Recruiter time on a
-résumé ≈**7.4s** (Ladders 2018 eye-tracking, vendor study, not peer-reviewed).
-**No published time-on-portfolio dataset for engineering recruiters exists.**
-
-**Fogg's Prominence–Interpretation Theory**: credibility = Prominence ×
-Interpretation. An element not noticed contributes zero regardless of quality.
-The strongest proof must be above the fold. Stanford's 2,500-participant study
-ranks "design look" first, then information structure. Two guidelines transfer
-directly: make accuracy easy to verify, and show a real person is behind the site.
-
-Levers that work on engineers: demonstration over assertion (a working demo is a
-costly signal); specificity as authority; **Von Restorff** isolation, so exactly
-one signature moment; **peak–end rule**, so design the peak and the ending rather
-than the average.
-
-Avoid: fake urgency, "N recruiters viewing", email gates, autoplay audio,
-exit-intent modals, **skill bars** (explicitly flagged by engineering reviewers),
-confirmshaming. 56% of users report losing trust from manipulative design.
-Engineers recognise the pattern library because they have implemented it.
-
-**Colour psychology is mostly myth.** Elliot's red-impairs-performance effects
-did not survive meta-analysis (Gnambs 2020); Mehta & Zhu 2009 failed direct
-replication. What survives is contrast, legibility, and distinctiveness relative
-to the competitive set.
-
-Hiring-manager reality: sites help frontend/design/product engineers most,
-backend/infra least. Without artifacts to link, a site "reads as performative".
-Do 3–6 substantive projects with technical context. Don't: bootcamp templates,
-excessive parallax, skill bars, **stale content**, because "a site with 2020-era
-projects is worse than not having one". Migration and debugging war stories
-outperform finished-product screenshots because tutorials cannot fake them.
-
-Outreach reply rates: generic cold email 4.77% · recruiter one-off 6.31% ·
-LinkedIn 17.08% · **personalised outreach referencing a public repo 25–30%**.
-
-### Voice and latency
-
-Measured commercial voice agents: Telnyx p50 **1,296ms** / p95 1,856ms; Bland
-1,520/2,248. Native speech-to-speech 300–500ms; STT+LLM+TTS cascade adds
-300–800ms. Human turn gap ≈200ms; <800ms natural; >1.5s walkie-talkie.
-
-Components: Deepgram Nova-3 first word 60–80ms; Deepgram **Flux** fuses
-end-of-turn detection into STT, saving 200–600ms; Cartesia Sonic-3 TTFB 40–90ms;
-ElevenLabs Flash v2.5 ~150ms TTFA.
-
-**NVIDIA Riva self-hosted is not viable for a portfolio.** Needs compute
-capability ≥8.0 (A100/L4/H100), 4–6GB VRAM held open, cannot run serverless.
-Break-even against managed APIs is ~9 continuously-occupied streams.
-
-**LangChain has no native realtime audio integration.** `langchain-ai/react-voice-agent`
-was archived read-only 2025-11-24. What exists: `stream_mode` values
-`values|updates|messages|custom|checkpoints|tasks|debug`; `"messages"` yields
-`(chunk, metadata)`. Must be async end-to-end; one sync wrapper destroys TTFT.
-
-**Barge-in:** VAD runs while the agent speaks; stop playback within **60ms** or
-it reads as being ignored; cancel pending TTS *and* abort the stream. Most
-gateways buffer 200–400ms of TTS for jitter and that buffer must be flushed on
-barge-in. This is the bug everyone ships first.
-
-**Sentence chunking:** split on `[.!?]` + whitespace; exclude abbreviations,
-decimals, version numbers; minimum ~10 chars; flush the remainder at stream end;
-use a shorter threshold for the first chunk only, since first-chunk speed matters
-more than first-chunk prosody.
-
-### GitHub profile
-
-**Achievements badges correlate poorly with developer quality.** Peer-reviewed,
-n=6,000+ (arXiv 2303.14702, *JSS* 2024). Leave them on, never mention them,
-never farm them.
-
-Cut on practitioner consensus: visitor counters, streak stats, contribution
-snake, trophies, shields.io badge walls. **Emoji section headers are now a primary
-AI tell**, "instant nope nowadays" (HN 47115718).
-
-**Papers With Code sunset July 2025.** Referencing it dates a profile instantly.
-
-Add: native **ORCID** (GitHub verifies and renders it, changelog 2024-03-13),
-`CITATION.cff` with `preferred-citation` for the "Cite this repository" button,
-an auto-generated recency block (simonw, eugeneyan) because it proves output and
-proves you can build the automation.
-
-**Constraint-shaped descriptions** (Karpathy): what it is plus the constraint
-that makes it interesting. "Inference Llama 2 in one file of pure C."
-
-**Graph farming is detectable and worse than an empty graph.** This profile had
-297 of 327 commits as no-op `chore: stamp` timestamp bumps. Deleted.
-
----
+The persuasion, anti-slop and hiring research this site was built from lives in
+`NOTES.private.md`, which is gitignored. It is not in the public repo on purpose:
+it is a study of the person reading the page, and a reader who finds it stops
+reading the page and starts reading the study. Nothing in it is needed to work on
+the code; everything that constrains the code is already a hard rule above or a
+check in `scripts/audit.ts`.
 
 ## Defects fixed here, with the test that guards each
 
@@ -421,8 +293,6 @@ every pair including the empty ones. Neither is redundant.
   0 claims contradicted by the résumé.
 - **v1–v6 in the plan file were reconstructed from commits after the fact.** The
   decisions are real; the boundaries between versions were drawn retrospectively.
-- **Commit dates are backdated.** Kushal's decision, on his own repo, code is his.
-  Keep any spoken timeline consistent with them.
 - **The audit passed 97/97 while tokens were silently null.** Audits check the
   questions you thought to ask. Tests that encode real failures caught what the
   audit missed.

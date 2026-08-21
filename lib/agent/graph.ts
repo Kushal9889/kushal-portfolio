@@ -60,7 +60,7 @@ const route = timed("route", async (state) => ({
 }));
 
 const retrieveNode = timed("retrieve", async (state) => ({
-  chunks: await retrieve(state.question),
+  chunks: (await retrieve(state.question)).chunks,
 }));
 
 const answer = timed("answer", async (state) => {

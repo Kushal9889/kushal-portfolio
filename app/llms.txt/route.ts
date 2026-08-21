@@ -11,6 +11,12 @@ export const dynamic = "force-static";
  * the machine-generated version of him is accurate rather than guessed.
  *
  * Generated from content/facts.md, so it cannot drift from the page.
+ *
+ * The technology list is flattened out of the same `stack` lines the page
+ * renders as chips. A model matching this profile against a job description is
+ * looking for those exact strings, and asking it to infer them from prose is
+ * work it will do badly. The resume is linked because a screener that wants a
+ * document should not have to reconstruct one from a web page.
  */
 export function GET() {
   const { profile, sections } = loadContent();
@@ -23,8 +29,13 @@ export function GET() {
 - Contact: ${profile.email}
 - LinkedIn: ${profile.linkedin}
 - GitHub: ${profile.github}
+- Resume (PDF, text layer intact): ${profile.site}/kushal-gaddamwar-resume.pdf
 - Available: ${profile.available}
 - Last verified: ${profile.lastVerified}
+
+## Technologies
+
+${[...new Set(sections.flatMap((s) => s.stack))].join(", ")}
 
 ## Certifications
 

@@ -1,0 +1,104 @@
+.wrap {
+  margin-top: clamp(1rem, 3vh, 1.75rem);
+}
+
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+
+/*
+ * One row per action, each a full-width target.
+ *
+ * The old block was three inline links on one line, which is fine to read and
+ * poor to hit: on a phone they sat inside a wrapping paragraph with no reliable
+ * hit area. These are rows because a row is unambiguous, and because the second
+ * line has room to say what will actually happen when it is pressed.
+ */
+.item,
+.primary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 56px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease-standard),
+    background-color var(--t-fast) var(--ease-standard);
+}
+
+.item:hover,
+.primary:hover,
+.item:focus-visible,
+.primary:focus-visible {
+  border-color: var(--ink);
+  background: var(--paper-sunk);
+}
+
+/* Email is the action this section exists for, so it is the only one carrying
+   full ink. Weight, not colour: the accent means live state everywhere else. */
+.primary {
+  border-color: var(--ink);
+  border-width: 1.5px;
+}
+
+.item strong,
+.primary strong {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Says what the control does before it is pressed. A link that opens a written
+   draft and a link that opens a blank one look identical without this. */
+.sub {
+  display: block;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  margin-top: 0.1rem;
+}
+
+/* A text glyph rather than a drawn icon: there is no PDF mark worth redrawing,
+   and three letters read at any size. */
+.glyph {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  padding: 0.15em 0.35em;
+  flex: none;
+}
+
+.plain {
+  margin: 0.9rem 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+/* Selectable and monospaced, because this line exists to be copied and pasted
+   into somebody else's message. */
+.address {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  color: var(--ink);
+  user-select: all;
+}
+
+@media print {
+  /* On paper a button is nothing, so the address is what has to survive. */
+  .links {
+    display: none;
+  }
+}

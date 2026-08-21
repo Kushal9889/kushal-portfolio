@@ -19,3 +19,6 @@ docs/
 
 # Local Netlify folder
 .netlify
+
+# Research written about the reader. Never public.
+NOTES.private.md

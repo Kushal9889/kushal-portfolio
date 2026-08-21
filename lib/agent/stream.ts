@@ -1,4 +1,5 @@
 import { streamWithFailover } from "./model";
+import type { RetrievalTrace } from "./retrieve";
 import { retrieve } from "./retrieve";
 import { classify, systemPrompt, cleanAnswer, deflection, AUTHORISATION_ANSWER } from "./policy";
 import prewarm from "./prewarm.json";
@@ -18,7 +19,7 @@ import prewarm from "./prewarm.json";
  */
 export type StreamEvent =
   | { type: "route"; route: string; ms: number }
-  | { type: "sources"; titles: string[]; ms: number }
+  | { type: "sources"; titles: string[]; ms: number; trace?: RetrievalTrace }
   | { type: "token"; text: string }
   | { type: "done"; total: number; usage: { in: number; out: number } | null }
   | { type: "error"; message: string };
@@ -55,11 +56,14 @@ export async function* runStream(question: string): AsyncGenerator<StreamEvent> 
   }
 
   const retrieveStart = Date.now();
-  const chunks = await retrieve(question);
+  const { chunks, trace } = await retrieve(question);
   yield {
     type: "sources",
     titles: chunks.map((c) => c.title),
     ms: Date.now() - retrieveStart,
+    // The full fusion, every chunk, so the page can draw what actually
+    // happened rather than an illustration of it.
+    trace,
   };
 
   const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");

@@ -14,7 +14,15 @@ type Command = { label: string; hint: string; run: () => void };
  * summoned, and it is the interaction an engineer reaching for Cmd+K expects to
  * find. The jump links below the fold cover everyone who does not.
  */
-export default function Palette({ email, resume }: { email: string; resume: string }) {
+export default function Palette({
+  email,
+  github,
+  repo,
+}: {
+  email: string;
+  github: string;
+  repo: string;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -58,7 +66,15 @@ export default function Palette({ email, resume }: { email: string; resume: stri
       run: () => document.documentElement.classList.toggle("condensed"),
     },
     { label: "Print or save as PDF", hint: "uses the print stylesheet", run: () => window.print() },
-    { label: "Open GitHub", hint: "external", run: () => window.open(resume, "_blank") },
+    { label: "Open the source for this page", hint: "repo", run: () => window.open(repo, "_blank") },
+    { label: "Open GitHub profile", hint: "external", run: () => window.open(github, "_blank") },
+    // The prop feeding "Open GitHub" used to be called `resume`, from a time
+    // when no resume existed. There is one now, so it gets its own entry.
+    {
+      label: "Download resume",
+      hint: "pdf",
+      run: () => window.open("/kushal-gaddamwar-resume.pdf", "_blank"),
+    },
   ];
 
   const matches = commands.filter((c) =>

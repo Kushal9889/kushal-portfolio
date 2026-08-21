@@ -1,12 +1,14 @@
 ---
 name: Kushal Gaddamwar
 role: Agentic AI Engineer
+current: AI Engineer at Boston University's Questrom Computational Lab
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
 email: kushal7887pd@gmail.com
 phone: "+1 (857) 328-4611"
 linkedin: https://linkedin.com/in/kushal-gaddamwar
 github: https://github.com/Kushal9889
+repo: https://github.com/Kushal9889/kushal-portfolio-v2
 site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
@@ -34,7 +36,7 @@ claim to. He builds systems that stay correct under load.
 Two examples. At Questrom he traced answer quality problems to retrieval rather than generation,
 which is where they usually are and rarely where people look first. In LangChain's deepagents SDK
 he found a code path that reported success while discarding an error, and wrote it up precisely
-enough that a maintainer shipped the fix in three days.
+enough that a maintainer shipped the fix in 57 hours.
 
 Both are the same skill: reading a system closely enough to see where it contradicts itself.
 
@@ -272,9 +274,28 @@ This is answered only when asked. It is not raised otherwise.
 
 ## This site
 
+Two decisions on this page are worth asking about, and both went the opposite way
+to the default.
+
+**The graph runs without a checkpointer.** LangGraph persists state after every
+node by default, which is right for a long-running stateful agent and wrong here.
+A Postgres saver costs 20 to 50 milliseconds per write, and this graph runs three
+nodes to answer one question in a conversation that lives in a browser tab.
+Conversation history is passed per request instead, which trades durability he
+does not need for latency the reader can feel.
+
+**The evaluation suite has no LLM judge, deliberately.** He built LLM-as-a-Judge
+evaluation at the Questrom lab, where a large private corpus made grading by
+model the only tractable option. Here the suite is sixteen cases with known
+correct behaviour, so assertions are substring and route checks. A judge would
+add cost, latency, and a second thing to trust, to grade questions whose right
+answer is already written down. The technique is not better than the check; it is
+what you reach for when a check is not available.
+
+
 The page you are reading is the work sample. The agent answering questions runs a LangGraph graph
 with four nodes, hybrid BM25 and dense retrieval over this file and his engineering notes, a policy
 layer, and per-answer cost accounting. Every latency number shown was measured on the request you
 are looking at, not configured.
 
-Source: https://github.com/Kushal9889/kushal-portfolio
+Source: https://github.com/Kushal9889/kushal-portfolio-v2

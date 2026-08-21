@@ -6,9 +6,11 @@ import Agent from "./components/Agent";
 import Palette from "./components/Palette";
 import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
-import CorpusGraph from "./components/CorpusGraph";
+import RetrievalField from "./components/RetrievalField";
 import Artifacts from "./components/Artifacts";
 import Measured from "./components/Measured";
+import Reach from "./components/Reach";
+import AskAbout from "./components/AskAbout";
 import PageMotion from "./components/PageMotion";
 import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
@@ -55,24 +57,18 @@ function Section({
  * and dates sit under it as context. Rendering the company first put the least
  * scannable line in the most prominent position.
  */
-function Role({
-  role,
-  company,
-  dates,
-  section: s,
-}: {
-  role: string;
-  company: string;
-  dates: string;
-  section: Section;
-}) {
+function Role({ section: s }: { section: Section }) {
+  const { title, dates, location } = s.roleParts;
   return (
     <article className={styles.role}>
       <div className={styles.roleHead}>
-        <h3 className={styles.roleName}>{role}</h3>
+        <h3 className={styles.roleName}>{title}</h3>
         <p className={styles.roleMeta}>
-          <span className={styles.company}>{company}</span>
-          <span className="label">{dates}</span>
+          <span className={styles.company}>{s.title}</span>
+          <span className="label">
+            {dates}
+            {location ? ` · ${location}` : ""}
+          </span>
         </p>
       </div>
       <Metrics items={s.metrics} />
@@ -95,7 +91,7 @@ export default function Page() {
 
   return (
     <>
-      <Palette email={profile.email} resume={profile.github} />
+      <Palette email={profile.email} github={profile.github} repo={profile.repo} />
       <PageMotion />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}
@@ -104,6 +100,7 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
+        current={profile.current}
         focus={profile.focus}
         proof={profile.proof}
         available={profile.available}
@@ -122,6 +119,12 @@ export default function Page() {
           <Metrics items={section("Open source, LangChain deepagents").metrics} />
           <Prose body={section("Open source, LangChain deepagents").body} />
           <Artifacts items={section("Open source, LangChain deepagents").artifacts} />
+          <AskAbout
+            email={profile.email}
+            site={profile.site.replace("https://", "")}
+            context="opensource"
+            label="Email him about this bug"
+          />
         </Section>
 
         {/* The strongest signal in 2026 hiring is evidence that the thing was
@@ -129,6 +132,12 @@ export default function Page() {
             proves he finds failures and this proves he checks for them. */}
         <Section id="measured" index="02" title="How this is measured">
           <Measured />
+          <AskAbout
+            email={profile.email}
+            site={profile.site.replace("https://", "")}
+            context="measured"
+            label="Email him about the eval suite"
+          />
         </Section>
 
         {/* What he is and what he is not, before the evidence. A reader who has
@@ -136,30 +145,30 @@ export default function Page() {
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" index="03" title="How he works">
-          <CorpusGraph />
+          {/* The retriever drawing its own last run. Ranks are exact, so ranks
+              are what is plotted; the 3D projection that was tried first is
+              reported as failed inside the figure rather than quietly dropped. */}
+          <RetrievalField />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           <Prose body={section("What he does not do").body} />
+          <AskAbout
+            email={profile.email}
+            site={profile.site.replace("https://", "")}
+            context="approach"
+            label="Email him about the retrieval design"
+          />
         </Section>
 
         <Section id="work" index="04" title="Work">
-          <Role
-            role="AI Engineer, Graduate Researcher"
-            company="Boston University, Questrom Computational Lab"
-            dates="May 2026 to present"
-            section={section("Boston University, Questrom Computational Lab")}
-          />
-          <Role
-            role="Software Engineering Intern"
-            company="IMG Systems"
-            dates="Aug 2024 to Apr 2025"
-            section={section("IMG Systems")}
-          />
-          <Role
-            role="Associate Software Engineer Intern"
-            company="Growaza"
-            dates="Jan 2024 to Jul 2024"
-            section={section("Growaza")}
+          <Role section={section("Boston University, Questrom Computational Lab")} />
+          <Role section={section("IMG Systems")} />
+          <Role section={section("Growaza")} />
+          <AskAbout
+            email={profile.email}
+            site={profile.site.replace("https://", "")}
+            context="work"
+            label="Email him about this work"
           />
         </Section>
 
@@ -167,6 +176,12 @@ export default function Page() {
           <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
           <Metrics items={section("BU Life AI").metrics} />
           <Prose body={section("BU Life AI").body} fold="always" />
+          <AskAbout
+            email={profile.email}
+            site={profile.site.replace("https://", "")}
+            context="projects"
+            label="Email him about BU Life AI"
+          />
         </Section>
 
         <Section id="proof" index="06" title="Credentials" data-tone="sunk">
@@ -175,6 +190,10 @@ export default function Page() {
             <div>
               <h3 className={styles.subhead}>Publications</h3>
               <Prose body={section("Publications").body} />
+            </div>
+            <div>
+              <h3 className={styles.subhead}>Education</h3>
+              <Prose body={section("Education").body} />
             </div>
             <div>
               <h3 className={styles.subhead}>Before this</h3>
@@ -186,28 +205,17 @@ export default function Page() {
 
         <Section id="contact" index="07" title="Get in touch" data-weight="closing">
           <Prose body={section("Availability").body} />
-          {/* Marks sit before the label so the eye lands on a recognisable shape
-              first. They inherit text colour, so the one-accent rule holds. */}
-          <ul className={styles.links}>
-            <li>
-              <a href={`mailto:${profile.email}`} data-pull>
-                <MailMark />
-                {profile.email}
-              </a>
-            </li>
-            <li>
-              <a href={profile.linkedin} target="_blank" rel="noreferrer" data-pull>
-                <LinkedInMark />
-                LinkedIn
-              </a>
-            </li>
-            <li>
-              <a href={profile.github} target="_blank" rel="noreferrer" data-pull>
-                <GitHubMark />
-                GitHub
-              </a>
-            </li>
-          </ul>
+          {/* Every path from "decided to write" to "message sent", with the
+              draft already composed. The bare mailto that was here opened an
+              empty window at the exact moment the reader had chosen to act. */}
+          <Reach
+            email={profile.email}
+            linkedin={profile.linkedin}
+            github={profile.github}
+            repo={profile.repo}
+            site={profile.site.replace("https://", "")}
+            resumeHref="/kushal-gaddamwar-resume.pdf"
+          />
         </Section>
       </main>
 
