@@ -22,6 +22,7 @@ import styles from "./Reach.module.css";
  */
 export default function Reach({
   email,
+  phone,
   linkedin,
   github,
   repo,
@@ -30,6 +31,8 @@ export default function Reach({
   context = "general",
 }: {
   email: string;
+  /** In the corpus since the start and rendered nowhere. One tap on a phone. */
+  phone: string;
   linkedin: string;
   github: string;
   /** The work sample itself. The profile is a list of repositories; this is the
@@ -92,7 +95,8 @@ export default function Reach({
           <a
             className={styles.item}
             href={resumeHref}
-            download
+            target="_blank"
+            rel="noreferrer"
             onClick={() => track("contact", "resume")}
             data-pull
           >
@@ -101,7 +105,7 @@ export default function Reach({
             </span>
             <span>
               <strong>Resume</strong>
-              <span className={styles.sub}>one page, text layer intact for your ATS</span>
+              <span className={styles.sub}>opens in the browser, one page, real text layer</span>
             </span>
           </a>
         </li>
@@ -124,10 +128,14 @@ export default function Reach({
         </li>
       </ul>
 
-      {/* The plain address stays reachable. Someone forwarding this to a
-          colleague needs a string they can paste, not a link they must click. */}
+      {/* Plain strings stay reachable. Someone forwarding this to a colleague
+          needs something they can paste, not a link they must click. */}
       <p className={styles.plain}>
         Or copy it: <span className={styles.address}>{email}</span>
+        {" · "}
+        <a className={styles.address} href={`tel:${phone.replace(/[^+\d]/g, "")}`}>
+          {phone}
+        </a>
       </p>
     </div>
   );

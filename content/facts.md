@@ -284,6 +284,19 @@ nodes to answer one question in a conversation that lives in a browser tab.
 Conversation history is passed per request instead, which trades durability he
 does not need for latency the reader can feel.
 
+**When every model provider fails, the answer degrades rather than erroring.**
+With no provider reachable, the agent returns the retrieved source paragraph
+instead of a failure: the reader still gets the grounded material, unsummarised,
+and the rest of the page keeps working. Silence is the failure mode worth
+avoiding, not imperfection.
+
+**The rate limit has a known ceiling and it is stated rather than hidden.** The
+per-IP token budget is held in memory, so on serverless it counts per warm
+instance rather than globally. That stops one client hammering one instance,
+which is the realistic abuse case for a portfolio, and it would not stop a
+distributed one. The upgrade path is a shared store such as Upstash Redis, and
+it has not been taken because the traffic does not justify it yet.
+
 **The evaluation suite has no LLM judge, deliberately.** He built LLM-as-a-Judge
 evaluation at the Questrom lab, where a large private corpus made grading by
 model the only tractable option. Here the suite is sixteen cases with known

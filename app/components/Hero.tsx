@@ -78,10 +78,17 @@ export default function Hero({
           return;
         }
 
+        // Paced to what was actually measured, not to a fixed beat. A flat
+        // 380ms per node put a floor of 1.14s under every reveal, so a fast
+        // answer was displayed as though it had been slow. Floored at 90ms so
+        // the sequence still reads as three discrete steps rather than a flash.
+        const total = NODES.reduce((sum, n) => sum + (measured[n] ?? 0), 0);
+        const step = Math.max(90, Math.min(380, total / NODES.length));
+
         for (const node of NODES) {
           if (measured[node] === undefined) continue;
           setActive(node);
-          await new Promise((r) => setTimeout(r, 380));
+          await new Promise((r) => setTimeout(r, step));
           setTrace((prev) => ({ ...prev, [node]: measured[node] }));
         }
         setActive(null);

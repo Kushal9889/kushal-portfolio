@@ -504,7 +504,9 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                       aria-expanded={openTrace === i}
                       onClick={() => setOpenTrace(openTrace === i ? null : i)}
                     >
-                      {openTrace === i ? "hide trace" : "trace"}{" "}
+                      {openTrace === i
+                        ? "hide trace"
+                        : `trace: ${turn.result.sources.length} sources, ${Object.keys(turn.result.timings).length} nodes`}{" "}
                       <span className="tabular">{turn.result.total}ms</span>
                       {turn.result.usage && (
                         <>

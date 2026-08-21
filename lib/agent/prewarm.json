@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document-intelligence assistant for an enterprise consulting client on Azure, built with Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React, and Cosmos DB Gremlin.",
+    "answer": "He shipped a document-intelligence assistant on Azure that provides a LangGraph agent with 14 tools for question answering, cross-document comparison, and template-driven generation, using Azure OpenAI GPT-4o, Azure AI Search, and other Azure services.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 318,
-      "answer": 2756
+      "retrieve": 314,
+      "answer": 1935
     },
-    "total": 3102,
+    "total": 2277,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "What he is good at",
@@ -16,47 +16,47 @@
     ],
     "usage": {
       "in": 927,
-      "out": 222
+      "out": 159
     }
   },
   "what broke in production and how did he find it?": {
-    "answer": "The production issue was that a backend error was silently swallowed, causing the system to return a seemingly healthy but nearly empty directory listing instead of propagating the failure. He discovered it by tracing the code path and noticing that the behavior contradicted the documented invariant that backend errors must not be treated as partial success.",
+    "answer": "A silent error-swallowing bug in LangChain's deepagents SDK caused backend failures to be hidden behind a \"successful\" listing of virtual route directories. He discovered it by tracing the code path and noticing that the behavior contradicted the SDK's own documented invariant that backend errors must not be swallowed as partial success.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 177,
-      "answer": 2143
+      "retrieve": 235,
+      "answer": 2324
     },
-    "total": 2330,
+    "total": 2568,
     "sources": [
       "What he is good at",
       "Open source, LangChain deepagents",
       "Who he is",
-      "BU Life AI"
+      "This site"
     ],
     "usage": {
-      "in": 1154,
-      "out": 215
+      "in": 1267,
+      "out": 208
     }
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He weighs the 70 % reduction in redundant LLM calls and state isolation against the added orchestration complexity.",
+    "answer": "He decides when the gain from state isolation and the resulting ~70 % cut in redundant LLM calls outweighs the added orchestration complexity.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 149,
-      "answer": 2918
+      "retrieve": 242,
+      "answer": 2952
     },
-    "total": 3075,
+    "total": 3202,
     "sources": [
       "This site",
-      "BU Life AI",
       "Who he is",
+      "BU Life AI",
       "What he does not do"
     ],
     "usage": {
-      "in": 1090,
-      "out": 277
+      "in": 1263,
+      "out": 243
     }
   }
 }

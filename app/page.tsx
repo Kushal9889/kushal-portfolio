@@ -210,6 +210,7 @@ export default function Page() {
               empty window at the exact moment the reader had chosen to act. */}
           <Reach
             email={profile.email}
+            phone={profile.phone}
             linkedin={profile.linkedin}
             github={profile.github}
             repo={profile.repo}

@@ -55,7 +55,9 @@ export default async function Image() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22 }}>
-          <span>{featured ? `${featured.issuer} Certified · ${featured.short}` : profile.role}</span>
+          {/* The strongest fact leads. A credential says a body vouched for
+              him; the merged fix says a maintainer acted on his work. */}
+          <span>{profile.proof ?? (featured ? `${featured.issuer} Certified · ${featured.short}` : profile.role)}</span>
           <span style={{ color: "#7a7269" }}>{profile.site.replace("https://", "")}</span>
         </div>
       </div>
