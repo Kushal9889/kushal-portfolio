@@ -411,8 +411,14 @@ const domains: Domain[] = [
         id: "12.10",
         need: "the second accent stays on checkable claims",
         pass: (() => {
+          // `evidence` was added on 2026-08-21 after this check did its job and
+          // stopped the hero's new proof block from taking the accent
+          // unreviewed. Reviewed: the block is an anchor to the merged pull
+          // request a maintainer wrote, so it is a checkable claim in exactly
+          // the sense the rest of this list means, and it is the strongest one
+          // on the page. Same class of thing as `proof` and `artifact`.
           const allowed =
-            /prose (strong|a)|proof|artifact|state|source|mark|metric|value|doi|cite|link/i;
+            /prose (strong|a)|proof|artifact|evidence|state|source|mark|metric|value|doi|cite|link/i;
           const offenders: string[] = [];
           for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
             for (const block of stripComments(read(file)).split("}")) {

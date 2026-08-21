@@ -459,3 +459,83 @@ describe("reasoning welded into the answer paragraph", () => {
     }
   });
 });
+
+/**
+ * Reasoning leaks that were live on the page.
+ *
+ * Both of these were real answers a visitor could read. The previous cleaner
+ * dropped whole leading PARAGRAPHS, and a reasoning model that emits its
+ * scratchpad and its answer as one unbroken paragraph slipped straight through
+ * it. These are verbatim.
+ */
+test("strips a scratchpad that shares a paragraph with the answer", () => {
+  const leaked =
+    'But phrase "the dense retriever overrules keyword rank" might be a snippet from ' +
+    "somewhere else? Not directly in provided context. However we can answer based on " +
+    "context: something. So answer: It means that in the hybrid retrieval system, the " +
+    "dense vector score can outrank the keyword score for a chunk.";
+  const out = cleanAnswer(leaked);
+  assert.ok(out.startsWith("It means that in the hybrid retrieval system"), out);
+  assert.ok(!/So answer|provided context|might be a snippet/i.test(out), out);
+});
+
+test("unwraps an answer the model handed over quoted, with its own commentary", () => {
+  const leaked =
+    'two sentences: "He adopts a multi-agent architecture when heterogeneous intents ' +
+    'would cause retrieval contamination. He then evaluates whether the orchestration ' +
+    'cost is offset by state isolation." That\'s two sentences. Provide answer only.';
+  const out = cleanAnswer(leaked);
+  assert.ok(out.startsWith("He adopts a multi-agent architecture"), out);
+  assert.ok(!/two sentences|Provide answer only/i.test(out), out);
+});
+
+test("leaves a clean answer untouched", () => {
+  const good = "He shipped an agentic RAG platform on Azure OpenAI with 14 tools on one graph.";
+  assert.equal(cleanAnswer(good), good);
+});
+
+test("holds a partial stream that still reads as working", () => {
+  assert.equal(looksLikeReasoning("We need to answer the question about"), true);
+  assert.equal(looksLikeReasoning("The user asks about Growaza, so"), true);
+  assert.equal(looksLikeReasoning("He cut API response time by 30 percent"), false);
+});
+
+/**
+ * Trailing leaks, observed live on 2026-08-21 after the leading-leak fix.
+ *
+ * The model answers correctly and then keeps going, narrating the instruction
+ * it just followed. Buffering cannot catch these: the meta arrives after the
+ * answer, so the cleaner has to trim both ends of the text, not just the front.
+ */
+test("trims a model that comments on its own answer afterwards", () => {
+  const a = cleanAnswer(
+    "It means that in the hybrid retrieval pipeline the vector-search results are " +
+      "taken as the final ranking instead of the BM25 keyword scores. That's within context.",
+  );
+  assert.ok(a.endsWith("keyword scores."), a);
+  assert.ok(!/within context/i.test(a), a);
+
+  const b = cleanAnswer(
+    "He cut API response time 30% and launched a MySQL inventory dashboard. " +
+      'But must start with specific thing. Could start: "He cut response time 30 percent."',
+  );
+  assert.ok(b.endsWith("inventory dashboard."), b);
+  assert.ok(!/must start|Could start/i.test(b), b);
+});
+
+/**
+ * Interior text survives cleaning.
+ *
+ * The sentence splitter treats "Node.js" as a boundary. An earlier version of
+ * the cleaner split into an array and rejoined it with a space, which shipped
+ * "Node. js" to a reader in the middle of an otherwise correct answer. The
+ * cleaner now slices the original string between the surviving boundaries, so
+ * a wrong interior boundary costs nothing.
+ */
+test("never rewrites text between the sentences it keeps", () => {
+  const exact =
+    "He worked with React, Redux, MySQL, Redis, Node.js, JWT and RBAC, cutting API " +
+    "response time 30 percent.";
+  assert.equal(cleanAnswer(exact), exact);
+  assert.ok(!cleanAnswer(`We need to answer. ${exact}`).includes("Node. js"));
+});

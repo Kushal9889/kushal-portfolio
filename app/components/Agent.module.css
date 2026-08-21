@@ -74,6 +74,13 @@
 }
 
 .opener {
+  /* Buttons are inline-flex globally, which made the label below the question
+     into a flex sibling sitting beside it: "What has he shipped on Azure?evals"
+     rendered as one run. Stacking the two is the whole point of the label. */
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
   /* Long questions wrap rather than setting the width of everything above them. */
   white-space: normal;
   text-align: left;
@@ -464,8 +471,6 @@
 
 /* What an opener demonstrates, set under the question it belongs to. */
 .shows {
-  display: block;
-  margin-block-start: 0.3rem;
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -476,6 +481,10 @@
    different kind of invitation: the others ask for information, this one asks
    the reader to try to make the page fail. */
 .adversarial {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
   justify-self: start;
   margin-block-start: 0.9rem;
   text-align: left;

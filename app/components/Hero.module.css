@@ -246,28 +246,6 @@
   max-width: 46rem;
 }
 
-/* The one outside verdict on the page, so it is the only thing in the hero set
-   in the serif. A different voice carries further than a bigger size, and the
-   size is already spoken for by the headline. */
-.proof {
-  margin: 0.85rem 0 0;
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1.05rem, 0.98rem + 0.42vw, 1.3rem);
-  line-height: 1.45;
-  max-width: 34em;
-  color: var(--ink);
-}
-
-.proof a {
-  color: var(--mark);
-  text-decoration-color: var(--mark-rule);
-  text-underline-offset: 0.22em;
-}
-
-.proof a:hover {
-  text-decoration-color: var(--signal);
-}
-
 .available {
   margin: 0.7rem 0 0;
   font-size: var(--step--1);
@@ -324,4 +302,168 @@
   font-size: var(--step--1);
   color: var(--ink);
   font-weight: 500;
+}
+
+/* The focus list, as tokens rather than a sentence.
+ *
+ * These four words are what a screener matches against a requisition, and they
+ * were set as one wrapping monospace line indistinguishable from the two gray
+ * lines above and below it. Set as discrete items they read as a list of
+ * capabilities in one glance instead of a sentence to be parsed. */
+.focus {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+}
+
+.focus li {
+  font-size: var(--step--1);
+  line-height: 1;
+  color: var(--ink-soft);
+  padding: 0.42em 0.7em;
+  border: 1px solid var(--rule);
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+/* The evidence block.
+ *
+ * The isolation effect needs difference in KIND, not degree: this is the only
+ * bordered object in the hero, the only place a display-scale tabular figure
+ * appears, and it carries more surrounding space than anything else. A reader
+ * who takes nothing else from the first screen takes this.
+ *
+ * It is an anchor, so the whole block is the target rather than a phrase inside
+ * a sentence. The previous treatment set the strongest claim on the page as an
+ * underlined run of text at the same size as the focus line beneath it, which
+ * made it read as a footnote. */
+.evidence {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: center;
+  margin-block: clamp(1.6rem, 4.5vh, 2.8rem);
+  padding: clamp(1.1rem, 2.5vw, 1.5rem) clamp(1.2rem, 3vw, 1.8rem);
+  max-width: 46rem;
+  text-decoration: none;
+  border: 1px solid var(--rule);
+  /* --mark, not --signal. The accent means "something is happening" and is
+     reserved for live state by an invariant the audit enforces; painting it on
+     a static border would cost it that meaning everywhere else on the page.
+     --mark is the right token by meaning as well as by rule: it is what this
+     page already uses for evidence a reader can go and check, which is exactly
+     what sits inside this box. */
+  border-inline-start: 2px solid var(--mark);
+  background: var(--paper-sunk);
+  transition:
+    border-color var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-out);
+}
+
+.evidence:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.evidenceFigure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  align-items: flex-start;
+}
+
+/* Light weight on purpose. A number this large does not need bold to dominate,
+   and bold at display scale reads as shouting rather than as data. */
+.evidenceNumber {
+  font-size: clamp(2.6rem, 1.8rem + 3.4vw, 4.6rem);
+  font-weight: 300;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+}
+
+.evidenceUnit {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.evidenceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Serif, deliberately. The hero is otherwise monospace, so the one sentence a
+   reader is meant to actually read is set in the family used for reading. */
+.evidenceSentence {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: var(--step-1);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.evidenceLabel {
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+
+.evidence:hover .evidenceLabel {
+  color: var(--mark);
+}
+
+@media (max-width: 34rem) {
+  .evidence {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+}
+
+/* The graph carries the page's only live claim and was its faintest object.
+ *
+ * Every timing on it is measured on the request the reader just triggered, which
+ * makes it the one thing here that cannot be faked -- and it was drawn in rule
+ * grey at label scale, quieter than the availability line beneath it. The node
+ * that is running takes the accent, completed rails take ink, and the figures
+ * step up to body size so they read as data rather than as a caption. */
+.graph .dot {
+  width: 9px;
+  height: 9px;
+}
+
+.cell[data-state="done"] .dot {
+  background: var(--ink);
+}
+
+.cell[data-state="running"] .dot {
+  background: var(--signal);
+}
+
+.cell[data-state="done"] .railLine {
+  background: var(--ink);
+}
+
+.cell .label {
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cell[data-state="done"] .label,
+.cell[data-state="running"] .label {
+  color: var(--ink);
+}
+
+.ms {
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+}
+
+.cell[data-state="done"] .ms {
+  color: var(--ink);
 }

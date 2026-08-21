@@ -18,8 +18,16 @@ type Props = {
   current: string;
   /** What he builds, in the words a 2026 role is written in. */
   focus: string;
-  /** The least fakeable thing he owns, stated before the first scroll. */
-  proof: string;
+  /** The least fakeable thing he owns, stated before the first scroll.
+   *
+   *  Split into a figure and a sentence rather than passed as one string. A
+   *  recruiter decides whether to keep reading in two to three seconds, against
+   *  the largest and highest-contrast object on the page, and this claim -- an
+   *  outside maintainer acting on his work -- was previously set at the same
+   *  size as the four gray lines around it. A number set as a number is a
+   *  difference in kind, not in degree, which is what the isolation effect
+   *  actually requires. */
+  evidence: { figure: string; unit: string; sentence: string; href: string; label: string };
   /** When he can start, and where. The question that gates a reply. */
   available: string;
   credential: { label: string; url: string };
@@ -46,7 +54,7 @@ export default function Hero({
   location,
   current,
   focus,
-  proof,
+  evidence,
   available,
   credential,
   contactHref,
@@ -138,18 +146,32 @@ export default function Hero({
 
         {/* What he builds, in the vocabulary the roles are written in.
             The headline is the voice; this is the scan. Someone deciding in
-            twenty seconds is looking for these four words before they read a
+            twenty seconds is looking for these words before they read a
             sentence, and search engines read them too. */}
         <p className={styles.current}>{current}</p>
-        <p className={styles.focus}>{focus}</p>
+        <ul className={styles.focus}>
+          {focus.split(/\s*[·]\s*/).filter(Boolean).map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
 
-        {/* The strongest claim, above the fold, where it is the second thing
-            read rather than the first thing missed. Everything else in this
-            hero is a system describing itself; this is the one line where an
-            outside party did something in response to his work. */}
-        <p className={styles.proof}>
-          <a href="#opensource">{proof}</a>
-        </p>
+        {/* The one object on this page that looks like nothing else on it.
+            Everything else in the hero is a system describing itself; this is
+            the single line where an outside party did something in response to
+            his work, and it is the only claim here that no other candidate can
+            copy. It gets a figure, a border and more surrounding space than
+            anything else, because difference in kind is what a scanning eye
+            stops for. */}
+        <a className={styles.evidence} href="#opensource">
+          <span className={styles.evidenceFigure}>
+            <span className={`${styles.evidenceNumber} tabular`}>{evidence.figure}</span>
+            <span className={styles.evidenceUnit}>{evidence.unit}</span>
+          </span>
+          <span className={styles.evidenceBody}>
+            <span className={styles.evidenceSentence}>{evidence.sentence}</span>
+            <span className={styles.evidenceLabel}>{evidence.label}</span>
+          </span>
+        </a>
 
         {/* The two facts that decide whether a recruiter writes at all, kept
             deliberately quiet. Moved above the graph block: on a 13-inch laptop

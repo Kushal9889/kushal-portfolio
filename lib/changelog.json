@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Give the page a colour system, and fix what the fade was hiding"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Publish what the page had only been claiming"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-20",
       "subject": "Put the reasoning, the limits and the contact paths on the page"
-    },
-    {
-      "date": "2026-08-20",
-      "subject": "Make the page answerable, reachable and true to its own corpus"
     }
   ]
 }

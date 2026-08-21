@@ -103,6 +103,25 @@ export default function Page() {
   const { profile } = loadContent();
   const certs = loadCertifications();
   const asks = loadContent().sections.flatMap((x) => x.asks.map((a) => a.question));
+
+  /**
+   * The hero's one piece of outside validation, assembled from the corpus.
+   *
+   * Figure, unit and link all come from the open-source section rather than
+   * being typed here: the metric is the same `57 hours` the section renders,
+   * and the link is the same merged pull request the link checker resolves. A
+   * second copy of any of it is a second thing that can drift.
+   */
+  const os = section("Open source, LangChain deepagents");
+  const hours = os.metrics.find((m) => /hour/i.test(m.value));
+  const merged = os.artifacts.find((a) => a.state === "merged");
+  const evidence = {
+    figure: hours?.value.replace(/\s*hours?$/i, "") ?? "57",
+    unit: "hours to merge",
+    sentence: profile.proof,
+    href: merged?.url ?? profile.github,
+    label: merged?.label ?? "",
+  };
   const featured = certs.find((c) => c.featured);
 
   return (
@@ -118,7 +137,7 @@ export default function Page() {
         location={profile.location}
         current={profile.current}
         focus={profile.focus}
-        proof={profile.proof}
+        evidence={evidence}
         available={profile.available}
         credential={{
           label: featured ? `${featured.issuer} Certified · ${featured.short ?? featured.name}` : "",

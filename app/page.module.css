@@ -55,12 +55,24 @@
 }
 
 /* The job title leads. It is the line a recruiter is actually looking for, so
-   it is set at heading scale rather than as a caption under the employer. */
+   it is set at heading scale rather than as a caption under the employer.
+ *
+ * Set in the serif, and sized to the rail it actually occupies. At --step-2 in
+ * the mono it rendered 41.6px inside a 240px column: "AI Engineer, Graduate
+ * Researcher" broke across four lines and still overflowed its column by 43px,
+ * because mono runs about 0.6em per character and a rail that width holds
+ * fourteen of them. The serif carries roughly a third more characters per line
+ * at the same size, which is the whole reason headings on this page are set in
+ * it, and this one had been left behind in the body face. */
 .roleName {
-  font-size: var(--step-2);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  /* A long title shortens rather than escaping its column. */
+  overflow-wrap: break-word;
 }
 
 .roleMeta {
@@ -240,23 +252,11 @@
   gap: 1.25rem 2rem;
 }
 
-.links a {
-  overflow-wrap: anywhere;
-}
-
 /* The open-source section leads with the artifact rather than prose, so its
    heading sits tighter to the diff below it. */
 .section[data-lead="artifact"] .title {
   margin-bottom: clamp(1rem, 2.5vh, 1.5rem);
 }
-
-.links a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 44px;
-}
-
 
 /* A project that runs but is not the argument.
    Separated from the credentials above it by a rule rather than a heading level,
@@ -316,4 +316,14 @@
     grid-template-columns: 1fr;
     gap: 0.1rem;
   }
+}
+
+/* Role prose. Referenced from page.tsx and never defined, so a role body
+   inherited the full page measure and ran wider than the metrics strip above
+   it. The rail itself was already correct: `.grid` is defined in the two-column
+   media query above with the rail width tuned to keep the paragraph at its
+   natural measure, and an earlier reading that said otherwise had measured the
+   hero's wrap, which carries no grid class by design. */
+.roleBody {
+  max-width: 62ch;
 }
