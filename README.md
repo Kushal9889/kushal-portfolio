@@ -1,10 +1,49 @@
-# kushalgaddamwar.com
+# kushal-portfolio-v2
 
-Personal site with an agent that answers questions about my work, grounded in a
-single corpus file and running on a LangGraph state machine.
+**Live: [kushal-portfolio-223.netlify.app](https://kushal-portfolio-223.netlify.app)**
 
-Everything on the page is either measured or linked to a source that can be
-checked. There are no placeholder numbers.
+[![ci](https://github.com/Kushal9889/kushal-portfolio-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/Kushal9889/kushal-portfolio-v2/actions/workflows/ci.yml)
+
+The badge is the claim, not decoration. It goes red when a link rots, when a
+corrected fact reappears, when the availability date passes, or when a colour is
+written outside the token file.
+
+A portfolio whose agent answers questions about my work, grounded in one corpus
+file and routed through a LangGraph state machine. Every figure on the page is
+measured or links to something that can be checked. There are no placeholder
+numbers, and the build fails if a claim stops being true.
+
+## The two things worth checking first
+
+**A silent bug I reported in LangChain's deepagents SDK.** `CompositeBackend.ls("/")`
+discarded errors from the default backend and returned a successful route-only
+listing, so an agent read an unavailable filesystem as healthy and nearly empty.
+I traced it to a recurring class of error-handling defect rather than a one-off
+and filed a reproduction covering the synchronous and asynchronous paths. A
+maintainer wrote and merged the fix 57 hours later and credited the reproduction.
+
+- Issue: [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
+- Merged fix: [langchain-ai/deepagents#4925](https://github.com/langchain-ai/deepagents/pull/4925)
+
+**The retrieval figure, which plots the run that just happened.** BM25 rank,
+dense rank, and the reciprocal rank fusion of the two, per corpus chunk, redrawn
+from whatever you ask the agent. It publishes its own Kruskal stress, because
+the 3D projection I tried first held only 47.4% of the variance across three
+axes and I cut it rather than ship a picture that discards half the structure.
+
+## What the gates enforce
+
+```bash
+npm run audit          # 98 requirements across 12 domains
+npm test               # 30 unit and integration tests
+npm run test:evals     # 16 agent evals, asserts answer quality
+npm run verify:links   # every external URL, HEAD-checked
+npm run verify:facts   # corpus consistency, prose gates, staleness
+```
+
+The facts gate fails the build when the availability date passes, when a
+corrected claim reappears, or when the em-dash rate suggests the prose was not
+written by a person.
 
 ---
 

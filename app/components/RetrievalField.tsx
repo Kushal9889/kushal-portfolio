@@ -165,10 +165,15 @@ export default function RetrievalField() {
             embedding rank, right is the fusion of both.
           </>
         )}
-        <span className={styles.stress}>
-          3D projection of these vectors was cut: Kruskal stress {field.stress}, only 47% of variance
-          in three axes. Rank is exact, so rank is what is drawn.
-        </span>
+        {/* Only claimed when a projection was actually computed. Built without
+            an embedding key there are no vectors, so there is no stress to
+            report and the sentence would be describing work that never ran. */}
+        {field.stress !== null && (
+          <span className={styles.stress}>
+            3D projection of these vectors was cut: Kruskal stress {field.stress}, only 47% of
+            variance in three axes. Rank is exact, so rank is what is drawn.
+          </span>
+        )}
       </figcaption>
     </figure>
   );

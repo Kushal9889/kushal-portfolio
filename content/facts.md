@@ -215,8 +215,10 @@ June 2024. India.
 ## Publications
 
 IEEE ICAICCIT 2024, first author. Deep Learning for Contextual Bug Detection and Automated Fixes in
-Software Systems.
-[Read the paper and code](https://github.com/Kushal9889/Deep-Learning-for-Contextual-Bug-Detection-and-Automated-Fixes-in-Software-Systems)
+Software Systems, pages 624 to 629.
+[doi:10.1109/ICAICCIT64383.2024.10912101](https://doi.org/10.1109/ICAICCIT64383.2024.10912101)
+and [the code](https://github.com/Kushal9889/Deep-Learning-for-Contextual-Bug-Detection-and-Automated-Fixes-in-Software-Systems),
+which carries a CITATION.cff so GitHub renders a citation button.
 
 IGI Global 2024, co-author. Cyber-Physical Systems: Security and Optimization Strategies.
 [Read the chapter and code](https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities)
