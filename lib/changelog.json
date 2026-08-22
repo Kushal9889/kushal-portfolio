@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Record what was fixed, what was wrong, and what is still open"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Retrieve on the phrase, and stop padding the context with filler"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Publish what the page had only been claiming"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Give the section to the research and demote the side project"
     }
   ]
 }

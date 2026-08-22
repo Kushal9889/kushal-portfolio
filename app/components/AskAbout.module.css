@@ -11,7 +11,10 @@
 
 .link {
   color: var(--ink);
-  font-weight: 500;
+  /* 600, not 500. Martian Mono ships at 300/400/600 and `font-synthesis-weight`
+     is off, so a mono element asking for 500 silently rendered at 400 and the
+     emphasis simply did not exist. The serif is variable and unaffected. */
+  font-weight: 600;
   text-decoration-thickness: 2px;
   text-decoration-color: var(--ink-faint);
   text-underline-offset: 0.18em;

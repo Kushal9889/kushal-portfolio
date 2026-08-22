@@ -55,7 +55,6 @@
   text-transform: uppercase;
   background: var(--ink);
   color: var(--paper);
-  transition: background-color var(--t-fast) var(--ease-out);
 }
 
 /* Stop is the same weight as Ask on purpose. A control that ends something the

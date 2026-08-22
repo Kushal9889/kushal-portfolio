@@ -16,7 +16,7 @@
     "verify:links": "tsx scripts/verify-links.ts",
     "lint:tokens": "tsx scripts/lint-tokens.ts",
     "test:evals": "tsx scripts/run-evals.ts",
-    "check": "npm run typecheck && npm run lint:tokens && npm run verify:facts && npm run audit",
+    "check": "npm run typecheck && npm run lint:tokens && npm run lint:vars && npm run verify:facts && npm run audit",
     "test:silhouette": "tsx scripts/silhouette.ts",
     "prewarm": "tsx scripts/prewarm.ts",
     "decision-matrix": "tsx scripts/decision-matrix.ts",
@@ -30,7 +30,8 @@
     "build:field": "tsx scripts/build-field.ts",
     "build:topology": "tsx scripts/build-topology.ts",
     "build:readme": "tsx scripts/build-profile-readme.ts",
-    "build:changelog": "tsx scripts/build-changelog.ts"
+    "build:changelog": "tsx scripts/build-changelog.ts",
+    "lint:vars": "tsx scripts/lint-vars.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",

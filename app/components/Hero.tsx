@@ -131,7 +131,7 @@ export default function Hero({
 
         {/* Split on the sentence boundary: the claim leads, the qualifier
             recedes. Falls back to the whole string if the shape ever changes. */}
-        <h1 className={`${styles.line} rise`}>
+        <h1 className={styles.line}>
           {(() => {
             const cut = tagline.indexOf(". ");
             if (cut === -1) return tagline;
@@ -148,8 +148,10 @@ export default function Hero({
             The headline is the voice; this is the scan. Someone deciding in
             twenty seconds is looking for these words before they read a
             sentence, and search engines read them too. */}
-        <p className={styles.current}>{current}</p>
-        <ul className={styles.focus}>
+        <p className={`${styles.current} rise`} style={{ "--rise-n": 0 } as React.CSSProperties}>
+          {current}
+        </p>
+        <ul className={`${styles.focus} rise`} style={{ "--rise-n": 1 } as React.CSSProperties}>
           {focus.split(/\s*[·]\s*/).filter(Boolean).map((f) => (
             <li key={f}>{f}</li>
           ))}
@@ -162,7 +164,11 @@ export default function Hero({
             copy. It gets a figure, a border and more surrounding space than
             anything else, because difference in kind is what a scanning eye
             stops for. */}
-        <a className={styles.evidence} href="#opensource">
+        <a
+          className={`${styles.evidence} rise`}
+          style={{ "--rise-n": 2 } as React.CSSProperties}
+          href={evidence.href}
+        >
           <span className={styles.evidenceFigure}>
             <span className={`${styles.evidenceNumber} tabular`}>{evidence.figure}</span>
             <span className={styles.evidenceUnit}>{evidence.unit}</span>

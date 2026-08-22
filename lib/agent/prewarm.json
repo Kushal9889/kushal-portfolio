@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant on Azure.",
+    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 362,
-      "answer": 2635
+      "retrieve": 397,
+      "answer": 3065
     },
-    "total": 3023,
+    "total": 3491,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -16,7 +16,7 @@
     ],
     "usage": {
       "in": 1732,
-      "out": 214
+      "out": 316
     },
     "trace": {
       "k": 60,
@@ -169,17 +169,17 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": "openrouter"
   },
   "what broke in production and how did he find it?": {
-    "answer": "\"A silent failure with no exception or stack trace in the LangChain defect in section 01 of the production SDK, discovered manually.\" Must start with answer itself as first word. So first word could be \"Silent failure\". But need to lead with specific thing in one or two sentences and stop. So maybe: \"Silent failure with no exception or stack trace in the LangChain defect of section 01, found by manually locating the bug in a production SDK.\" That's one sentence? It's two clauses but okay. Must start with the answer itself as first word. So first word must be the answer itself. The answer is the thing that broke? The question asks \"What broke in production and how did he find it?\" So answer could be \"Silent failure in the LangChain defect of section 01, discovered by manually finding the bug in a production SDK.\" That starts with \"Silent",
+    "answer": "He discovered a silent failure in a production",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 327,
-      "answer": 4719
+      "retrieve": 234,
+      "answer": 5367
     },
-    "total": 5055,
+    "total": 5608,
     "sources": [
       "Publications",
       "How retrieval on this page works"
@@ -339,17 +339,17 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": "openrouter"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He decides when the problem involves heterogeneous domains and requires isolation of tool namespaces, leading to redundant LLM calls, so he uses a supervisor to route to specialized agents. Provide one or two sentences, stop. Must start with specific thing. So first word could be \"He decides\". But must lead with the specific thing in one or two sentences and stop. So maybe: \"He decides when a single agent's broad context would mix tool namespaces across domains, causing retrieval contamination and redundant calls.\" That's one sentence. Could add second sentence: \"In such cases he adopts a supervisor-routed multi-agent architecture to isolate state and cut redundant LLM usage.\" That's two sentences. Must not add extra. Must not quote. Must not mention context. Must not say anything else. Must not mention \"The context\". Must not mention \"He decided\". Actually we can use",
+    "answer": "He decides when heterogeneous domain questions and need for isolation justify multi-agent. Provide that. Must be only answer, no extra.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 343,
-      "answer": 2864
+      "retrieve": 275,
+      "answer": 4825
     },
-    "total": 3214,
+    "total": 5108,
     "sources": [
       "BU Life AI",
       "This site",
@@ -511,6 +511,6 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": "openrouter"
   }
 }

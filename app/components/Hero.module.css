@@ -92,20 +92,24 @@
     background var(--t-fast) var(--ease-out);
 }
 
+/* One rule, not two.
+ *
+ * This selector was declared twice in a row. The first set the accent
+ * background, the second immediately reset it to ink, so the call to action's
+ * hover colour never rendered once and only the lift survived. The accent is
+ * not the right answer here anyway: it means "live", and a button at rest is
+ * not live. The hover reads as a press instead. */
 .cta:hover {
   transform: translate3d(0, -2px, 0);
-  background: var(--signal);
-}
-
-.cta:hover {
-  background: var(--ink);
-  color: var(--paper);
-  transform: translate3d(0, -2px, 0);
+  box-shadow: var(--lift-2);
 }
 
 .cta:active {
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  box-shadow: none;
 }
+
+
 
 .cred {
   font-size: var(--step--1);
@@ -301,7 +305,10 @@
   margin: 0.65rem 0 0;
   font-size: var(--step--1);
   color: var(--ink);
-  font-weight: 500;
+  /* 600, not 500. Martian Mono ships at 300/400/600 and `font-synthesis-weight`
+     is off, so a mono element asking for 500 silently rendered at 400 and the
+     emphasis simply did not exist. The serif is variable and unaffected. */
+  font-weight: 600;
 }
 
 /* The focus list, as tokens rather than a sentence.
