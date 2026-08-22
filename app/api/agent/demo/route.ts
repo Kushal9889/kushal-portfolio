@@ -26,11 +26,18 @@ const QUESTION = "What has he shipped on Azure?";
 const TTL_MS = 60_000;
 
 type Demo = {
+  /** The question, returned rather than duplicated in the hero. */
+  question: string;
+  /** What it actually said. The hero printed timings for a request whose answer
+   *  it discarded, so the strongest thing this page does -- answer a real
+   *  question about him, correctly, in under two seconds -- was invisible to
+   *  anyone who did not type. */
+  answer: string;
+  sources: string[];
   timings: Record<string, number>;
   total: number;
   usage: { in: number; out: number } | null;
   provider: string | null;
-  model: string | null;
 };
 
 let cached: { at: number; demo: Demo } | null = null;
@@ -43,13 +50,15 @@ export async function GET() {
   }
 
   try {
-    const { timings, total, usage, provider } = await ask(QUESTION);
+    const { answer, sources, timings, total, usage, provider } = await ask(QUESTION);
     const demo: Demo = {
+      question: QUESTION,
+      answer: (answer ?? "").toString(),
+      sources: sources ?? [],
       timings,
       total,
       usage: usage ?? null,
       provider: provider ?? null,
-      model: null,
     };
     cached = { at: Date.now(), demo };
     return Response.json(demo, { headers: { "cache-control": "public, max-age=30" } });

@@ -475,8 +475,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           ref={inputRef}
           className={styles.input}
           rows={1}
-          placeholder="Ask about his work, or paste a job description"
-          aria-label="Ask about his work, or paste a job description"
+          placeholder="Ask anything about his work"
+          aria-label="Ask anything about his work"
           maxLength={2000}
           disabled={pending}
           // The demo endpoint is cached for sixty seconds and shares the cold
@@ -520,28 +520,6 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         )}
       </form>
 
-      {canVoice && (
-        <label className={styles.voiceToggle}>
-          <input
-            type="checkbox"
-            checked={voiceOn}
-            onChange={(e) => {
-              setVoiceOn(e.target.checked);
-              if (e.target.checked) {
-                // Start the model download the moment someone opts in, rather
-                // than on the first answer. By the time a question is typed and
-                // answered it is usually ready, so the first spoken reply gets
-                // the neural voice instead of the built-in one.
-                warmNeural();
-              } else {
-                silence();
-              }
-            }}
-          />
-          Read answers aloud
-        </label>
-      )}
-
       {micError && (
         <p className={styles.micError} role="status">
           {micError}
@@ -556,41 +534,31 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           know what a trace is. Each line says what to do first and what happens
           because of it, in that order, because an instruction a reader has to
           decode is one they skip. */}
-      <ul className={styles.affordances}>
+      {/* Four rows of instructions cost 190px of the first screen.
+       *
+       * They were correct and nobody was reading them: a recruiter does not
+       * want a manual, and the engineer who does will find ⌘K without being
+       * told twice. One line, three affordances, and the keycaps still depress
+       * when the real shortcut fires so the hint demonstrates itself. */}
+      <ul className={styles.hints}>
         <li>
           <span className={styles.keys}>
             <kbd className={styles.kbd}>{modKey}</kbd>
             <kbd className={styles.kbd}>K</kbd>
           </span>
-          <span>
-            <b>Jump anywhere on this page.</b> Opens a search box for every section.
-          </span>
+          <span>jump anywhere</span>
         </li>
         <li>
-          <span className={styles.keys} aria-hidden="true">
-            <span className={styles.gesture}>drag</span>
+          <span className={styles.gesture} aria-hidden="true">
+            drag
           </span>
-          <span>
-            <b>Highlight any sentence.</b> A button appears to ask the agent about exactly that.
-          </span>
+          <span>highlight any sentence to ask about it</span>
         </li>
         <li>
-          <span className={styles.keys} aria-hidden="true">
-            <span className={styles.gesture}>plot</span>
+          <span className={styles.gesture} aria-hidden="true">
+            trace
           </span>
-          <span>
-            <b>Watch the retrieval figure redraw.</b> Three sections down, it replots from your
-            question: keyword rank, embedding rank, and how the two fuse.
-          </span>
-        </li>
-        <li>
-          <span className={styles.keys} aria-hidden="true">
-            <span className={styles.gesture}>trace</span>
-          </span>
-          <span>
-            <b>Open the trace under any answer.</b> It shows where the answer came from, how long
-            each step took, and what it cost in tokens.
-          </span>
+          <span>every answer opens its own</span>
         </li>
       </ul>
 
@@ -848,6 +816,31 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           );
         })}
       </div>
+
+      {/* A preference, so it sits after the conversation rather than inside it.
+          Between the ask bar and the suggested questions it spent 44px of the
+          first screen on a control most visitors never touch. */}
+      {canVoice && (
+        <label className={styles.voiceToggle}>
+          <input
+            type="checkbox"
+            checked={voiceOn}
+            onChange={(e) => {
+              setVoiceOn(e.target.checked);
+              if (e.target.checked) {
+                // Start the model download the moment someone opts in, rather
+                // than on the first answer. By the time a question is typed and
+                // answered it is usually ready, so the first spoken reply gets
+                // the neural voice instead of the built-in one.
+                warmNeural();
+              } else {
+                silence();
+              }
+            }}
+          />
+          Read answers aloud
+        </label>
+      )}
 
       {showConversion && (
         <div className={styles.conversion}>

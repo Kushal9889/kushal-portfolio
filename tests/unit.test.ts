@@ -539,3 +539,51 @@ test("never rewrites text between the sentences it keeps", () => {
   assert.equal(cleanAnswer(exact), exact);
   assert.ok(!cleanAnswer(`We need to answer. ${exact}`).includes("Node. js"));
 });
+
+/**
+ * A scratchpad in the middle of an answer, observed live on the hero.
+ *
+ * Trimming both ends left the middle two sentences, because "No extra." is not
+ * a marker and stopped the walk backwards. The answer is the first sentence and
+ * everything after it is the model restating its instructions.
+ */
+test("cuts at the first meta sentence that follows real content", () => {
+  const leaked =
+    "He shipped a document intelligence assistant (document QA system) on Azure. " +
+    "Must start with the answer itself, one or two sentences, stop. No extra. " +
+    'So first word should be the answer itself. Could be "He shipped a document assistant."';
+  const out = cleanAnswer(leaked);
+  assert.equal(out, "He shipped a document intelligence assistant (document QA system) on Azure.");
+});
+
+test("keeps a genuine multi-sentence answer whole", () => {
+  const good =
+    "He shipped a document intelligence assistant for an enterprise consulting client on " +
+    "Azure, covering ingestion through deployment. It used Azure OpenAI GPT-4o and Azure AI Search.";
+  assert.equal(cleanAnswer(good), good);
+});
+
+/**
+ * A reply that is scratchpad from first word to last.
+ *
+ * The leading walk stops one short of the end so a single-sentence answer is
+ * never emptied, which meant a response containing no answer at all surfaced
+ * its last line. This reached the eval suite as a whole answer:
+ * "Could also add second sentence about containerizing microservices and CI/CD."
+ *
+ * Empty is the honest return; every caller degrades to the retrieved section.
+ */
+test("returns nothing when the reply contains no answer", () => {
+  assert.equal(
+    cleanAnswer("Could also add second sentence about containerizing microservices and CI/CD."),
+    "",
+  );
+  assert.equal(cleanAnswer("We need to mention the schema accuracy figure."), "");
+});
+
+test("keeps the answer and drops the plan that follows it", () => {
+  assert.equal(
+    cleanAnswer("He cut API response time 30 percent. Could also add a second sentence about caching."),
+    "He cut API response time 30 percent.",
+  );
+});

@@ -170,7 +170,14 @@ const META_SENTENCE = new RegExp(
     // narrating the instruction it is about to re-follow, after it has already
     // answered. Both shipped as trailing text on live answers.
     "^(but|and|so|now)?\\s*(must|should|need to|needs to|could|can|will|let'?s)\\s+(start|begin|lead|open|say|write|answer|mention|focus|keep|make|give|state)\\b",
-    "^(could|should|might|maybe|perhaps)\\s+(start|say|write|answer|be|go)\\b",
+    "^(could|should|might|maybe|perhaps|would)\\s+(also\\s+)?(start|say|write|answer|be|go|add|mention|include|note|keep)\\b",
+    // "add a second sentence about ..." -- planning the reply rather than
+    // writing it. Observed as an entire eval answer.
+    "\\b(add|include|mention)\\s+(a\\s+)?(second|third|another|final)\\s+sentence\\b",
+    // "No extra." / "Nothing else." -- the model reminding itself to stop.
+    "^(no|nothing)\\s+(extra|more|else|further|additional)\\b",
+    // "one or two sentences, stop" anywhere in a sentence, not just at its head.
+    "\\b(one or two|two|three) sentences?\\b",
     "^(provide|write|give|keep|return|output|answer)\\b.*\\b(answer|response|only|sentences?|briefly|concise)\\b",
     "^(one|two|three|four|\\d+) sentences?\\b",
     "^(final |short |the )?answer\\s*[:\\-]",
@@ -297,11 +304,45 @@ export function cleanAnswer(text: string): string {
   const spans = sentenceSpans(out);
   if (spans.length > 1) {
     let lo = 0;
-    let hi = spans.length - 1;
-    while (lo < hi && META_SENTENCE.test(spans[lo].text)) lo++;
-    while (hi > lo && META_SENTENCE.test(spans[hi].text)) hi--;
+    while (lo < spans.length - 1 && META_SENTENCE.test(spans[lo].text)) lo++;
+
+    /**
+     * Once it starts narrating, it does not go back.
+     *
+     * Trimming both ends was not enough. This shipped on the hero, which is the
+     * most prominent text on the page:
+     *
+     *   He shipped a document intelligence assistant on Azure. Must start with
+     *   the answer itself, one or two sentences, stop. No extra. So first word
+     *   should be the answer itself. Could be "He shipped a document ...
+     *
+     * The answer is the first sentence and everything after it is the model
+     * talking to itself. An end-trim removes the last two and leaves the middle
+     * two, because "No extra." stops the walk. So the cut is at the FIRST meta
+     * sentence that follows real content: a model that has begun restating its
+     * instructions has stopped answering, and nothing after that point has ever
+     * been worth keeping.
+     */
+    let hi = lo;
+    while (hi + 1 < spans.length && !META_SENTENCE.test(spans[hi + 1].text)) hi++;
+
     out = out.slice(spans[lo].start, spans[hi].end);
   }
+
+  /**
+   * Sometimes there is no answer in there at all.
+   *
+   * The leading walk stops one short of the end so a single-sentence reply is
+   * never emptied, which means a response that is scratchpad from first word to
+   * last surfaces its last line. Observed: "Could also add second sentence
+   * about containerizing microservices and CI/CD." reached the eval suite as
+   * the whole answer.
+   *
+   * Empty is the honest return. Every caller already has a degraded path that
+   * serves the retrieved section unsummarised, and grounded source text beats a
+   * model thinking out loud under his name.
+   */
+  if (META_SENTENCE.test(out.trim())) out = "";
 
   // Models emit non-breaking hyphens and directional quotes that do not match
   // the rest of the page. Normalised so an answer sits in the same typography as

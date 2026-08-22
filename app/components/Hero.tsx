@@ -67,6 +67,17 @@ export default function Hero({
   const [done, setDone] = useState(false);
   /** Set when the demo endpoint could not be reached, so the caption says so. */
   const [unreachable, setUnreachable] = useState(false);
+  /**
+   * What the request on load actually returned.
+   *
+   * The hero printed three timings for a request whose answer it discarded, so
+   * the single most persuasive thing this page does -- answer a real question
+   * about him, correctly, in under two seconds -- was invisible to anyone who
+   * did not type something first. Most visitors do not type.
+   */
+  const [said, setSaid] = useState<{ question: string; answer: string; sources: string[] } | null>(
+    null,
+  );
   const started = useRef(false);
 
   useEffect(() => {
@@ -86,12 +97,16 @@ export default function Hero({
           return;
         }
         const demo: {
+          question: string;
+          answer: string;
+          sources: string[];
           timings: Trace;
           total: number;
           usage: { in: number; out: number } | null;
           provider: string | null;
         } = await res.json();
         const measured = demo.timings;
+        setSaid({ question: demo.question, answer: demo.answer, sources: demo.sources });
 
         if (calm) {
           setTrace(measured);
@@ -175,6 +190,17 @@ export default function Hero({
           })()}
         </h1>
 
+        {/* Two columns above 62rem, stacked below.
+         *
+         * Measured before this changed: the hero ran 1767px against a 900px
+         * viewport, so half of it was below the fold -- including the telemetry
+         * strip, the suggested questions, and the call to action, which sat at
+         * 1660px. Meanwhile the right third of a 1440px screen was empty from
+         * top to bottom. Identity reads down the left, the instrument runs on
+         * the right, and both finish inside the first screen. */}
+        <div className={styles.body}>
+          <div className={styles.identity}>
+
         {/* What he builds, in the vocabulary the roles are written in.
             The headline is the voice; this is the scan. Someone deciding in
             twenty seconds is looking for these words before they read a
@@ -216,6 +242,18 @@ export default function Hero({
             that gates a reply outside the first screen. */}
         <p className={styles.available}>Available {available}</p>
 
+        {/* In the first screen now, not at 1660px.
+            The one action this page is asking for cannot live below two folds. */}
+        <div className={styles.actions}>
+          <a className={styles.cta} href={contactHref} data-pull>
+            Get in touch
+          </a>
+          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
+            {credential.label}
+          </a>
+        </div>
+          </div>
+
         {/* One instrument, not two.
             The graph and the agent were separated by the availability line and
             two buttons, so the thing that had just run and the box that runs it
@@ -255,18 +293,38 @@ export default function Hero({
             })}
           </div>
 
-          <p className={styles.caption}>
-            {done ? (
+          {/* What it said.
+           *
+           * A panel that reports three latencies for an answer it does not show
+           * is asking to be taken on trust, on a page whose entire argument is
+           * that nothing here needs to be. This is the actual reply to the
+           * actual question, with the sections it was grounded in, produced by
+           * the request whose timings are drawn directly above it. */}
+          <div className={styles.said} aria-live="polite">
+            {said ? (
               <>
-                <span className="live-dot" /> answered in{" "}
-                <span className="tabular">{total}ms</span>, measured on this page load
+                <p className={styles.saidQ}>{said.question}</p>
+                <p className={styles.saidA}>{said.answer}</p>
+                {said.sources.length > 0 && (
+                  <p className={styles.saidSrc}>
+                    <span className={styles.saidSrcLabel}>grounded in</span>
+                    {said.sources.map((src) => (
+                      <span key={src} className={styles.saidChip}>
+                        {src}
+                      </span>
+                    ))}
+                  </p>
+                )}
               </>
             ) : unreachable ? (
-              <>the demo endpoint is unreachable right now; the box below still answers</>
+              <p className={styles.saidA}>
+                No provider is reachable right now. The box below still answers from the
+                retrieved sections, unsummarised.
+              </p>
             ) : (
-              <>ask anything below and this graph runs again</>
+              <p className={styles.saidPending}>running the graph against his corpus</p>
             )}
-          </p>
+          </div>
 
 
           <div className={styles.agentSlot}>{children}</div>
@@ -276,18 +334,6 @@ export default function Hero({
           <Telemetry />
         </div>
 
-        {/* Below the instrument, not above it.
-            These two sat between the evidence block and the console and pushed
-            the one live thing on the page to 806px, which on a 13-inch laptop
-            is off the first screen entirely. A reader who wants to write has
-            already decided; a reader who has not seen the agent work has not. */}
-        <div className={styles.actions}>
-          <a className={styles.cta} href={contactHref} data-pull>
-            Get in touch
-          </a>
-          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
-            {credential.label}
-          </a>
         </div>
       </div>
     </header>

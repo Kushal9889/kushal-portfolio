@@ -115,13 +115,16 @@ const answer = timed("answer", async (state) => {
       { role: "system", content: systemPrompt(context) },
       { role: "user", content: state.question },
     ]);
-    return {
-      // Stripped here rather than inside the provider adapter: the adapter's job
-      // is transport, and reasoning leakage is a property of the answer.
-      reply: cleanAnswer(state.intent === "handoff" ? handoffAnswer(text) : text),
-      usage,
-      provider,
-    };
+    // Stripped here rather than inside the provider adapter: the adapter's job
+    // is transport, and reasoning leakage is a property of the answer.
+    const reply = cleanAnswer(state.intent === "handoff" ? handoffAnswer(text) : text);
+
+    // Nothing survived the clean, so the reply was scratchpad end to end. The
+    // retrieved section is a worse answer and a far better outcome than a model
+    // thinking out loud under his name.
+    if (!reply.trim()) return fallback();
+
+    return { reply, usage, provider };
   } catch {
     return fallback();
   }

@@ -28,26 +28,22 @@
 }
 
 .line {
+  /* Sized to break after the claim, not mid-clause.
+   *
+   * At --step-3 capped by a 20ch measure this set three lines and 232px, which
+   * on a 900px viewport is a quarter of everything a recruiter sees spent on
+   * one sentence. Measured at 36.3px per character, the first sentence needs
+   * 1270px to sit on one line and the wrap is 1088; at 3.6rem it needs 1048 and
+   * fits. Two lines, 127px, and the break lands on the full stop. */
+  font-size: clamp(2.2rem, 1.5rem + 2.6vw, 3.6rem);
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 400;
   letter-spacing: -0.025em;
-  max-width: 20ch;
+  max-width: 36ch;
 }
 
 /* The graph is the one signature moment on the page. It gets the space that a
    hero image would normally take, because unlike an image it is the work. */
-.graph {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.75rem;
-  margin-top: clamp(1.5rem, 4vh, 2.25rem);
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--rule);
-}
-
-
-
 .label {
   font-size: var(--step-0);
   transition: color var(--t-base) var(--ease-out);
@@ -150,13 +146,13 @@
      silhouette test looks for. */
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--s-2);
 }
 
 .cell {
   display: grid;
   justify-items: center;
-  gap: 0.45rem;
+  gap: var(--s-1);
 }
 
 .rail {
@@ -164,7 +160,10 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   width: 100%;
-  height: 1rem;
+  /* Was 1rem plus 0.45rem gaps plus two text rows: 106px of panel for three
+     numbers, most of it air. The rail only has to read as a line through a
+     node. */
+  height: 0.65rem;
 }
 
 .railLine {
@@ -327,7 +326,10 @@
 }
 
 .focus li {
-  font-size: var(--step--1);
+  /* One step down so two sit on a row inside a 23rem column. At --step--1 the
+     longest label measured 190px against a 368px column, so every pill claimed
+     its own line and four short capabilities cost 133px of the first screen. */
+  font-size: var(--step--2);
   line-height: 1;
   color: var(--ink-soft);
   padding: 0.34em 0.62em;
@@ -349,9 +351,13 @@
  * made it read as a footnote. */
 .evidence {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: clamp(1rem, 3vw, 2rem);
-  align-items: center;
+  /* One column. This sat beside a full-width layout that no longer exists, and
+     in the identity column the two-column form crushed the sentence into a
+     99px ribbon 321px tall. The figure reads better stacked over its claim
+     anyway: the number is the thing that stops the eye, and the sentence is
+     what it turns out to mean. */
+  gap: var(--s-3);
+  align-items: start;
   /* Tightened. The evidence block was spending 90px of pure margin, which
      pushed the live instrument off a 13-inch first screen. */
   margin-block: clamp(1rem, 2.6vh, 1.6rem);
@@ -384,15 +390,14 @@
 
 .evidenceFigure {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  align-items: flex-start;
+  align-items: baseline;
+  gap: var(--s-2);
 }
 
 /* Light weight on purpose. A number this large does not need bold to dominate,
    and bold at display scale reads as shouting rather than as data. */
 .evidenceNumber {
-  font-size: clamp(2.6rem, 1.8rem + 3.4vw, 4.6rem);
+  font-size: clamp(2.4rem, 1.9rem + 1.6vw, 3.4rem);
   font-weight: 300;
   line-height: 0.85;
   letter-spacing: -0.04em;
@@ -431,12 +436,7 @@
   color: var(--mark);
 }
 
-@media (max-width: 34rem) {
-  .evidence {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
-  }
-}
+
 
 /* The graph carries the page's only live claim and was its faintest object.
  *
@@ -567,4 +567,119 @@
   padding: var(--s-4) var(--s-5) var(--s-5);
   border: none;
   margin: 0;
+}
+
+/* The hero body: identity left, instrument right.
+ *
+ * Measured before this existed: the hero ran 1767px against a 900px viewport,
+ * so the telemetry strip, the suggested questions and the call to action -- at
+ * 1660px -- were all below the fold, while the right third of a 1440px screen
+ * was empty top to bottom. One column of reading at 68ch is correct for prose
+ * and wrong for a page whose strongest asset is a running system.
+ *
+ * The headline stays full width above this. It is the one piece of typography
+ * on the page worth setting large, and narrowing it into a column would cost
+ * that for no gain. */
+.body {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+  margin-block-start: var(--s-5);
+}
+
+@media (min-width: 62rem) {
+  .body {
+    grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
+    gap: clamp(var(--s-6), 4vw, var(--s-8));
+  }
+}
+
+.identity {
+  display: grid;
+  gap: var(--s-3);
+  align-content: start;
+}
+
+/* The console sits in the right column and stops growing. Everything inside it
+   is either measured or an input; none of it is prose that needs a measure. */
+.body > .console {
+  margin-block-start: 0;
+}
+
+/* What the agent said on load. */
+.said {
+  padding-block: var(--s-4);
+  border-block-start: var(--border-hair) solid var(--rule);
+  min-height: 7.5rem;
+}
+
+.saidQ {
+  margin: 0 0 var(--s-2);
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+
+/* Serif, because this is the one thing in the console meant to be read rather
+   than scanned. Everything else here is a label or a number. */
+.saidA {
+  margin: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: var(--step-1);
+  line-height: 1.45;
+  color: var(--ink);
+  max-width: var(--measure-tight);
+  text-wrap: pretty;
+  /* Bounded, because the height of this block is decided by a language model.
+   *
+   * The prompt asks for one or two sentences and the model does not always
+   * agree: one run returned 438px of answer, which pushed the ask bar and the
+   * suggested questions off the first screen entirely. A hero that is only
+   * correct when the model is terse is not correct.
+   *
+   * Scrolled rather than truncated. Clipping would hide part of a real answer
+   * on a page whose whole argument is that nothing here needs to be taken on
+   * trust; this keeps every word reachable and the layout fixed. */
+  max-height: 8.2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A scrollbar only when there is something to scroll to, and in the panel's own
+   tones rather than the platform's. */
+.saidA::-webkit-scrollbar {
+  width: 3px;
+}
+
+.saidA::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: var(--r-pill);
+}
+
+.saidPending {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+
+.saidSrc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-2);
+  margin: var(--s-3) 0 0;
+}
+
+.saidSrcLabel {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.saidChip {
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  padding: 0.2em 0.55em;
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-pill);
 }
