@@ -8,6 +8,11 @@
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--rule);
   background: var(--paper-sunk);
+  /* This panel paints its own recessed ground, so it owes the same ink
+     compensation the [data-tone="sunk"] scope gives section 06. Without it the
+     credit line measured Lc 70.8 against a 75 floor. */
+  --ink-faint: oklch(0.442 0.018 62);
+  --ink-soft: oklch(0.375 0.016 62);
 }
 
 .caption {

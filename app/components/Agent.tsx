@@ -389,7 +389,12 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     // ending in #agent. Neither element existed, and optional chaining meant
     // there was no error to notice. Asking from further down the page therefore
     // answered off-screen at the top and looked like nothing had happened.
-    <div className={styles.agent} id="agent" ref={rootRef}>
+    // data-surface="console" is the encoding, not a style choice. Dark means
+    // live on this page: everything inside this box changes at runtime, and the
+    // ground says so before a reader has parsed a single label. The scope
+    // redefines --paper and --ink rather than introducing new names, so every
+    // child stylesheet works here without knowing it is on a dark surface.
+    <div className={styles.agent} id="agent" ref={rootRef} data-surface="console">
       {selection && (
         <button
           className={styles.selectAsk}

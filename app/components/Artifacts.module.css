@@ -98,7 +98,9 @@
    the page. Merged gets the accent; closed stays quiet, because a closed issue
    is context and a merged fix is the evidence. */
 .state[data-state="merged"] {
-  color: var(--mark);
+  /* --mark-ink rather than --mark: the wash this sits on has already spent the
+     contrast the plain token was measured against, and it landed at Lc 68.4. */
+  color: var(--mark-ink);
   border-color: var(--mark-rule);
   background: var(--mark-wash);
 }

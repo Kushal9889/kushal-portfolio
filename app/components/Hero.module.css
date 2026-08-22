@@ -363,8 +363,13 @@
      --mark is the right token by meaning as well as by rule: it is what this
      page already uses for evidence a reader can go and check, which is exactly
      what sits inside this box. */
-  border-inline-start: 2px solid var(--mark);
+  border-inline-start: var(--border-emphasis) solid var(--mark);
   background: var(--paper-sunk);
+  /* Paints its own recessed ground, so it owes the same ink compensation the
+     sunk scope gives. Measured Lc 70.8 on the unit and label against a 75
+     floor before this. */
+  --ink-faint: oklch(0.442 0.018 62);
+  --ink-soft: oklch(0.375 0.016 62);
   transition:
     border-color var(--t-base) var(--ease-out),
     transform var(--t-base) var(--ease-out);

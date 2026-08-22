@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client.",
+    "answer": "He shipped a document intelligence assistant on Azure that answers questions grounded in a private document corpus, using hybrid retrieval and guardrails.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 397,
-      "answer": 3065
+      "retrieve": 379,
+      "answer": 3285
     },
-    "total": 3491,
+    "total": 3691,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -16,7 +16,7 @@
     ],
     "usage": {
       "in": 1732,
-      "out": 316
+      "out": 350
     },
     "trace": {
       "k": 60,
@@ -172,21 +172,21 @@
     "provider": "openrouter"
   },
   "what broke in production and how did he find it?": {
-    "answer": "He discovered a silent failure in a production",
+    "answer": ", He discovered a silent failure in the LangChain defect within production where no exception or stack trace occurred, a failure that static analysis could not detect and that the paper argues requires contextual understanding to catch.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 234,
-      "answer": 5367
+      "retrieve": 244,
+      "answer": 3431
     },
-    "total": 5608,
+    "total": 3686,
     "sources": [
       "Publications",
       "How retrieval on this page works"
     ],
     "usage": {
       "in": 1295,
-      "out": 400
+      "out": 87
     },
     "trace": {
       "k": 60,
@@ -342,14 +342,14 @@
     "provider": "openrouter"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He decides when heterogeneous domain questions and need for isolation justify multi-agent. Provide that. Must be only answer, no extra.",
+    "answer": "He decides when the problem involves heterogeneous domains requiring isolated state and when redundant LLM calls can be cut by ~70%, making the orchestration complexity worthwhile. So answer in third person, start with \"He decides...\" maybe. Must start with answer itself, no extra preamble. So first word is the answer itself. Could be \"He decides...\" That's okay. Must be one or two sentences and stop.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 275,
-      "answer": 4825
+      "retrieve": 145,
+      "answer": 6025
     },
-    "total": 5108,
+    "total": 6177,
     "sources": [
       "BU Life AI",
       "This site",

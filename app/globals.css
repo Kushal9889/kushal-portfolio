@@ -60,8 +60,8 @@
   /* Set explicitly rather than mixed, so the three steps stay three steps.
      Chroma rises slightly as they lighten, which keeps a pale tone from
      drifting toward grey and reading as disabled rather than as secondary. */
-  --ink-soft: oklch(0.44 0.016 62);
-  --ink-faint: oklch(0.53 0.018 62);
+  --ink-soft: oklch(0.405 0.016 62);
+  --ink-faint: oklch(0.487 0.018 62);
 
   /* Live state. */
   --signal: oklch(0.47 0.17 32);
@@ -80,8 +80,35 @@
   --mark: oklch(0.45 0.13 274);
   --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
+  /* For mark-coloured text sitting on a mark wash, where the wash has already
+     eaten the contrast the plain token was measured against. */
+  --mark-ink: oklch(0.355 0.14 274);
 
   --paper-sunk: color-mix(in oklch, var(--ink) 3.5%, var(--paper));
+
+  /* Semantic colour.
+   *
+   * The old palette had two accents and a rule that one of them could only
+   * appear on a state selector. That kept the page honest and left it unable to
+   * say anything: there was no encoding for pass, fail, healthy, benched, or
+   * "this is a limit", all of which this system measures on every request.
+   *
+   * These four are meanings, not decorations. Each one may only appear on
+   * something that computed the state it names, which `scripts/audit.ts`
+   * checks. Colour is now information, which is a stricter rule than rationing
+   * it was, not a looser one.
+   *
+   *   --live      running, streaming, reachable, a passing assertion
+   *   --warn      a limit, a caveat, a provider cooling off
+   *   --fail      a defect, a struck line, a failed assertion
+   *   --mark      a claim an outsider can go and check
+   */
+  --live: oklch(0.52 0.14 152);
+  --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
+  --warn: oklch(0.58 0.12 74);
+  --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
+  --fail: oklch(0.51 0.18 27);
+  --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
   /* Motion.
    *
@@ -650,6 +677,79 @@ hr {
 
 .skip:focus {
   left: 0;
+}
+
+/*
+ * The console ground.
+ *
+ * Dark means live. Anything on this page that runs -- the agent, the node
+ * graph, rank fusion, the eval matrix, the trace, provider health -- sits on a
+ * console surface. Anything authored -- prose, roles, publications -- stays on
+ * paper. The ground is the encoding: a reader can tell whether they are looking
+ * at a claim or at a system before they read a word.
+ *
+ * This redefines the existing token names inside a scope rather than
+ * introducing a parallel set. Every component already reads var(--paper) and
+ * var(--ink), so all fifteen stylesheets inherit the dark surface with no edit
+ * at all, and a panel can be dark inside a light page without a global theme
+ * flip. The charcoal is warm (hue 75, the paper family) rather than blue-black,
+ * which is the tell of every generated dark theme.
+ */
+[data-surface="console"] {
+  color-scheme: dark;
+
+  --paper: oklch(0.201 0.011 75);
+  --paper-raised: oklch(0.246 0.012 75);
+  --paper-sunk: oklch(0.166 0.010 75);
+  --rule: oklch(0.375 0.010 75);
+
+  --ink: oklch(0.955 0.008 85);
+  --ink-soft: oklch(0.868 0.010 82);
+  --ink-faint: oklch(0.806 0.012 80);
+
+  /* Restated rather than mixed. The light values are tuned against a light
+     ground; the same chroma at these lightnesses reads muddy on charcoal, and
+     color-mix against a dark paper produces a different result than intended. */
+  --signal: oklch(0.78 0.14 32);
+  --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
+  --mark: oklch(0.80 0.11 274);
+  --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 48%, var(--paper));
+  --mark-ink: oklch(0.86 0.11 274);
+
+  --live: oklch(0.80 0.17 152);
+  --live-wash: color-mix(in oklch, var(--live) 16%, var(--paper));
+  --warn: oklch(0.83 0.14 78);
+  --warn-wash: color-mix(in oklch, var(--warn) 16%, var(--paper));
+  --fail: oklch(0.72 0.17 27);
+  --fail-wash: color-mix(in oklch, var(--fail) 16%, var(--paper));
+
+  --lift-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --lift-2: 0 2px 4px oklch(0 0 0 / 0.35), 0 8px 20px oklch(0 0 0 / 0.3);
+
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Paper never needs it, but a console nested inside a console would otherwise
+   inherit and compound. Explicit so the ground is always exactly one level. */
+[data-surface="paper"] {
+  color-scheme: light;
+}
+
+/*
+ * A recessed ground costs contrast.
+ *
+ * The ink ramp is tuned against --paper. On --paper-sunk the faintest step
+ * measured Lc 70.8 against a floor of 75 for text under 18px, which put every
+ * label in the credentials section under the line. Restated in the scope, the
+ * same way the console ground restates it, so no component has to know it is
+ * sitting on a darker surface.
+ */
+[data-tone="sunk"],
+[data-surface="sunk"] {
+  --ink-faint: oklch(0.442 0.018 62);
+  --ink-soft: oklch(0.375 0.016 62);
 }
 
 /*

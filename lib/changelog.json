@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Make the animations that were already there actually run"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Record what was fixed, what was wrong, and what is still open"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Give the page a colour system, and fix what the fade was hiding"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Publish what the page had only been claiming"
     }
   ]
 }

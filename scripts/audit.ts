@@ -385,6 +385,12 @@ const domains: Domain[] = [
               // block pins it so a dark-mode print does not put lifted
               // vermillion on white paper. Neither is a component using it.
               if (/^\s*(:root|@media|@supports|html|--)/.test(selector)) continue;
+              // A block that declares the token is not a block that uses it.
+              // 12.4 has always had this guard; this one did not, so the scoped
+              // console ground -- which restates every token against a dark
+              // paper -- read as forty decorative uses.
+              if (/--signal(-\w+)?:/.test(block)) continue;
+              if (/^\s*\[data-surface/.test(selector)) continue;
               const isState =
                 // Happening now.
                 /live|running|data-state|data-live|pulse|progress|dot|\.stop\b|\.on\b/i.test(selector) ||
@@ -425,6 +431,11 @@ const domains: Domain[] = [
               if (!/var\(--mark(-wash|-rule)?\)/.test(block)) continue;
               const selector = block.split("{")[0];
               if (/^\s*(:root|@media|@supports|@keyframes|html|--)/.test(selector)) continue;
+              // A block that declares the token is not a block that uses it,
+              // and the scoped console ground restates every token against a
+              // dark paper. 12.4 has always had this guard; this one did not.
+              if (/--mark(-\w+)?:/.test(block)) continue;
+              if (/^\s*\[data-surface/.test(selector)) continue;
               if (!allowed.test(selector)) offenders.push(`${file}: ${selector.trim().slice(0, 40)}`);
             }
           }
@@ -462,6 +473,85 @@ const domains: Domain[] = [
         })(),
       },
       { id: "12.7", need: "voice degrades, never goes silent", pass: /speakBuiltIn/.test(read("lib/voice/speech.ts")) && /speakNeural/.test(read("lib/voice/speech.ts")) },
+    ],
+  },
+  {
+    name: "13. Instrument contract",
+    blocking: true,
+    checks: [
+      {
+        /*
+         * Colour is information here, not decoration, and that is a stricter
+         * rule than the rationing it replaces. The old system had two accents
+         * and a ban on using one of them statically, which kept the page honest
+         * and left it unable to say anything: there was no encoding for pass,
+         * fail, healthy, benched or "this is a limit", all of which this system
+         * measures on every request.
+         *
+         * So the semantic tokens are allowed anywhere they carry their meaning,
+         * and nowhere else. The allowlist is written out rather than inferred,
+         * for the same reason the --mark one is: enumerating the legitimate
+         * uses makes this pass by construction today and fail the moment
+         * something outside the list wants the colour, which is the decision
+         * worth reviewing.
+         */
+        id: "13.1",
+        need: "semantic colour only where it carries its meaning",
+        pass: (() => {
+          const MEANING: Record<string, RegExp> = {
+            live: /live|running|stream|healthy|ready|up\b|online|pass|ok\b|active|reachable|pulse|dot/i,
+            warn: /warn|limit|caveat|cool|bench|stale|degraded|partial|budget|throttle|unsourced|missing/i,
+            fail: /fail|error|defect|bad\b|struck|strike|reject|down\b|offline|drop/i,
+          };
+          const offenders: string[] = [];
+          for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
+            const src = stripComments(read(file));
+            for (const block of src.split("}")) {
+              const selector = (block.split("{")[0] ?? "").trim();
+              if (/^\s*(:root|@media|@supports|@keyframes|html|\[data-surface)/.test(selector)) continue;
+              for (const [name, allowed] of Object.entries(MEANING)) {
+                if (!new RegExp(`var\\(--${name}(-wash)?\\)`).test(block)) continue;
+                if (/--(live|warn|fail)(-wash)?:/.test(block)) continue;
+                if (!allowed.test(selector)) {
+                  offenders.push(`${file}: --${name} on ${selector.slice(0, 40)}`);
+                }
+              }
+            }
+          }
+          return offenders.length === 0;
+        })(),
+      },
+      {
+        /*
+         * Dark means live. A console surface that contains nothing live is a
+         * dark box chosen because it looked good, and the moment one of those
+         * ships the ground stops encoding anything and the reader has to go
+         * back to reading labels.
+         *
+         * Checked as a proxy: a component that puts a console surface on screen
+         * has to also carry something that changes at runtime.
+         */
+        id: "13.2",
+        need: "a console surface holds something that actually runs",
+        pass: (() => {
+          const LIVE =
+            /data-state|live-dot|RETRIEVAL_EVENT|ROUTE_EVENT|ASK_EVENT|useState|readout|data-live|EventSource/;
+          const offenders: string[] = [];
+          for (const file of sourceFiles.filter((f) => f.endsWith(".tsx"))) {
+            const src = read(file);
+            if (!/data-surface=["'{]?["']?console/.test(src)) continue;
+            if (!LIVE.test(src)) offenders.push(file);
+          }
+          return offenders.length === 0;
+        })(),
+      },
+      {
+        // Every ground has to be legible on its own terms. The focus ring was a
+        // single accent outline tuned against paper; on charcoal it disappears.
+        id: "13.3",
+        need: "focus is visible on both grounds",
+        pass: /\[data-surface="console"\][\s\S]{0,600}--signal/.test(read("app/globals.css")),
+      },
     ],
   },
 ];

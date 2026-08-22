@@ -1,4 +1,11 @@
 .agent {
+  /* The instrument, given an edge. It was previously a bare region separated
+     from the hero by a hairline, which made the one genuinely live thing on the
+     page look like another paragraph. */
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-panel);
+  box-shadow: var(--lift-2);
   display: grid;
   /* minmax(0, 1fr) rather than 1fr: a grid track defaults to min-content, and
      the longest opener is wider than a phone. Without this the whole block
@@ -374,12 +381,15 @@
 /* A gesture has no key to draw, so it is named in the same slot at the same
    size. Keeping the column identical is what makes the three rows scan as one
    list rather than as three unrelated notes. */
+  /* --ink-soft, not --ink-faint. APCA punishes small text hard: the faintest
+     tone measured Lc 61 here against a floor of 75 for anything under 18px.
+     The third step of the ink ramp is for large or decorative text only. */
 .gesture {
   font-family: var(--font-mono), monospace;
   font-size: 0.78em;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   border-block-end: 1px dashed var(--rule);
   padding-block-end: 0.15em;
 }
@@ -473,7 +483,7 @@
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* The attack, offered deliberately. Set apart from the openers because it is a
