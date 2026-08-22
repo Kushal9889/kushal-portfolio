@@ -1,0 +1,145 @@
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--s-5) var(--s-6);
+}
+
+.group {
+  display: grid;
+  gap: var(--s-2);
+  align-content: start;
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  border-block-end: var(--border-hair) solid var(--rule);
+  padding-block-end: var(--s-1);
+}
+
+.groupLabel {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.groupCount {
+  font-size: var(--step-0);
+  color: var(--ink);
+}
+
+.cells {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  margin: var(--s-1) 0 0;
+  padding: 0;
+}
+
+/* One case.
+ *
+ * Sized to a touch target rather than to a calendar square: this is a control
+ * that opens the assertion, not a heat cell. The colour is the group, so a
+ * reader scanning the row sees what kind of case it is; the outcome is carried
+ * by fill against outline, which survives both grounds and a reader who cannot
+ * separate the hues. */
+.cell {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: var(--r-sm);
+  border: var(--border-solid) solid var(--rule);
+  background: none;
+  cursor: pointer;
+  transition:
+    transform var(--t-normal) var(--ease-instrument),
+    border-color var(--t-normal) var(--ease-out),
+    background-color var(--t-normal) var(--ease-out);
+}
+
+.cell:hover,
+.cell[data-open] {
+  transform: translateY(-2px);
+}
+
+/* Colour is the outcome, not the group.
+ *
+ * An earlier version tinted each group its own hue, which audit 13.1 rejected
+ * and was right to: an authorisation case is not a warning, and a grounding
+ * case is not "live". That was categorical encoding borrowed from the semantic
+ * palette, which is exactly the decoration the rule exists to stop. The group
+ * is already carried by its column, its label and its sentence.
+ *
+ * What the ring adds is real and computed: a hollow centre means the policy
+ * layer classified the question and no model was ever called. Six of these
+ * cases are attempts to break the agent, and every one of them was stopped
+ * before it reached a provider. Shape carries that, because shape is free and
+ * means nothing on its own until it is given something to mean. */
+.cell[data-outcome="passed"] {
+  background: var(--live);
+  border-color: var(--live);
+}
+
+.cell[data-outcome="failed"] {
+  background: var(--fail-wash);
+  border-color: var(--fail);
+}
+
+.cell[data-outcome="passed"][data-reached-model="false"] {
+  background: none;
+  box-shadow: inset 0 0 0 var(--border-emphasis) var(--live);
+}
+
+.cell[data-outcome="failed"][data-reached-model="false"] {
+  box-shadow: inset 0 0 0 var(--border-emphasis) var(--fail);
+}
+
+.says {
+  margin: var(--s-1) 0 0;
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.detail {
+  margin-block-start: var(--s-5);
+  padding-block-start: var(--s-4);
+  border-block-start: var(--border-hair) solid var(--rule);
+  min-height: 4.25rem;
+}
+
+.detailQ {
+  margin: 0 0 var(--s-1);
+  font-size: var(--step-0);
+  color: var(--ink);
+}
+
+.detailA {
+  margin: 0;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.detailHint {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+  max-width: var(--measure-tight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+
+  .cell:hover,
+  .cell[data-open] {
+    transform: none;
+  }
+}

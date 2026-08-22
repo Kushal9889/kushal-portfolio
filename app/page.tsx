@@ -15,6 +15,7 @@ import PageMotion from "./components/PageMotion";
 import AskSeeds from "./components/AskSeeds";
 import Topology from "./components/Topology";
 import Defects from "./components/Defects";
+import EvalMatrix from "./components/EvalMatrix";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
 import changelog from "@/lib/changelog.json";
@@ -168,6 +169,9 @@ export default function Page() {
             proves he finds failures and this proves he checks for them. */}
         <Section id="measured" index="02" title="How this is measured">
           <Measured />
+          {/* The suite as sixteen objects rather than one ratio. Six of them are
+              attempts to break the agent, which the score cannot say. */}
+          <EvalMatrix />
           <Defects />
           <AskAbout
             email={profile.email}

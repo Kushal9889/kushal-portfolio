@@ -81,6 +81,7 @@ type Domain = { name: string; blocking: boolean; checks: Check[] };
 const countOf = (haystack: string, needle: RegExp) => (haystack.match(needle) ?? []).length;
 
 let markOffenders: string[] = [];
+let semanticOffenders: string[] = [];
 
 const domains: Domain[] = [
   {
@@ -527,8 +528,12 @@ const domains: Domain[] = [
               }
             }
           }
+          semanticOffenders = offenders;
           return offenders.length === 0;
         })(),
+        get note() {
+          return semanticOffenders.length ? semanticOffenders.slice(0, 4).join(" | ") : "";
+        },
       },
       {
         /*

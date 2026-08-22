@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant for an enterprise consulting client on Azure, built with Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React and Cosmos DB.",
+    "answer": "He shipped a document intelligence assistant for an enterprise consulting client on Azure.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 295,
-      "answer": 1840
+      "retrieve": 377,
+      "answer": 2392
     },
-    "total": 2161,
+    "total": 2799,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -16,7 +16,7 @@
     ],
     "usage": {
       "in": 1732,
-      "out": 301
+      "out": 237
     },
     "trace": {
       "k": 60,
@@ -172,21 +172,21 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "A silent failure with no exception and no stack trace in a production SDK. He discovered it by manually finding a bug in the production SDK.",
+    "answer": "\"A silent failure in production with no exception or stack trace, discovered manually in a production SDK.\" Must start with first word being the answer itself. So first word could be \"A\". But need to start with the answer itself, not a preamble. The answer itself is the content. So first word should be something like \"A\". But the instruction: \"Start your first word with the answer itself.\" Means the first word should be the answer? Actually \"Start your first word with the answer itself.\" Means the first word should be the answer? Probably they want the answer to start with the answer itself, i.e., the first word should be the answer phrase? Hmm ambiguous. They say \"Start your first word with the answer itself.\" Means the first word should be the answer? Actually they say \"Start your first word with the answer itself.\" Could interpret as the first word should be the answer (i.e., the answer begins with that word).",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 246,
-      "answer": 4090
+      "retrieve": 336,
+      "answer": 3456
     },
-    "total": 4346,
+    "total": 3802,
     "sources": [
       "Publications",
       "How retrieval on this page works"
     ],
     "usage": {
       "in": 1295,
-      "out": 393
+      "out": 400
     },
     "trace": {
       "k": 60,
@@ -342,14 +342,14 @@
     "provider": "nvidia"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He decides when the problem involves heterogeneous domains requiring isolated state and reduces redundant LLM calls, i.e., when a single agent would cause contamination and you need specialized agents. So answer in third person, start with the answer itself. No extra sentences beyond maybe one or two. Must not mention context. Must not quote. Must not say \"The context says\". Must lead with answer. So maybe: \"He adopts a multi-agent architecture when heterogeneous, domain-specific queries would cause contamination and redundant LLM calls in a monolithic agent, and isolation of state is required.\" That's one sentence. Could add second sentence? The instruction: \"Lead with the specific thing in one or two sentences and stop.\" So we can give one or two sentences.",
+    "answer": "He adopts a multi-agent supervisor when a single long-context agent causes retrieval contamination and redundant LLM calls, as in the BU Life AI redesign.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 336,
-      "answer": 6305
+      "retrieve": 233,
+      "answer": 3479
     },
-    "total": 6649,
+    "total": 3717,
     "sources": [
       "BU Life AI",
       "This site",
@@ -358,7 +358,7 @@
     ],
     "usage": {
       "in": 2009,
-      "out": 400
+      "out": 355
     },
     "trace": {
       "k": 60,
