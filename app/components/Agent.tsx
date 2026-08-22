@@ -85,6 +85,23 @@ export const ASK_EVENT = "corpus:ask";
 /** The branch the router chose, so the topology figure can light its own path. */
 export const ROUTE_EVENT = "corpus:route";
 
+/**
+ * One completed request, for the telemetry strip in the hero.
+ *
+ * Emitted per answer rather than polled, and never on a timer: the strip is
+ * completely still between requests because nothing is happening between them.
+ * A sparkline that moves on its own would be decoration dressed as measurement,
+ * which is the one thing this page cannot afford to fake.
+ */
+export const TELEMETRY_EVENT = "corpus:telemetry";
+
+export type TelemetryPing = {
+  ms: number;
+  tokens: number;
+  cost: number;
+  provider: string | null;
+};
+
 export default function Agent({ email, linkedin }: { email: string; linkedin: string }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
@@ -292,6 +309,16 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           degraded: data.degraded,
           policy: data.policy,
         });
+        window.dispatchEvent(
+          new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
+            detail: {
+              ms: Math.round(performance.now() - startedAt),
+              tokens: (data.usage?.in ?? 0) + (data.usage?.out ?? 0),
+              cost: data.listPrice ?? 0,
+              provider: data.provider ?? null,
+            },
+          }),
+        );
         finish();
       }
     };

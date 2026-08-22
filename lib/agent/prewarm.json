@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 377,
-      "answer": 2392
+      "retrieve": 418,
+      "answer": 4611
     },
-    "total": 2799,
+    "total": 5057,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -16,7 +16,7 @@
     ],
     "usage": {
       "in": 1732,
-      "out": 237
+      "out": 317
     },
     "trace": {
       "k": 60,
@@ -172,21 +172,21 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "\"A silent failure in production with no exception or stack trace, discovered manually in a production SDK.\" Must start with first word being the answer itself. So first word could be \"A\". But need to start with the answer itself, not a preamble. The answer itself is the content. So first word should be something like \"A\". But the instruction: \"Start your first word with the answer itself.\" Means the first word should be the answer? Actually \"Start your first word with the answer itself.\" Means the first word should be the answer? Probably they want the answer to start with the answer itself, i.e., the first word should be the answer phrase? Hmm ambiguous. They say \"Start your first word with the answer itself.\" Means the first word should be the answer? Actually they say \"Start your first word with the answer itself.\" Could interpret as the first word should be the answer (i.e., the answer begins with that word).",
+    "answer": "A silent failure in LangChain with no exception or stack trace was discovered manually in a production SDK.",
     "route": "answer",
     "timings": {
       "route": 1,
       "retrieve": 336,
-      "answer": 3456
+      "answer": 4868
     },
-    "total": 3802,
+    "total": 5215,
     "sources": [
       "Publications",
       "How retrieval on this page works"
     ],
     "usage": {
       "in": 1295,
-      "out": 400
+      "out": 344
     },
     "trace": {
       "k": 60,
@@ -342,14 +342,14 @@
     "provider": "nvidia"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He adopts a multi-agent supervisor when a single long-context agent causes retrieval contamination and redundant LLM calls, as in the BU Life AI redesign.",
+    "answer": "He uses multi-agent when a single agent mixing domains causes retrieval contamination and reasoning drift, and when state isolation and a large reduction in redundant LLM calls are required.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 233,
-      "answer": 3479
+      "retrieve": 235,
+      "answer": 5290
     },
-    "total": 3717,
+    "total": 5542,
     "sources": [
       "BU Life AI",
       "This site",
@@ -358,7 +358,7 @@
     ],
     "usage": {
       "in": 2009,
-      "out": 355
+      "out": 386
     },
     "trace": {
       "k": 60,

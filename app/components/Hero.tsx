@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Telemetry from "./Telemetry";
+import { TELEMETRY_EVENT, type TelemetryPing } from "./Agent";
 import styles from "./Hero.module.css";
 
 const NODES = ["route", "retrieve", "answer"] as const;
@@ -83,11 +85,27 @@ export default function Hero({
           setUnreachable(true);
           return;
         }
-        const measured: Trace = await res.json();
+        const demo: {
+          timings: Trace;
+          total: number;
+          usage: { in: number; out: number } | null;
+          provider: string | null;
+        } = await res.json();
+        const measured = demo.timings;
 
         if (calm) {
           setTrace(measured);
           setDone(true);
+          window.dispatchEvent(
+            new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
+              detail: {
+                ms: demo.total,
+                tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
+                cost: 0,
+                provider: demo.provider,
+              },
+            }),
+          );
           return;
         }
 
@@ -106,6 +124,19 @@ export default function Hero({
         }
         setActive(null);
         setDone(true);
+        // The request the page made on load is a real request and belongs on
+        // the strip. Without it a visitor who asks nothing sees an empty chart
+        // under a panel claiming to be live.
+        window.dispatchEvent(
+          new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
+            detail: {
+              ms: demo.total,
+              tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
+              cost: 0,
+              provider: demo.provider,
+            },
+          }),
+        );
       } catch (err) {
         // Offline, blocked, or the route is not deployed. The structure above
         // still tells the story; it just does so without numbers. Stated rather
@@ -239,6 +270,10 @@ export default function Hero({
 
 
           <div className={styles.agentSlot}>{children}</div>
+
+          {/* What this page has done since you opened it. Every bar is one real
+              request, plotted against the median measured across the eval run. */}
+          <Telemetry />
         </div>
 
         {/* Below the instrument, not above it.
