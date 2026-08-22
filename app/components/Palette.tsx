@@ -30,6 +30,7 @@ export default function Palette({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const inputRef = useRef<HTMLInputElement>(null);
   const previous = useRef<HTMLElement | null>(null);
 
@@ -78,6 +79,26 @@ export default function Palette({
     // The prop feeding "Open GitHub" used to be called `resume`, from a time
     // when no resume existed. There is one now, so it gets its own entry.
     {
+      /* The dark scheme has existed in the stylesheet since it was written and
+         nothing has ever been able to reach it: `data-theme` was set by no code
+         anywhere in the repo, so eleven tokens and their measured commentary
+         shipped dead on every page load. The ADR keeps light unconditional and
+         ignores the system preference on purpose, which makes a switch the only
+         honest way to offer the other half. */
+      label: theme === "dark" ? "Switch to light" : "Switch to dark",
+      hint: theme === "dark" ? "paper and ink" : "console ground everywhere",
+      run: () => {
+        const next = theme === "dark" ? "light" : "dark";
+        document.documentElement.dataset.theme = next;
+        try {
+          localStorage.setItem("theme", next);
+        } catch {
+          // Private mode. The choice still applies for this page view.
+        }
+        setTheme(next);
+      },
+    },
+    {
       // Hands an interviewer the prep list rather than making them invent one.
       // The questions are written in the corpus beside the sections that answer
       // them, so this cannot drift from what the agent can actually handle.
@@ -116,6 +137,12 @@ export default function Palette({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Read after mount rather than rendered on the server: the attribute is set
+  // by the pre-hydration script from storage, which the server cannot know.
+  useEffect(() => {
+    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+  }, [open]);
 
   // Focus moves into the dialog on open and returns to wherever it came from on
   // close, so a keyboard user is never dropped at the top of the document.

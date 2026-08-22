@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "a document intelligence assistant for an enterprise consulting client",
+    "answer": "He shipped a document intelligence assistant for an enterprise consulting client on Azure. That is the specific thing. Must quote figure if \"Measured:\" line present. There's a \"Measured: 14 tools on one LangGraph agent; BM25 + vector hybrid retrieval, Cohere reranked; LLM-as-a-Judge hallucination and retrieval scoring\". That's a measured figure.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 383,
-      "answer": 2619
+      "retrieve": 284,
+      "answer": 3311
     },
-    "total": 3029,
+    "total": 3621,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -16,7 +16,7 @@
     ],
     "usage": {
       "in": 1851,
-      "out": 317
+      "out": 400
     },
     "trace": {
       "k": 60,
@@ -172,14 +172,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect broke in production as a silent failure with no exception or stack trace. He found it by manually detecting it in a production SDK.",
+    "answer": "The LangChain defect broke, a silent failure with no exception or stack trace. He discovered it manually in a production SDK, using the contextual bug detection method described in his paper.",
     "route": "answer",
     "timings": {
       "route": 1,
       "retrieve": 320,
-      "answer": 2288
+      "answer": 2800
     },
-    "total": 2616,
+    "total": 3128,
     "sources": [
       "Publications",
       "How retrieval on this page works"
@@ -342,14 +342,14 @@
     "provider": "nvidia"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He decides when reducing redundant LLM calls by 70% and achieving state isolation justifies orchestration complexity.",
+    "answer": "He uses a supervisor node that classifies intent and routes to specialized agents when the use case involves heterogeneous questions across domains, leading to redundant LLM calls and state contamination; the 70% reduction justifies the added orchestration complexity.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 234,
-      "answer": 1819
+      "retrieve": 233,
+      "answer": 4248
     },
-    "total": 2062,
+    "total": 4489,
     "sources": [
       "BU Life AI",
       "This site",

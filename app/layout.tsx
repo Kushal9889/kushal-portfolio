@@ -161,7 +161,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{if(new URLSearchParams(location.search).get("mode")==="condensed")document.documentElement.classList.add("condensed")}catch(e){}',
+              'try{' +
+              'var d=document.documentElement;' +
+              'if(new URLSearchParams(location.search).get("mode")==="condensed")d.classList.add("condensed");' +
+              // Restores a chosen theme before first paint, so a reader who
+              // picked dark never sees the page flash light on the way in.
+              // Read from storage only: the ADR keeps light unconditional and
+              // ignores the system preference deliberately, so that a recruiter
+              // sees the design that was measured rather than a variant of it.
+              // The dark scheme has been in the stylesheet and unreachable since
+              // it was written, because nothing ever set this attribute.
+              'var t=localStorage.getItem("theme");' +
+              'if(t==="dark"||t==="light")d.dataset.theme=t;' +
+              '}catch(e){}',
           }}
         />
         <script

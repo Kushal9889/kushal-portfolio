@@ -1071,3 +1071,99 @@ button {
     display: none;
   }
 }
+
+/*
+ * The control layer.
+ *
+ * Twenty-seven buttons on this page shared exactly three interaction moves --
+ * a border going from rule to ink, text going from soft to ink, and a two-pixel
+ * lift on two cards -- and exactly one `:active` rule between them. Nothing
+ * depressed, so every control felt like a link with a box around it, and a
+ * reader got no confirmation that a click had landed until the thing it did
+ * appeared.
+ *
+ * These are element-level so they apply to controls that already exist rather
+ * than requiring every call site to adopt a new class. Component styles keep
+ * their own look; this is the physics underneath them.
+ */
+button,
+[role="button"],
+summary,
+a[data-pull] {
+  /* Press depth, not a colour change. The surface goes down and its cast edge
+     collapses, which is what a physical control does and what a reader reads as
+     "that registered" without having to notice a hue. */
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+}
+
+button:active,
+[role="button"]:active,
+summary:active,
+a[data-pull]:active {
+  transform: translateY(1px);
+}
+
+/* A disclosure that is open should look open before it is read.
+ *
+ * Sixteen elements on this page carry `aria-expanded` and not one CSS rule read
+ * it, so the only difference between an open and a closed control was the word
+ * inside it. Assistive tech knew; nobody looking did. */
+[aria-expanded="true"] {
+  color: var(--ink);
+}
+
+[aria-expanded]::after {
+  content: "";
+  display: inline-block;
+  width: 0.34em;
+  height: 0.34em;
+  margin-inline-start: 0.5em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.12em) rotate(45deg);
+  transition: transform var(--t-normal) var(--ease-out);
+}
+
+[aria-expanded="true"]::after {
+  transform: translateY(0.04em) rotate(-135deg);
+}
+
+/* The eval matrix cells are their own affordance and carry their own marker. */
+[aria-expanded][class*="cell"]::after {
+  content: none;
+}
+
+/*
+ * Touch targets.
+ *
+ * Measured: a metric's source link rendered 16px tall, the corpus question
+ * seeds 34px, and the voice checkbox 17px. WCAG 2.2 puts the floor at 24px and
+ * the comfortable target at 44px; these were under both. Padding rather than
+ * height, so the visual size is unchanged and only the hit area grows.
+ */
+a[class*="source"],
+button[class*="seed"] {
+  position: relative;
+}
+
+a[class*="source"]::before,
+button[class*="seed"]::before {
+  content: "";
+  position: absolute;
+  inset: -0.55rem -0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  [role="button"]:active,
+  summary:active,
+  a[data-pull]:active {
+    transform: none;
+  }
+
+  [aria-expanded]::after {
+    transition: none;
+  }
+}
