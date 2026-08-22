@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import topology from "@/lib/agent/topology.json";
 import { ROUTE_EVENT } from "./Agent";
+import Panel from "./Panel";
 import styles from "./Topology.module.css";
 
 /**
@@ -58,7 +59,12 @@ export default function Topology() {
   };
 
   return (
-    <figure className={styles.wrap}>
+    <Panel
+      label="compiled graph"
+      state={route ? "done" : "idle"}
+      status={route ? `routed to ${route}` : `${topology.conditional} conditional`}
+    >
+      <figure className={styles.wrap}>
       <svg
         className={styles.svg}
         viewBox="0 0 640 200"
@@ -121,6 +127,7 @@ export default function Topology() {
           <>Ask the agent something and the branch it takes lights up here.</>
         )}
       </figcaption>
-    </figure>
+      </figure>
+    </Panel>
   );
 }

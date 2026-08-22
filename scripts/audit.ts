@@ -80,6 +80,8 @@ type Domain = { name: string; blocking: boolean; checks: Check[] };
 
 const countOf = (haystack: string, needle: RegExp) => (haystack.match(needle) ?? []).length;
 
+let markOffenders: string[] = [];
+
 const domains: Domain[] = [
   {
     name: "1. Content truth",
@@ -439,8 +441,15 @@ const domains: Domain[] = [
               if (!allowed.test(selector)) offenders.push(`${file}: ${selector.trim().slice(0, 40)}`);
             }
           }
+          markOffenders = offenders;
           return offenders.length === 0;
         })(),
+        // A check that fails without naming what failed costs more time than it
+        // saves. This one reported nothing for two rounds while the cause was a
+        // selector nobody could see from the output.
+        get note() {
+          return markOffenders.length ? markOffenders.slice(0, 4).join(" | ") : "";
+        },
       },
       {
         // The three text tones have to actually be three. They were derived off

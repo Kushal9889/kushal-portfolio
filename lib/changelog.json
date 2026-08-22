@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Make the hero one instrument instead of two"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Dark means live: give the page a second ground"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Retrieve on the phrase, and stop padding the context with filler"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Stop the model narrating itself, and give the hero one thing to look at"
     }
   ]
 }

@@ -1,0 +1,70 @@
+/* The instrument shell.
+ *
+ * Overflow is hidden so the header strip's fill is clipped by the radius rather
+ * than needing its own corner values, which is the detail that makes a panel
+ * read as one object instead of a box with a bar balanced on top. */
+.panel {
+  margin-block: var(--s-5);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-panel);
+  box-shadow: var(--lift-2);
+  overflow: hidden;
+}
+
+/* What it is on the left, what it is doing on the right. */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-block-end: var(--border-hair) solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.label {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--step--2);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The status colour is the panel's state, so it is information rather than
+   trim. Degraded takes the warning hue rather than the failure hue on purpose:
+   a provider being unreachable is a limit the page handles, not a defect. */
+.panel[data-state="running"] .status {
+  color: var(--live);
+}
+
+.panel[data-state="done"] .status {
+  color: var(--ink);
+}
+
+.panel[data-state="degraded"] .status {
+  color: var(--warn);
+}
+
+.body {
+  padding: var(--s-5);
+}
+
+@media (max-width: 40rem) {
+  .head {
+    padding: var(--s-2) var(--s-4);
+  }
+
+  .body {
+    padding: var(--s-4);
+  }
+}

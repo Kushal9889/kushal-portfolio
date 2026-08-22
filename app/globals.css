@@ -731,8 +731,10 @@ hr {
   color: var(--ink);
 }
 
-/* Paper never needs it, but a console nested inside a console would otherwise
-   inherit and compound. Explicit so the ground is always exactly one level. */
+/* Declaring the ground back to paper, for a written block sitting inside a live
+   one. A console nested in a console is harmless -- these values are absolute,
+   not relative, so the inner scope simply restates what it already inherited --
+   but going back the other way needs saying explicitly. */
 [data-surface="paper"] {
   color-scheme: light;
 }

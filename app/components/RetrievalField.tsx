@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import field from "@/lib/agent/field.json";
 import { RETRIEVAL_EVENT } from "./Agent";
+import Panel from "./Panel";
 import styles from "./RetrievalField.module.css";
 
 /**
@@ -107,7 +108,16 @@ export default function RetrievalField() {
   const denseOff = live ? !live.denseUsed : false;
 
   return (
-    <figure className={styles.wrap}>
+    <Panel
+      label="rank fusion"
+      state={live ? "done" : "idle"}
+      status={
+        live
+          ? `${live.rows.filter((r) => r.selected).length} of ${live.rows.length} kept`
+          : `${field.n} chunks at rest`
+      }
+    >
+      <figure className={styles.wrap}>
       <div className={styles.head}>
         <span className="label">bm25 rank</span>
         <span className="label">
@@ -174,7 +184,8 @@ export default function RetrievalField() {
             variance in three axes. Rank is exact, so rank is what is drawn.
           </span>
         )}
-      </figcaption>
-    </figure>
+        </figcaption>
+      </figure>
+    </Panel>
   );
 }
