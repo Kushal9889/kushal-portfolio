@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-21",
+      "subject": "Dark means live: give the page a second ground"
+    },
+    {
+      "date": "2026-08-21",
       "subject": "Make the animations that were already there actually run"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Stop the model narrating itself, and give the hero one thing to look at"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Give the page a colour system, and fix what the fade was hiding"
     }
   ]
 }

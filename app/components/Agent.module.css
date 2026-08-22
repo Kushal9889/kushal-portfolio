@@ -1,11 +1,7 @@
 .agent {
-  /* The instrument, given an edge. It was previously a bare region separated
-     from the hero by a hairline, which made the one genuinely live thing on the
-     page look like another paragraph. */
-  padding: var(--s-5) var(--s-5) var(--s-4);
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-panel);
-  box-shadow: var(--lift-2);
+  /* No frame of its own. The hero's console panel wraps the graph and this
+     input together as one instrument, and a second border inside the first
+     reads as two boxes that happen to be touching. */
   display: grid;
   /* minmax(0, 1fr) rather than 1fr: a grid track defaults to min-content, and
      the longest opener is wider than a phone. Without this the whole block

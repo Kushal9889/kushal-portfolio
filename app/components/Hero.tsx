@@ -185,43 +185,67 @@ export default function Hero({
             that gates a reply outside the first screen. */}
         <p className={styles.available}>Available {available}</p>
 
-        {/* The graph, drawn rather than written.
-            Each node is a cell with a rail running through it; the rail fills as
-            that node completes, so the row reads as a system executing instead of
-            a line of log output. Timings sit under the node they belong to. */}
-        <div className={styles.graph} aria-hidden="true">
-          {NODES.map((node, i) => {
-            const ms = trace[node];
-            const state = active === node ? "running" : ms !== undefined ? "done" : "idle";
-            return (
-              <div key={node} className={styles.cell} data-state={state}>
-                <div className={styles.rail}>
-                  {i > 0 && <span className={styles.railLine} />}
-                  <span className={styles.dot} />
-                  {i < NODES.length - 1 && <span className={styles.railLine} />}
+        {/* One instrument, not two.
+            The graph and the agent were separated by the availability line and
+            two buttons, so the thing that had just run and the box that runs it
+            again read as unrelated furniture. They are the same object: this
+            panel shows the request the page made on load, and the input under
+            it makes another. The console ground says the whole block is live. */}
+        <div className={styles.console} data-surface="console">
+          <div className={styles.consoleHead}>
+            <span className={styles.consoleLabel}>agent</span>
+            <span className={styles.consoleState} data-state={done ? "done" : unreachable ? "degraded" : "running"}>
+              <span className="live-dot" data-state={done || unreachable ? undefined : "running"} />
+              {done ? `${total}ms` : unreachable ? "unreachable" : "running"}
+            </span>
+          </div>
+
+          {/* The graph, drawn rather than written.
+              Each node is a cell with a rail running through it; the rail fills as
+              that node completes, so the row reads as a system executing instead of
+              a line of log output. Timings sit under the node they belong to. */}
+          <div className={styles.graph} aria-hidden="true">
+            {NODES.map((node, i) => {
+              const ms = trace[node];
+              const state = active === node ? "running" : ms !== undefined ? "done" : "idle";
+              return (
+                <div key={node} className={styles.cell} data-state={state}>
+                  <div className={styles.rail}>
+                    {i > 0 && <span className={styles.railLine} />}
+                    <span className={styles.dot} />
+                    {i < NODES.length - 1 && <span className={styles.railLine} />}
+                  </div>
+                  <span className={styles.label}>{node}</span>
+                  <span className={`${styles.ms} tabular`}>
+                    {ms !== undefined ? `${ms}ms` : state === "running" ? "\u00b7\u00b7\u00b7" : ""}
+                  </span>
                 </div>
-                <span className={styles.label}>{node}</span>
-                <span className={`${styles.ms} tabular`}>
-                  {ms !== undefined ? `${ms}ms` : state === "running" ? "\u00b7\u00b7\u00b7" : ""}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          <p className={styles.caption}>
+            {done ? (
+              <>
+                <span className="live-dot" /> answered in{" "}
+                <span className="tabular">{total}ms</span>, measured on this page load
+              </>
+            ) : unreachable ? (
+              <>the demo endpoint is unreachable right now; the box below still answers</>
+            ) : (
+              <>ask anything below and this graph runs again</>
+            )}
+          </p>
+
+
+          <div className={styles.agentSlot}>{children}</div>
         </div>
 
-        <p className={styles.caption}>
-          {done ? (
-            <>
-              <span className="live-dot" /> answered in{" "}
-              <span className="tabular">{total}ms</span>, measured on this page load
-            </>
-          ) : unreachable ? (
-            <>the demo endpoint is unreachable right now; the box below still answers</>
-          ) : (
-            <>ask anything below and this graph runs again</>
-          )}
-        </p>
-
+        {/* Below the instrument, not above it.
+            These two sat between the evidence block and the console and pushed
+            the one live thing on the page to 806px, which on a 13-inch laptop
+            is off the first screen entirely. A reader who wants to write has
+            already decided; a reader who has not seen the agent work has not. */}
         <div className={styles.actions}>
           <a className={styles.cta} href={contactHref} data-pull>
             Get in touch
@@ -229,12 +253,6 @@ export default function Hero({
           <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
             {credential.label}
           </a>
-        </div>
-
-        {/* The demo sits above the fold because it is the strongest thing on the
-            page and an unseen proof persuades nobody. Everything below it is
-            supporting evidence for what this box already showed. */}
-        <div className={styles.agentSlot}>{children}
         </div>
       </div>
     </header>

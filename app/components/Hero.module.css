@@ -321,8 +321,8 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 0.5rem;
-  margin: 0.7rem 0 0;
+  gap: var(--s-2) var(--s-2);
+  margin: var(--s-3) 0 0;
   padding: 0;
 }
 
@@ -330,8 +330,8 @@
   font-size: var(--step--1);
   line-height: 1;
   color: var(--ink-soft);
-  padding: 0.42em 0.7em;
-  border: 1px solid var(--rule);
+  padding: 0.34em 0.62em;
+  border: var(--border-hair) solid var(--rule);
   border-radius: 100px;
   white-space: nowrap;
 }
@@ -352,7 +352,9 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: clamp(1rem, 3vw, 2rem);
   align-items: center;
-  margin-block: clamp(1.6rem, 4.5vh, 2.8rem);
+  /* Tightened. The evidence block was spending 90px of pure margin, which
+     pushed the live instrument off a 13-inch first screen. */
+  margin-block: clamp(1rem, 2.6vh, 1.6rem);
   padding: clamp(1.1rem, 2.5vw, 1.5rem) clamp(1.2rem, 3vw, 1.8rem);
   max-width: 46rem;
   text-decoration: none;
@@ -478,4 +480,91 @@
 
 .cell[data-state="done"] .ms {
   color: var(--ink);
+}
+
+
+/*
+ * The console: the graph and the agent as one instrument.
+ *
+ * These were separated by the availability line and two buttons, so the request
+ * the page had just made and the box that makes another read as unrelated
+ * furniture. Same object, one frame, one ground.
+ */
+.console {
+  margin-block-start: clamp(0.9rem, 2.2vh, 1.6rem);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-panel);
+  box-shadow: var(--lift-2);
+  overflow: hidden;
+}
+
+/* The header strip. Every instrument on this page gets one: what it is on the
+   left, what it is doing on the right. */
+.consoleHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-block-end: var(--border-hair) solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.consoleLabel {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* State, in the colour that means it. Green while a real request is in flight,
+   ink once it has landed with a measured number, warn when the endpoint is
+   unreachable. Nothing here is a placeholder. */
+.consoleState {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--step--2);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.consoleState[data-state="running"] {
+  color: var(--live);
+}
+
+.consoleState[data-state="running"] .live-dot,
+.consoleState[data-state="running"] :global(.live-dot) {
+  background: var(--live);
+}
+
+.consoleState[data-state="done"] {
+  color: var(--ink);
+}
+
+/* Degraded, not down. The demo endpoint being unreachable does not stop the
+   agent underneath answering, so this is a caveat rather than a failure, and
+   --warn is the token that means caveat. Audit 13.1 caught the earlier
+   spelling: a semantic colour has to sit on a selector that names the state it
+   encodes, and "down" named a state this is not in. */
+.consoleState[data-state="degraded"] {
+  color: var(--warn);
+}
+
+.console .graph {
+  padding: var(--s-5) var(--s-5) 0;
+  border: none;
+}
+
+.console .caption {
+  padding: var(--s-3) var(--s-5) 0;
+  margin: 0;
+}
+
+.console .agentSlot {
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  border: none;
+  margin: 0;
 }
