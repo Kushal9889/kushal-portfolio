@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant on Azure.",
+    "answer": "What has he shipped on Azure?\"",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 382,
-      "answer": 3026
+      "retrieve": 405,
+      "answer": 1987
     },
-    "total": 3438,
+    "total": 2420,
     "sources": [
       "Skills",
       "Boston University, Questrom Computational Lab",
@@ -172,14 +172,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "\"A silent failure in a production SDK, discovered manually.\"",
+    "answer": "Must not start with \"We need to\", etc. Must use only context. The question: \"What broke in production and how did he find it?\"",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 326,
-      "answer": 1967
+      "retrieve": 303,
+      "answer": 4545
     },
-    "total": 2301,
+    "total": 4855,
     "sources": [
       "Publications",
       "How retrieval on this page works"
@@ -342,14 +342,14 @@
     "provider": "nvidia"
   },
   "how does he decide when multi-agent is worth it?": {
-    "answer": "He adopts a multi-agent architecture when heterogeneous domains cause retrieval contamination and redundant LLM calls, and the measured 70 % reduction in redundant calls justifies",
+    "answer": "He decides when the reduction in redundant L",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 238,
-      "answer": 6706
+      "retrieve": 321,
+      "answer": 2206
     },
-    "total": 6951,
+    "total": 2539,
     "sources": [
       "BU Life AI",
       "This site",

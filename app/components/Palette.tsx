@@ -5,7 +5,25 @@ import styles from "./Palette.module.css";
 import { track } from "@/lib/analytics";
 import { ASK_EVENT } from "./Agent";
 
-type Command = { label: string; hint: string; run: () => void };
+/**
+ * A palette row.
+ *
+ * `kind` is a scanning aid, not decoration. Fourteen rows of label-and-hint read
+ * as one undifferentiated list, and a reader hunting for the way out of the
+ * page has to read every line to find it. Four glyphs sort them into what they
+ * do -- move you, copy something, open something elsewhere, change the page --
+ * which is the distinction a reader is actually making.
+ */
+type Kind = "jump" | "copy" | "open" | "toggle";
+
+type Command = { label: string; hint: string; kind: Kind; run: () => void };
+
+const GLYPH: Record<Kind, string> = {
+  jump: "\u2192",
+  copy: "\u29C9",
+  open: "\u2197",
+  toggle: "\u25E7",
+};
 
 /**
  * Command palette on Cmd/Ctrl+K.
@@ -42,6 +60,7 @@ export default function Palette({
     // The agent lives in the hero, not in a section of its own. This pointed at
     // an anchor that was removed when it moved.
     {
+      kind: "jump",
       label: "Ask the agent",
       hint: "top of page",
       run: () => {
@@ -49,12 +68,13 @@ export default function Palette({
         setTimeout(() => document.querySelector<HTMLInputElement>("#ask")?.focus(), 400);
       },
     },
-    { label: "A bug in LangChain", hint: "section", run: go("opensource") },
-    { label: "Work", hint: "section", run: go("work") },
-    { label: "Research and publications", hint: "section", run: go("research") },
-    { label: "Proof and certifications", hint: "section", run: go("proof") },
-    { label: "Get in touch", hint: "section", run: go("contact") },
+    { kind: "jump", label: "A bug in LangChain", hint: "section", run: go("opensource") },
+    { kind: "jump", label: "Work", hint: "section", run: go("work") },
+    { kind: "jump", label: "Research and publications", hint: "section", run: go("research") },
+    { kind: "jump", label: "Proof and certifications", hint: "section", run: go("proof") },
+    { kind: "jump", label: "Get in touch", hint: "section", run: go("contact") },
     {
+      kind: "copy",
       label: "Copy email address",
       hint: email,
       run: () => {
@@ -69,13 +89,14 @@ export default function Palette({
       // Was "Recruiter mode". Naming the reader's category back at them is a
       // guess about who they are, and it is wrong for the engineer on the
       // hiring panel who is the other half of this audience. Say what it does.
+      kind: "toggle",
       label: "Condense this page",
       hint: "headings, metrics and links only",
       run: () => document.documentElement.classList.toggle("condensed"),
     },
-    { label: "Print or save as PDF", hint: "uses the print stylesheet", run: () => window.print() },
-    { label: "Open the source for this page", hint: "repo", run: () => window.open(repo, "_blank") },
-    { label: "Open GitHub profile", hint: "external", run: () => window.open(github, "_blank") },
+    { kind: "open", label: "Print or save as PDF", hint: "uses the print stylesheet", run: () => window.print() },
+    { kind: "open", label: "Open the source for this page", hint: "repo", run: () => window.open(repo, "_blank") },
+    { kind: "open", label: "Open GitHub profile", hint: "external", run: () => window.open(github, "_blank") },
     // The prop feeding "Open GitHub" used to be called `resume`, from a time
     // when no resume existed. There is one now, so it gets its own entry.
     {
@@ -85,6 +106,7 @@ export default function Palette({
          shipped dead on every page load. The ADR keeps light unconditional and
          ignores the system preference on purpose, which makes a switch the only
          honest way to offer the other half. */
+      kind: "toggle",
       label: theme === "dark" ? "Switch to light" : "Switch to dark",
       hint: theme === "dark" ? "paper and ink" : "console ground everywhere",
       run: () => {
@@ -102,6 +124,7 @@ export default function Palette({
       // Hands an interviewer the prep list rather than making them invent one.
       // The questions are written in the corpus beside the sections that answer
       // them, so this cannot drift from what the agent can actually handle.
+      kind: "copy",
       label: "Copy the questions worth asking",
       hint: `${asks.length} from the corpus`,
       run: () => {
@@ -115,6 +138,7 @@ export default function Palette({
       // the PDF in the browser, which is what a reader deciding whether to keep
       // reading actually wants; the viewer has its own download button for the
       // reader who wants the file. Both paths now do the same thing.
+      kind: "open",
       label: "Open resume",
       hint: "pdf, opens in the browser",
       run: () => window.open("/kushal-gaddamwar-resume.pdf", "_blank", "noopener"),
@@ -218,6 +242,9 @@ export default function Palette({
                 onMouseEnter={() => setCursor(i)}
                 onClick={() => choose(i)}
               >
+                <span className={styles.glyph} aria-hidden="true" data-kind={c.kind}>
+                  {GLYPH[c.kind]}
+                </span>
                 <span>{c.label}</span>
                 <span className={styles.hint}>{c.hint}</span>
               </button>

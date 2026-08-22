@@ -45,13 +45,33 @@
 
 .item {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
+  /* A grid rather than space-between, so the labels align down a column instead
+     of starting wherever their glyph ended. Fourteen rows of ragged left edge
+     is the thing that made this list hard to scan. */
+  display: grid;
+  /* The label takes its natural width and the hint gives way.
+     With the hint sized `auto` it claimed whatever it needed and the label
+     wrapped to two lines behind it, which is backwards: the label is what a
+     reader is scanning for and the hint is the qualifier. */
+  grid-template-columns: 1.4rem auto minmax(0, 1fr);
   align-items: baseline;
-  gap: 1rem;
+  gap: var(--s-3);
   padding: 0.55rem 0.6rem;
   font-size: var(--step-0);
   text-align: left;
+}
+
+/* What the row does, not what it is about: move you, copy something, open
+   something elsewhere, change the page. */
+.glyph {
+  font-size: var(--step--1);
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.item:hover .glyph,
+.on .glyph {
+  color: var(--ink);
 }
 
 .on {
@@ -60,6 +80,11 @@
 }
 
 .hint {
+  justify-self: end;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--step--1);
   color: var(--ink-faint);
 }

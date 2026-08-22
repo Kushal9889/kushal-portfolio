@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-22",
+      "subject": "Reach him from where the reader is, and drop the motion that meant nothing"
+    },
+    {
+      "date": "2026-08-22",
       "subject": "Make the controls answer when they are pressed, and reach the dark theme"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-22",
       "subject": "Plot real request latency against the measured baseline"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Show the eval suite as sixteen cases instead of one ratio"
     }
   ]
 }
