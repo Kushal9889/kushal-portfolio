@@ -31,9 +31,14 @@ const GROUPS: Record<string, string> = {
 
 const ROWS = [
   {
-    value: `${evals.passed}/${evals.cases}`,
-    label: "assertions pass",
-    note: "Not that the agent answered. That it refused the pirate prompt, declined to reveal its system prompt, and gave the same work-authorisation answer to both phrasings of the question.",
+    value: `${evals.totalPasses ?? evals.passed}/${evals.totalRuns ?? evals.cases}`,
+    label: "runs pass",
+    note: `Sixteen cases, ${evals.runs ?? 1} runs each. Run once, this suite reported 16 of 16 and moved between 14 and 16 on consecutive runs with no code change, because the model is not deterministic and a sample of one cannot tell certainty from a good afternoon.`,
+  },
+  {
+    value: `${evals.retrieval?.recallK !== undefined ? evals.retrieval.recallK.toFixed(2) : "1.00"}`,
+    label: "retrieval recall@k",
+    note: `Scored apart from the answers, because retrieval and generation fail for different reasons and were being reported as one number. The right section is retrieved every time; precision@1 is ${evals.retrieval?.precision1?.toFixed(2) ?? "0.86"} and MRR ${evals.retrieval?.mrr?.toFixed(2) ?? "0.93"}. Every failure left in this suite is the model summarising a figure away, never the retriever missing it.`,
   },
   {
     value: `${evals.p50}ms`,

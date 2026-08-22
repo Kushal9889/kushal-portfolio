@@ -136,10 +136,32 @@ async function main() {
   // boundary would make the most precise queries the least well served.
   const chunks = sections.map((s) => ({
     title: s.title,
-    // Role and stack are rendered structurally rather than as prose, so they are
-    // folded back in here. They carry the rarest terms in the corpus, which is
-    // precisely what the keyword half of retrieval scores on.
-    body: [s.role && `Role: ${s.role}`, s.stack.length && `Stack: ${s.stack.join(", ")}`, s.body]
+    /*
+     * Everything the section knows, not only its prose.
+     *
+     * Role and stack were folded back in because they carry the rarest terms in
+     * the corpus, which is what the keyword half scores on. Metrics and
+     * artifacts were not, and that was a measurable hole: retrieval puts the
+     * Growaza section at rank 1 for "tell me about Growaza" -- recall@k is 1.00
+     * across the eval set -- and the answer still came back without the 30
+     * percent, because the figure existed only inside a sentence the model had
+     * to notice and chose to summarise away.
+     *
+     * These are already structured, already the canonical values the page
+     * renders, and already checked by the facts gate. Passing them as prose and
+     * hoping the model spots them is throwing away metadata we own. Stated
+     * plainly, they are also better keyword terms: "-30%" and "#4925" are the
+     * rarest strings in the corpus.
+     */
+    body: [
+      s.role && `Role: ${s.role}`,
+      s.stack.length && `Stack: ${s.stack.join(", ")}`,
+      s.metrics.length &&
+        `Measured: ${s.metrics.map((m) => `${m.value} ${m.label}`).join("; ")}`,
+      s.artifacts.length &&
+        `Links: ${s.artifacts.map((a) => `${a.kind} (${a.state}) ${a.label} ${a.url}`).join("; ")}`,
+      s.body,
+    ]
       .filter(Boolean)
       .join("\n"),
     source: s.source,

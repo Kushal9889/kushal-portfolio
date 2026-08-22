@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-22",
+      "subject": "Rebuild the hero around the thing that is actually running"
+    },
+    {
+      "date": "2026-08-22",
       "subject": "Plot real request latency against the measured baseline"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Make the hero one instrument instead of two"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Dark means live: give the page a second ground"
     }
   ]
 }

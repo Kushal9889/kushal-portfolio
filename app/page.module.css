@@ -28,7 +28,17 @@
 .title {
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 400;
-  font-size: var(--step-2);
+  /* Sized to the rail it sits in, not to the page.
+   *
+   * At --step-2 this rendered 41.6px inside a 176px column, and "LangChain" -- 
+   * nine characters at roughly 20px each -- overflowed by four. The section
+   * heading read "A bug in LangChair" with the last letter clipped off, which
+   * is the same failure the role titles had before they were sized to their
+   * own column. A long single word now breaks rather than escaping. */
+  font-size: clamp(1.45rem, 1.05rem + 1.4vw, 2.05rem);
+  line-height: 1.12;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .subhead {

@@ -12,14 +12,17 @@
 
 .groupHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--s-2);
+  gap: 0 var(--s-2);
   border-block-end: var(--border-hair) solid var(--rule);
   padding-block-end: var(--s-1);
 }
 
 .groupLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
@@ -48,6 +51,8 @@
  * by fill against outline, which survives both grounds and a reader who cannot
  * separate the hues. */
 .cell {
+  position: relative;
+  overflow: hidden;
   width: 1.65rem;
   height: 1.65rem;
   border-radius: var(--r-sm);
@@ -78,23 +83,57 @@
  * cases are attempts to break the agent, and every one of them was stopped
  * before it reached a provider. Shape carries that, because shape is free and
  * means nothing on its own until it is given something to mean. */
-.cell[data-outcome="passed"] {
+/* Filled from the bottom to the share of runs the case passed.
+ *
+ * A solid cell is an assertion that holds every time; a part-filled one is
+ * flaky, and flaky is failed. Drawn as an element rather than a colour stop
+ * because every gradient function is banned in this stylesheet, and animated
+ * from zero on first paint so the row fills rather than appearing filled. */
+.fill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--rate);
+  transform-origin: bottom;
+  animation: fill-in var(--t-slow) var(--ease-instrument) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+@keyframes fill-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.cell[data-reliability="pass"] .fill {
   background: var(--live);
+}
+
+.cell[data-reliability="pass"] {
   border-color: var(--live);
 }
 
-.cell[data-outcome="failed"] {
-  background: var(--fail-wash);
-  border-color: var(--fail);
+/* Anything short of every run is partial, not failed: the assertion held some
+   of the time, which is a limit on what the suite can promise rather than a
+   defect in the code under test. Naming it "failed" was both imprecise and the
+   reason audit 13.1 rejected the colour. */
+.cell[data-reliability="partial"] .fill {
+  background: var(--warn);
 }
 
-.cell[data-outcome="passed"][data-reached-model="false"] {
+.cell[data-reliability="partial"] {
+  border-color: var(--warn);
+}
+
+/* No model was called, so the result is deterministic. Hollow, because there is
+   nothing probabilistic to fill. */
+.cell[data-reliability="pass"][data-reached-model="false"] .fill {
   background: none;
   box-shadow: inset 0 0 0 var(--border-emphasis) var(--live);
-}
-
-.cell[data-outcome="failed"][data-reached-model="false"] {
-  box-shadow: inset 0 0 0 var(--border-emphasis) var(--fail);
+  height: 100%;
 }
 
 .says {
@@ -141,5 +180,35 @@
   .cell:hover,
   .cell[data-open] {
     transform: none;
+  }
+}
+
+/* The sentence the aggregate was hiding. */
+.headline {
+  margin: 0 0 var(--s-5);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 52em;
+  text-wrap: pretty;
+}
+
+.headline b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.detailLimit {
+  margin: var(--s-2) 0 0;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--warn);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    animation: none;
   }
 }

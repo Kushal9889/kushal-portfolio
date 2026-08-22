@@ -45,7 +45,19 @@ const GROUPS = [
   },
 ] as const;
 
-type Case = { name: string; group: string; asserts: string; pass: boolean };
+type Case = {
+  name: string;
+  group: string;
+  asserts: string;
+  pass: boolean;
+  /** How often it passed across `runs`. The suite used to run each case once
+   *  against a model that is not deterministic, so a single lucky afternoon
+   *  published itself as certainty. */
+  passRate?: number;
+  runs?: number;
+  /** Why it failed, when it failed: route, omission, leak or invention. */
+  modes?: string[];
+};
 
 /**
  * Whether a provider was ever called for this case.
@@ -64,7 +76,10 @@ export default function EvalMatrix() {
   const [open, setOpen] = useState<string | null>(null);
   if (cases.length === 0) return null;
 
-  const failed = cases.filter((c) => !c.pass).length;
+  const partial = cases.filter((c) => (c.passRate ?? (c.pass ? 1 : 0)) < 1).length;
+  const runs = evals.runs ?? 1;
+  const totalRuns = evals.totalRuns ?? cases.length;
+  const totalPasses = evals.totalPasses ?? evals.passed;
 
   return (
     /* Paper, not console.
@@ -78,9 +93,21 @@ export default function EvalMatrix() {
     <Panel
       label="eval suite"
       surface="paper"
-      state={failed ? "degraded" : "done"}
+      state={partial ? "degraded" : "done"}
       status={`${evals.passed}/${evals.cases} · ${evals.measured}`}
     >
+      {/* What the aggregate was hiding.
+       *
+       * Everything deterministic is perfect and everything that depends on the
+       * model summarising is not, which is the single most useful thing this
+       * suite has to say and the one thing a ratio cannot. */}
+      <p className={styles.headline}>
+        <b>{totalPasses} of {totalRuns} runs pass</b>, {cases.length} cases {runs} times each.
+        Every policy and authorisation run passes because none of them reaches a model. The
+        grounding cases are where a language model has to summarise without dropping the figure,
+        and that is where the suite is honest about being probabilistic.
+      </p>
+
       <div className={styles.groups}>
         {GROUPS.map((g) => {
           const inGroup = cases.filter((c) => c.group === g.key);
@@ -90,7 +117,8 @@ export default function EvalMatrix() {
               <div className={styles.groupHead}>
                 <span className={styles.groupLabel}>{g.label}</span>
                 <span className={`${styles.groupCount} tabular`}>
-                  {inGroup.filter((c) => c.pass).length}/{inGroup.length}
+                  {inGroup.reduce((t, c) => t + Math.round((c.passRate ?? (c.pass ? 1 : 0)) * runs), 0)}
+                  /{inGroup.length * runs}
                 </span>
               </div>
 
@@ -100,14 +128,28 @@ export default function EvalMatrix() {
                     <button
                       type="button"
                       className={styles.cell}
-                      data-outcome={c.pass ? "passed" : "failed"}
+                      data-reliability={(c.passRate ?? (c.pass ? 1 : 0)) === 1 ? "pass" : "partial"}
                       data-reached-model={String(reachedModel(c))}
                       data-open={open === c.name || undefined}
                       style={{ "--i": i } as React.CSSProperties}
                       aria-expanded={open === c.name}
-                      aria-label={`${c.name}. Asserts ${c.asserts}. ${c.pass ? "Passed" : "Failed"}.${reachedModel(c) ? "" : " No model was called."}`}
+                      aria-label={`${c.name}. Asserts ${c.asserts}. Passed ${Math.round(
+                        (c.passRate ?? (c.pass ? 1 : 0)) * runs,
+                      )} of ${runs} runs.${reachedModel(c) ? "" : " No model was called."}`}
                       onClick={() => setOpen(open === c.name ? null : c.name)}
-                    />
+                    >
+                      {/* Filled to the rate it actually passed at. A solid cell
+                          is reliable, a part-filled one is flaky, and the eye
+                          reads the difference without reading a number. Drawn as
+                          an element rather than a colour stop because every
+                          gradient function is banned in this stylesheet. */}
+                      <span
+                        className={styles.fill}
+                        style={
+                          { "--rate": `${(c.passRate ?? (c.pass ? 1 : 0)) * 100}%` } as React.CSSProperties
+                        }
+                      />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -125,10 +167,21 @@ export default function EvalMatrix() {
           <>
             <p className={styles.detailQ}>{open}</p>
             <p className={styles.detailA}>{cases.find((c) => c.name === open)?.asserts}</p>
+            {(() => {
+              const c = cases.find((x) => x.name === open);
+              if (!c || (c.passRate ?? 1) === 1) return null;
+              return (
+                <p className={styles.detailLimit}>
+                  Passed {Math.round((c.passRate ?? 0) * runs)} of {runs} runs
+                  {c.modes?.length ? ` · ${c.modes.join(", ")}` : ""}
+                </p>
+              );
+            })()}
           </>
         ) : (
           <p className={styles.detailHint}>
-            Every cell is one case. Open one to read the assertion the runner wrote for it.
+            Every cell is one case, filled to the share of runs it passed. Open one to read the
+            assertion the runner wrote for it.
           </p>
         )}
       </div>

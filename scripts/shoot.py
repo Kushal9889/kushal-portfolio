@@ -82,6 +82,29 @@ def main() -> int:
 
             page.screenshot(path=f"{OUT}/{name}{tag}-{scheme}.png")
 
+            # Text that does not fit the box it was given.
+            #
+            # Two of these shipped: a role title at 41.6px inside a 240px rail,
+            # and a section heading that rendered "A bug in LangChair" with the
+            # last letter clipped. Both were invisible to every existing gate,
+            # because nothing measured rendered geometry.
+            over = page.evaluate("""() => [...document.querySelectorAll('body *')]
+              .filter(e => {
+                const cs = getComputedStyle(e);
+                if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return false;
+                if (!e.offsetParent && e.tagName !== 'BODY') return false;
+                return e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0;
+              })
+              .map(e => ({
+                cls: (typeof e.className === 'string' ? e.className : '').split(' ')[0].split('__').pop() || e.tagName,
+                txt: (e.textContent || '').trim().slice(0, 40),
+                sw: e.scrollWidth, cw: e.clientWidth,
+              })).slice(0, 12)""")
+            if over:
+                print(f"\n  !! {len(over)} element(s) overflow their box at {name}:")
+                for o in over:
+                    print(f"     {o['cls'][:24]:<24} sw{o['sw']} cw{o['cw']}  {o['txt']}")
+
             if name == "desktop":
                 data = page.evaluate(INVENTORY)
                 above = [r for r in data["rows"] if r["y"] < data["fold"]]
