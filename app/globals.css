@@ -1152,7 +1152,12 @@ a[class*="source"]::before,
 button[class*="seed"]::before {
   content: "";
   position: absolute;
-  inset: -0.55rem -0.25rem;
+  /* Vertical only. Expanding sideways made the pseudo-element wider than its
+     parent, so scrollWidth exceeded clientWidth and the overflow propagated up
+     through every ancestor -- twelve reported boxes from one four-pixel
+     mistake. Height is the axis that was actually short: these render 16px and
+     34px tall against a 24px floor. */
+  inset: -0.7rem 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1166,4 +1171,33 @@ button[class*="seed"]::before {
   [aria-expanded]::after {
     transition: none;
   }
+}
+
+/* The dock rides in a reserved gutter rather than on top of the page.
+   Fixed positioning alone would cover the last lines of the footer, which is
+   the behaviour that makes a floating widget feel bolted on. */
+body {
+  padding-block-end: 4rem;
+}
+
+@media print {
+  body {
+    padding-block-end: 0;
+  }
+}
+
+/* A quote arrived at through a shared text fragment.
+ *
+ * A link ending in #:~:text= scrolls to the sentence and the browser highlights
+ * it with its own yellow, which belongs to no palette on this page. This is the
+ * same mark bold claims already carry, so an arriving reader lands on something
+ * that looks like the page rather than like a find-in-page result. */
+::target-text {
+  background: var(--mark-wash);
+  color: var(--ink);
+}
+
+/* An anchored section should not land flush against the top edge. */
+:target {
+  scroll-margin-block-start: clamp(1.5rem, 6vh, 4rem);
 }

@@ -3,6 +3,10 @@
   "entries": [
     {
       "date": "2026-08-22",
+      "subject": "Make the controls answer when they are pressed, and reach the dark theme"
+    },
+    {
+      "date": "2026-08-22",
       "subject": "Stop publishing a lucky run as if it were certainty"
     },
     {
@@ -16,10 +20,6 @@
     {
       "date": "2026-08-21",
       "subject": "Show the eval suite as sixteen cases instead of one ratio"
-    },
-    {
-      "date": "2026-08-21",
-      "subject": "Give the page a second ground, and make it mean something"
     }
   ]
 }

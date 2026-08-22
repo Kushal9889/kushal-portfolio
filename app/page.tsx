@@ -10,6 +10,8 @@ import RetrievalField from "./components/RetrievalField";
 import Artifacts from "./components/Artifacts";
 import Measured from "./components/Measured";
 import Reach from "./components/Reach";
+import ReachDock from "./components/ReachDock";
+import SectionLink from "./components/SectionLink";
 import AskAbout from "./components/AskAbout";
 import PageMotion from "./components/PageMotion";
 import AskSeeds from "./components/AskSeeds";
@@ -48,12 +50,10 @@ function Section({
           still sees them individually. */}
       <div className={`wrap ${styles.grid}`}>
         <div className={styles.head}>
-          {/* The index was decoration. As a link it is how a reader cites one
-              part of this page in a message to a colleague, which is the only
-              thing a section number has ever been for. */}
-          <a className={styles.index} href={`#${id}`} aria-label={`Link to ${title}`}>
-            {index}
-          </a>
+          {/* The index was decoration, then an anchor. An anchor still asks a
+              reader to know that right-clicking copies an address; the commonest
+              reason to want one of these is to paste it into a message. */}
+          <SectionLink id={id} index={index} title={title} />
           <h2 className={styles.title}>{title}</h2>
         </div>
         {children}
@@ -128,6 +128,16 @@ export default function Page() {
   return (
     <>
       <Palette email={profile.email} github={profile.github} repo={profile.repo} asks={asks} />
+      {/* Reaching him from wherever the reader is, with the draft written for
+          the section they are actually in. Six of the seven openers in
+          lib/reach.ts have never been reachable, because the contact block is
+          the only caller and it takes the default. */}
+      <ReachDock
+        email={profile.email}
+        site={profile.site.replace("https://", "")}
+        linkedin={profile.linkedin}
+        resumeHref="/kushal-gaddamwar-resume.pdf"
+      />
       <PageMotion />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}

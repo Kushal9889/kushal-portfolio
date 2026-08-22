@@ -153,37 +153,19 @@ export default function PageMotion() {
       }
     }, 1000);
 
-    /* --- The things worth clicking lean toward the cursor -------------------
+    /*
+     * The cursor magnets are gone.
      *
-     * Only the handful of elements marked in the markup, because the effect
-     * works by being rare: if every link did it, none of them would read as
-     * worth reaching for.
+     * Six controls used to drift toward the pointer on hover. The rule this
+     * redesign is built on is that every colour and every animation has to
+     * encode a value the system computed, and a control sliding toward a mouse
+     * encodes nothing at all: it is the one piece of motion on the page that
+     * was there because it looked expensive. Keeping it would have meant the
+     * rule applied to everything except the part that was fun to write.
      *
-     * Guarded on a real pointer. On a touch screen the browser synthesises a
-     * pointer at the tap position, which would jerk the control sideways at the
-     * exact moment a finger is trying to land on it.
+     * The press depth in globals.css replaces it, and that one is real: it
+     * fires on pointerdown and confirms that a click landed.
      */
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-
-    for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-pull]"))) {
-      // quickTo reuses one tween per property instead of allocating a new one on
-      // every pointermove, which is what makes this affordable at pointer rate.
-      const toX = gsap.quickTo(el, "x", { duration: 0.4, ease: "power3" });
-      const toY = gsap.quickTo(el, "y", { duration: 0.4, ease: "power3" });
-
-      el.addEventListener("pointermove", (event) => {
-        const box = el.getBoundingClientRect();
-        // Vertical pull is stronger than horizontal because these controls are
-        // wider than they are tall, and an equal ratio reads as loose sideways.
-        toX((event.clientX - (box.left + box.width / 2)) * 0.16);
-        toY((event.clientY - (box.top + box.height / 2)) * 0.3);
-      });
-
-      el.addEventListener("pointerleave", () => {
-        toX(0);
-        toY(0);
-      });
-    }
   });
 
   // No box, no space, no accessibility surface. This exists only to give the

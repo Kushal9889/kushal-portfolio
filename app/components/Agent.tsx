@@ -844,10 +844,10 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
 
       {showConversion && (
         <div className={styles.conversion}>
-          <button className={styles.copy} onClick={() => copyOpener(last)}>
+          <button className={styles.copy} data-copied={copied || undefined} onClick={() => copyOpener(last)}>
             {copied ? "Copied. Paste it anywhere." : "Copy an opening line"}
           </button>
-          <button className={styles.copy} onClick={() => shareTurn(last)}>
+          <button className={styles.copy} data-copied={shared || undefined} onClick={() => shareTurn(last)}>
             {shared ? "Link copied" : "Share this answer"}
           </button>
           <a href={linkedin} target="_blank" rel="noreferrer" onClick={() => track("contact", "linkedin")}>

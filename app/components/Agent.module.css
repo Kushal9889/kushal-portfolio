@@ -564,3 +564,74 @@
   align-items: center;
   gap: var(--s-2);
 }
+
+/* Confirming a copy with something other than a different sentence.
+ *
+ * The only signal that a click landed was the label changing, which a reader
+ * who was looking at their clipboard target rather than at the button never
+ * saw. The surface inverts for the moment the text is on the clipboard and a
+ * tick is drawn in front of it. No semantic colour: this is a confirmation of
+ * an action, not a state the system is in. */
+.copy[data-copied] {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.copy[data-copied]::before {
+  content: "";
+  display: inline-block;
+  width: 0.32em;
+  height: 0.62em;
+  margin-inline-end: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-0.1em, -0.05em);
+  animation: tick-in var(--t-normal) var(--ease-instrument) both;
+}
+
+@keyframes tick-in {
+  from {
+    opacity: 0;
+    transform: rotate(45deg) translate(-0.1em, -0.05em) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(45deg) translate(-0.1em, -0.05em) scale(1);
+  }
+}
+
+/* Listening is a live state, so it takes the accent and it breathes. Border
+   colour alone did not read as "the microphone is open right now". */
+.micOn::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: var(--border-hair) solid var(--signal);
+  border-radius: inherit;
+  animation: mic-listening 1.6s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+.mic {
+  position: relative;
+}
+
+@keyframes mic-listening {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy[data-copied]::before,
+  .micOn::after {
+    animation: none;
+  }
+}

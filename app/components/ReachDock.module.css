@@ -1,0 +1,113 @@
+/* Docked to the bottom edge, never over the text.
+ *
+ * `position: fixed` would sit on top of whatever is behind it, so the body
+ * reserves the dock's height in globals.css instead and this rides in that
+ * gutter. Nothing is ever covered, which is the difference between a dock and
+ * the floating widget it would otherwise be. */
+.dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  padding: var(--s-2) var(--s-4);
+  background: var(--paper-sunk);
+  border-block-start: var(--border-hair) solid var(--rule);
+  transition:
+    transform var(--t-mid) var(--ease-out),
+    opacity var(--t-mid) var(--ease-out);
+}
+
+/* Inside the contact section there is a better version of this on the page, so
+   the shortcut to it gets out of the way. */
+.dock[data-hidden] {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  max-width: 76rem;
+  margin-inline: auto;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding-inline: var(--s-3);
+  margin-inline-end: auto;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: var(--step--1);
+  border: var(--border-hair) solid transparent;
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+
+.primary:hover {
+  border-color: var(--rule);
+}
+
+.label {
+  font-weight: 600;
+}
+
+/* The part that changes as the reader moves. Set in the softer tone so the
+   label reads as one phrase rather than two competing ones. */
+.about {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.hint {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.side {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding-inline: var(--s-3);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-decoration: none;
+  border: var(--border-hair) solid transparent;
+  transition:
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.side:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+@media (max-width: 40rem) {
+  /* The context phrase is the first thing to go: on a phone the bar has room
+     for the action and the two shortcuts, and not for the qualifier. */
+  .about,
+  .hint {
+    display: none;
+  }
+
+  .sideLabel {
+    display: none;
+  }
+
+  .inner {
+    gap: var(--s-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    transition: none;
+  }
+}

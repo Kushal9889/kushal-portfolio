@@ -85,7 +85,13 @@ export default function Reach({
         </li>
 
         <li>
-          <button type="button" className={styles.item} onClick={openLinkedIn} data-pull>
+          <button
+            type="button"
+            className={styles.item}
+            data-copied={copied || undefined}
+            onClick={openLinkedIn}
+            data-pull
+          >
             <LinkedInMark />
             <span>
               <strong>LinkedIn</strong>

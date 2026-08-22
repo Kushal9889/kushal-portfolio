@@ -426,8 +426,14 @@ const domains: Domain[] = [
           // request a maintainer wrote, so it is a checkable claim in exactly
           // the sense the rest of this list means, and it is the strongest one
           // on the page. Same class of thing as `proof` and `artifact`.
+          // `target-text` added 2026-08-22, reviewed. A reader arriving through
+          // a #:~:text= fragment was sent to one specific sentence by somebody
+          // pointing at it as evidence, which is the same family as a bold
+          // claim or a resolvable artifact: an outsider indicating something
+          // checkable. The browser's own highlight is a yellow that belongs to
+          // no palette here.
           const allowed =
-            /prose (strong|a)|proof|artifact|evidence|state|source|mark|metric|value|doi|cite|link/i;
+            /prose (strong|a)|proof|artifact|evidence|state|source|mark|metric|value|doi|cite|link|target-text/i;
           const offenders: string[] = [];
           for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
             for (const block of stripComments(read(file)).split("}")) {

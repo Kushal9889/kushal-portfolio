@@ -93,7 +93,16 @@ def main() -> int:
                 const cs = getComputedStyle(e);
                 if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return false;
                 if (!e.offsetParent && e.tagName !== 'BODY') return false;
-                return e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0;
+                if (!(e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0)) return false;
+                // An absolutely positioned child -- a tooltip, a hint, a
+                // decorative rule -- is meant to extend past its anchor and is
+                // not the bug this is looking for. What matters is text that
+                // does not fit the box it was given to sit in.
+                const floated = [...e.children].some(c => {
+                  const p = getComputedStyle(c).position;
+                  return p === 'absolute' || p === 'fixed';
+                });
+                return !floated;
               })
               .map(e => ({
                 cls: (typeof e.className === 'string' ? e.className : '').split(' ')[0].split('__').pop() || e.tagName,
