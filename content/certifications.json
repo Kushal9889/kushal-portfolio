@@ -51,14 +51,44 @@
           "name": "Vector Databases for RAG: An Introduction",
           "url": "https://www.coursera.org/account/accomplishments/verify/9S7Z4CGK7EB5"
         },
-        { "name": "Advanced RAG with Vector Databases and Retrievers", "url": null },
-        { "name": "Build Multimodal Generative AI Applications", "url": null },
-        { "name": "Fundamentals of Building AI Agents", "url": null },
-        { "name": "Agentic AI with LangChain and LangGraph", "url": null },
-        { "name": "Agentic AI with LangGraph, CrewAI, AutoGen and BeeAI", "url": null },
-        { "name": "Build AI Agents using MCP", "url": null },
-        { "name": "RAG and Agentic AI Capstone Project", "url": null }
+        {
+          "name": "Advanced RAG with Vector Databases and Retrievers",
+          "url": null
+        },
+        {
+          "name": "Build Multimodal Generative AI Applications",
+          "url": null
+        },
+        {
+          "name": "Fundamentals of Building AI Agents",
+          "url": null
+        },
+        {
+          "name": "Agentic AI with LangChain and LangGraph",
+          "url": null
+        },
+        {
+          "name": "Agentic AI with LangGraph, CrewAI, AutoGen and BeeAI",
+          "url": null
+        },
+        {
+          "name": "Build AI Agents using MCP",
+          "url": null
+        },
+        {
+          "name": "RAG and Agentic AI Capstone Project",
+          "url": null
+        }
       ]
+    },
+    {
+      "id": "ibm-genai-prompt-engineering-basics",
+      "name": "Generative AI: Prompt Engineering Basics",
+      "issuer": "IBM",
+      "year": 2026,
+      "url": "https://www.coursera.org/account/accomplishments/verify/4GQE7X5TB7FT",
+      "kind": "course",
+      "featured": false
     }
   ]
 }

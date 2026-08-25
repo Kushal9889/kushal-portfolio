@@ -27,13 +27,18 @@ const GROUPS: Record<string, string> = {
   policy: "compensation, personal life and prompt overrides never reach the model",
   authorisation: "asked, it answers exactly; unasked, it never raises the subject",
   "out-of-corpus": "a question the corpus cannot answer produces no invention",
+  tools: "an instruction is executed rather than answered, and a refusal says what would work",
 };
 
 const ROWS = [
   {
     value: `${evals.totalPasses ?? evals.passed}/${evals.totalRuns ?? evals.cases}`,
     label: "runs pass",
-    note: `Sixteen cases, ${evals.runs ?? 1} runs each. Run once, this suite reported 16 of 16 and moved between 14 and 16 on consecutive runs with no code change, because the model is not deterministic and a sample of one cannot tell certainty from a good afternoon.`,
+    // The count is read, not written. It was the word "Sixteen" here while
+    // EvalMatrix beside it read the same number from evals.json, so adding a
+    // case would have left two components disagreeing on screen. The 14-to-16
+    // figures stay literal: they are what a past run reported, not a count.
+    note: `${evals.cases} cases, ${evals.runs ?? 1} runs each. Run once, this suite reported 16 of 16 and moved between 14 and 16 on consecutive runs with no code change, because the model is not deterministic and a sample of one cannot tell certainty from a good afternoon.`,
   },
   {
     value: `${evals.retrieval?.recallK !== undefined ? evals.retrieval.recallK.toFixed(2) : "1.00"}`,
@@ -55,7 +60,7 @@ const ROWS = [
 export default function Measured() {
   const groups = Object.entries(evals.groups ?? {});
   const cases = evals.cases_detail ?? [];
-  const skipped = evals.lexicalDecisive ?? 0;
+  const bothRetrievers = evals.denseUsed ?? 0;
   const retrievals = evals.retrievals ?? 0;
 
   return (
@@ -76,10 +81,17 @@ export default function Measured() {
         <ul className={styles.groups}>
           {groups.map(([name, g]) => (
             <li key={name} className={styles.group}>
+              {/* Cases, not runs, and it has to say so.
+                  "1/6" sitting under "69/80 runs pass" is two different
+                  denominators with nothing distinguishing them: one counts
+                  cases that were clean every single run, the other counts
+                  individual runs. */}
               <span className={`${styles.groupValue} tabular`}>
                 {g.passed}/{g.cases}
               </span>
-              <span className="label">{name}</span>
+              <span className="label">
+                {name} · cases clean
+              </span>
               <span className={styles.groupNote}>{GROUPS[name]}</span>
             </li>
           ))}
@@ -87,7 +99,7 @@ export default function Measured() {
       )}
 
       {/* Every assertion, written by the runner from the cases it executes.
-          Behind a disclosure because sixteen rows is a wall on a page that has
+          Behind a disclosure because that many rows is a wall on a page that has
           to be skimmable, and open in one click because the reader who wants
           this is the one worth keeping. */}
       {cases.length > 0 && (
@@ -111,14 +123,14 @@ export default function Measured() {
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
       <div className={styles.limits}>
-        <h3 className={styles.limitHead}>What these sixteen cases cannot catch</h3>
+        <h3 className={styles.limitHead}>What these {evals.cases} cases cannot catch</h3>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
             well, only whether it is grounded and routed correctly.
           </li>
           <li>
-            There is no LLM judge, deliberately. At sixteen cases with known correct behaviour, a
+            There is no LLM judge, deliberately. At {evals.cases} cases with known correct behaviour, a
             judge adds cost, latency, and a second thing to trust.
           </li>
           <li>
@@ -128,8 +140,11 @@ export default function Measured() {
           </li>
           {retrievals > 0 && (
             <li>
-              The lexical short-circuit fired on {skipped} of {retrievals} retrievals, skipping the
-              embedding round trip entirely. The other {retrievals - skipped} paid for it.
+              Both retrievers ran on {bothRetrievers} of {retrievals} retrievals. A short-circuit
+              used to skip the embedding call when one keyword hit led the rest by 2.2x; measured
+              across the suite it never fired on the rare-term queries it was written for, and fired
+              only on the weakest-scoring ones, where it answered a question about his work with a
+              paragraph about this website. It was removed rather than retuned.
             </li>
           )}
         </ul>

@@ -8,11 +8,29 @@ import {
   cleanAnswer,
   deflection,
   isJobDescription,
-  looksLikeReasoning,
+  assertNoReasoning,
   AUTHORISATION_ANSWER,
 } from "../lib/agent/policy";
-import { mailtoLink, forwardBlurb, SUBJECT, OPENER } from "../lib/reach";
+import {
+  mailtoLink,
+  mailDraft,
+  linkedinNote,
+  forwardBlurb,
+  SUBJECT,
+  OPENER,
+  LINKEDIN_NOTE_LIMIT,
+  type ReachContext,
+} from "../lib/reach";
 import { tokenize } from "../lib/agent/retrieve";
+import { nearestTerm, correct } from "../lib/agent/vocab";
+import { indexTokens, queryTokens, normalize } from "../lib/agent/tokenize";
+import {
+  openEvidence,
+  composeIntro,
+  runEval,
+  toolSchemas,
+  TARGETS,
+} from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
 
 /**
@@ -289,9 +307,9 @@ describe("published artifacts", () => {
     const topology = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/topology.json"), "utf8"));
     assert.ok(topology.nodes.includes("route"));
     assert.ok(topology.nodes.includes("deflect"));
-    // Two conditional edges out of route are the entire reason this is a graph
-    // rather than a pipeline, and the reason a deflection never reaches a model.
-    assert.equal(topology.conditional, 2, "route must branch, or the policy layer is decorative");
+    // Three conditional edges out of route (deflect, act, retrieve) are the reason
+    // this is a routed graph rather than a single pipeline.
+    assert.equal(topology.conditional, 3, "route must branch, or the policy layer is decorative");
   });
 
   test("the eval file carries groups that sum to the total", () => {
@@ -314,18 +332,26 @@ describe("published artifacts", () => {
   });
 });
 
-describe("embedding windows", () => {
-  // A section that grew past the model's 512-token limit returned 400, and the
-  // builder answered by dropping vectors for every chunk in the corpus. The
-  // site then served keyword-only retrieval with no error anywhere.
-  test("every chunk carries exactly one vector, however long the section", () => {
-    const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+describe("the passage index", () => {
+  const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+
+  /*
+   * This suite used to assert that a section too long for the embedding window
+   * was split, embedded and mean-pooled back into one vector per section. That
+   * behaviour is gone and its absence is the improvement: averaging three
+   * semantically different windows produces a vector that represents none of
+   * them, and the two worst affected were the sections explaining how this page
+   * works. Passages are now built to fit the window, so nothing is pooled.
+   */
+  test("one vector per passage, and every passage fits the model's window", () => {
     if (!index.vectors) return; // keyless build, covered by its own suite
-    assert.equal(index.vectors.length, index.chunks.length);
+    assert.equal(index.vectors.length, index.passages.length);
+    for (const p of index.passages as { tokens: number; parent: string }[]) {
+      assert.ok(p.tokens <= 200, `${p.parent} passage is ${p.tokens} tokens`);
+    }
   });
 
-  test("a pooled vector is unit length, so cosine stays comparable", () => {
-    const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+  test("every vector is unit length, so cosine stays comparable", () => {
     if (!index.vectors) return;
     for (const v of index.vectors as number[][]) {
       const norm = Math.hypot(...v);
@@ -333,19 +359,47 @@ describe("embedding windows", () => {
     }
   });
 
-  test("the longest section is well past one window, and still embedded", () => {
-    const longest = Math.max(...loadContent().sections.map((s) => s.body.length));
-    assert.ok(longest > 1400, "this test stops meaning anything if no section is long");
+  test("a passage never spans two headings", () => {
+    // Header-aware is the one property of this chunker that cannot be recovered
+    // downstream: a passage straddling two sections has no correct parent, so
+    // the model would be handed the wrong section for a real match.
+    const titles = new Set((index.parents as { title: string }[]).map((p) => p.title));
+    for (const p of index.passages as { parent: string }[]) {
+      assert.ok(titles.has(p.parent), `passage claims unknown parent ${p.parent}`);
+    }
+  });
+
+  test("passages land in the size band they were built for", () => {
+    const tokens = (index.passages as { tokens: number }[]).map((p) => p.tokens).sort((a, b) => a - b);
+    const median = tokens[Math.floor(tokens.length / 2)];
+    assert.ok(median >= 100 && median <= 150, `median passage is ${median} tokens, target 125`);
+    // Whole sections shorter than the target are left alone rather than padded,
+    // so a floor on the minimum would be a floor on the corpus.
+    assert.ok(tokens.length > 40, `only ${tokens.length} passages; the split stopped working`);
+  });
+
+  test("every section is represented", () => {
+    const covered = new Set((index.passages as { parent: string }[]).map((p) => p.parent));
+    for (const parent of index.parents as { title: string }[]) {
+      assert.ok(covered.has(parent.title), `${parent.title} produced no passages`);
+    }
   });
 });
 
-describe("streamed reasoning never reaches the browser", () => {
+describe("reasoning never reaches a reader", () => {
   /**
-   * The streaming path cannot retract a token it has sent. cleanAnswer can only
-   * recognise a leading reasoning paragraph once a second paragraph exists, so
-   * applying it per-chunk shipped the model's working to the visitor and then
-   * quietly stopped shipping it. A reader asking about Growaza was shown
-   * "So answer: ... Probably focus ... We must lead with", live.
+   * These six were live on the page.
+   *
+   * The streaming path cannot retract a token it has sent, so it used to hold
+   * every answer's opening for 48 characters while a heuristic decided whether
+   * the text was an answer or the model narrating its instructions. That guard
+   * is gone, because the cause is gone: every provider is now told not to
+   * produce reasoning at all (lib/agent/model.ts). What remains is this gate,
+   * which the eval suite runs on every answer of every run.
+   *
+   * The distinction matters. The old check was a heuristic on a partial string
+   * and its failure mode was silent: a leak it missed reached a reader. This
+   * one runs on settled text and its failure mode is a failed build.
    */
   const OBSERVED = [
     'Question: "What did he do at Growaza?" So answer: he cut latency.',
@@ -356,32 +410,40 @@ describe("streamed reasoning never reaches the browser", () => {
     "<think>let me check the context</think>He shipped it.",
   ];
 
-  test("every leak observed in production is recognised before emitting", () => {
+  test("every leak observed in production still fails the gate", () => {
     for (const sample of OBSERVED) {
-      assert.ok(looksLikeReasoning(sample), `not held back: ${sample.slice(0, 40)}`);
+      assert.throws(
+        () => assertNoReasoning(sample),
+        /reasoning leaked/,
+        `slipped through: ${sample.slice(0, 40)}`,
+      );
     }
   });
 
-  test("a real answer is never mistaken for reasoning", () => {
-    // The cost of a false positive here is a delayed first word, not a wrong
-    // one, but a matcher that holds every answer has turned streaming off.
+  test("a real answer passes the gate", () => {
+    // A gate that rejects real answers has turned the agent off, which is a
+    // worse failure than the one it guards.
     const answers = [
       "He cut API response time by 30 percent using in-memory caching.",
       "At IMG Systems he extended a Python document-parsing pipeline.",
       "Kushal shipped a document-intelligence assistant on Azure.",
       "Compensation is worth discussing directly rather than through me.",
+      "He has no PyTorch or TensorFlow training experience.",
     ];
     for (const a of answers) {
-      assert.ok(!looksLikeReasoning(a), `held back a real answer: ${a.slice(0, 40)}`);
+      assert.doesNotThrow(() => assertNoReasoning(a), `rejected a real answer: ${a.slice(0, 40)}`);
     }
   });
 
-  test("cleanAnswer removes what looksLikeReasoning flags, given a paragraph break", () => {
-    // The two have to agree. Anything held back must also be something
-    // cleanAnswer would drop, or the answer is delayed and then shown anyway.
+  test("the gate reads the text cleanAnswer actually produces", () => {
+    // cleanAnswer runs first in every caller, so the gate has to pass on its
+    // output. If these two disagree the build fails on answers that shipped
+    // correctly, and the fix would be to weaken the gate -- which is how the
+    // previous version of this file grew to two hundred lines.
     const withBreak = "So answer: he cut latency.\n\nHe cut API response time by 30 percent.";
-    assert.ok(looksLikeReasoning(withBreak));
-    assert.equal(cleanAnswer(withBreak), "He cut API response time by 30 percent.");
+    const cleaned = cleanAnswer(withBreak);
+    assert.equal(cleaned, "He cut API response time by 30 percent.");
+    assert.doesNotThrow(() => assertNoReasoning(cleaned));
   });
 });
 
@@ -494,10 +556,13 @@ test("leaves a clean answer untouched", () => {
   assert.equal(cleanAnswer(good), good);
 });
 
-test("holds a partial stream that still reads as working", () => {
-  assert.equal(looksLikeReasoning("We need to answer the question about"), true);
-  assert.equal(looksLikeReasoning("The user asks about Growaza, so"), true);
-  assert.equal(looksLikeReasoning("He cut API response time by 30 percent"), false);
+test("the gate rejects a scratchpad opening and passes a real one", () => {
+  // Was three looksLikeReasoning assertions on partial stream text. The stream
+  // no longer buffers, because the provider no longer reasons; the same three
+  // strings are now asserted against the gate that fails the build instead.
+  assert.throws(() => assertNoReasoning("We need to answer the question about"));
+  assert.throws(() => assertNoReasoning("The user asks about Growaza, so"));
+  assert.doesNotThrow(() => assertNoReasoning("He cut API response time by 30 percent"));
 });
 
 /**
@@ -586,4 +651,368 @@ test("keeps the answer and drops the plan that follows it", () => {
     cleanAnswer("He cut API response time 30 percent. Could also add a second sentence about caching."),
     "He cut API response time 30 percent.",
   );
+});
+
+describe("reach drafts", () => {
+  const CONTEXTS: ReachContext[] = [
+    "general",
+    "opensource",
+    "measured",
+    "approach",
+    "work",
+    "research",
+    "credentials",
+  ];
+
+  test("no draft claims to know who is sending it", () => {
+    for (const c of CONTEXTS) {
+      const text = `${SUBJECT[c]} ${OPENER[c]} ${mailtoLink("a@b.c", "site", c)}`;
+      assert.doesNotMatch(
+        decodeURIComponent(text),
+        /\b(I am|I'm) (hiring|a recruiter|recruiting)\b|role I think (could be a )?fits?\b/i,
+        `${c} asserts the sender's identity`,
+      );
+    }
+  });
+
+  test("every context has a subject and an opener", () => {
+    for (const c of CONTEXTS) {
+      assert.ok(SUBJECT[c]?.length > 4, `${c} has no subject`);
+      assert.ok(OPENER[c]?.length > 20, `${c} has no opener`);
+    }
+    assert.equal(Object.keys(SUBJECT).length, CONTEXTS.length);
+    assert.equal(Object.keys(OPENER).length, CONTEXTS.length);
+  });
+
+  test("every LinkedIn note fits the connection-note cap", () => {
+    for (const c of CONTEXTS) {
+      const note = linkedinNote(c);
+      assert.ok(
+        note.length <= LINKEDIN_NOTE_LIMIT,
+        `${c} note is ${note.length} chars, over ${LINKEDIN_NOTE_LIMIT}`,
+      );
+      assert.ok(note.trim().endsWith("?") || note.trim().endsWith("."), `${c} note is cut mid-sentence`);
+    }
+  });
+
+  test("mailto never leaks a plus into the subject line", () => {
+    // URLSearchParams encodes a space as "+", which mail clients render
+    // literally. Only %20 survives a mailto query intact.
+    for (const c of CONTEXTS) {
+      const link = mailtoLink("a@b.c", "site", c);
+      const subject = link.split("subject=")[1].split("&")[0];
+      assert.doesNotMatch(subject, /\+/, `${c} subject carries a raw plus`);
+    }
+  });
+
+  test("the copyable draft is the same text the mail client gets", () => {
+    // mailto: fails silently with no registered client and in webmail, so the
+    // same draft has to be available to paste. Two drafts that drift apart is
+    // the failure this guards.
+    for (const c of CONTEXTS) {
+      const draft = mailDraft("a@b.c", "site", c);
+      const link = decodeURIComponent(mailtoLink("a@b.c", "site", c));
+      assert.equal(draft.subject, SUBJECT[c]);
+      assert.ok(link.includes(draft.body.split("\n")[0]), `${c} body drifted`);
+    }
+  });
+
+  test("openers state what was read, not how it felt", () => {
+    // "I spent a while on", "I had a look at" -- admiration typed into a
+    // stranger's outbox under their own name.
+    for (const c of CONTEXTS) {
+      assert.doesNotMatch(
+        OPENER[c],
+        /\b(impressive|amazing|loved|really enjoyed|spent a while|had a look)\b/i,
+        `${c} opener gushes`,
+      );
+    }
+  });
+});
+
+/**
+ * The answer is painted as plain text, so markdown in it is not formatting.
+ *
+ * The corpus is markdown and the model copies its conventions. Observed live:
+ * an answer about the LangChain fix came back containing
+ * `CompositeBackend.ls("/")` with the backticks intact, which a reader sees as
+ * punctuation and the voice path pronounces as the word "backtick".
+ */
+describe("markdown does not survive into an answer", () => {
+  test("code fences and bold markers are stripped, the words are kept", () => {
+    assert.equal(
+      cleanAnswer('He found it in `CompositeBackend.ls("/")` at the root.'),
+      'He found it in CompositeBackend.ls("/") at the root.',
+    );
+    assert.equal(cleanAnswer("He cut latency **30 percent** on that path."), "He cut latency 30 percent on that path.");
+  });
+
+  test("a plain answer is unchanged", () => {
+    const plain = "He shipped an agentic RAG platform on Azure OpenAI with 14 tools on one graph.";
+    assert.equal(cleanAnswer(plain), plain);
+  });
+});
+
+/**
+ * Typos, repaired against the index's own vocabulary.
+ *
+ * BM25 matches strings exactly, so one wrong character removes a term from the
+ * query entirely. Measured across five realistic typos before this existed,
+ * three retrieved the wrong section. The worst was "IMG Sytems": the typo also
+ * defeated the section-name check in query.ts, so the question was reclassified
+ * from `specific` to `shipped` and the ranking weights then promoted his
+ * current role over the employer he had actually been asked about.
+ */
+describe("typo tolerance", () => {
+  test("realistic typos resolve to the term that was meant", () => {
+    for (const [typed, meant] of [
+      ["growza", "growaza"],
+      ["langchian", "langchain"],
+      ["sytems", "systems"],
+      ["certifcations", "certifications"],
+      ["pytorc", "pytorch"],
+    ] as const) {
+      assert.equal(nearestTerm(typed), meant, `${typed} did not resolve to ${meant}`);
+    }
+  });
+
+  test("a word the corpus already knows is never rewritten", () => {
+    // Returning a correction for a real term would replace a good match with a
+    // near one, which is worse than doing nothing.
+    for (const known of ["growaza", "langchain", "azure", "retrieval", "pytorch"]) {
+      assert.equal(nearestTerm(known), null, `${known} was corrected despite being real`);
+    }
+  });
+
+  test("short tokens are left alone", () => {
+    // At three characters almost everything is within one edit of something,
+    // and a confident wrong correction retrieves worse than a missing term.
+    for (const short of ["img", "the", "aws", "sql"]) {
+      assert.equal(nearestTerm(short), null, `${short} should be too short to correct`);
+    }
+  });
+
+  test("a word missing only its inflection is not treated as a typo", () => {
+    /*
+     * "publish" is a real word this corpus never uses -- the prose says
+     * "published" and "publications". Edit distance alone corrected it to
+     * "public", which is equally close and does appear, in the certifications
+     * section, so "What did he publish?" retrieved Certifications first.
+     *
+     * A typo diverges early; an inflection diverges at the end.
+     */
+    assert.equal(nearestTerm("publish"), "published");
+    assert.equal(nearestTerm("certification"), "certifications");
+    // "deploy" was on this list until the tokenizer stopped keeping sentence-
+    // final punctuation. The corpus writes "deploy." at the end of a sentence,
+    // which used to be indexed as its own term, so the clean form was missing
+    // and looked like a typo. It is a real term now and must not be rewritten.
+    assert.equal(nearestTerm("deploy"), null);
+  });
+
+  test("a real word the corpus does not contain is left alone", () => {
+    // Correcting these would invent a match. "orchestrate" was rewritten to the
+    // vocabulary term "or" until the stem rule required a minimum length.
+    for (const alien of ["orchestrate", "kubernetes", "photosynthesis"]) {
+      assert.equal(nearestTerm(alien), null, `${alien} should not be corrected`);
+    }
+  });
+
+  test("correction adds the repaired term without dropping what was typed", () => {
+    // A correction can be wrong. Keeping both means a wrong one adds a term
+    // that matches nothing, instead of removing one that would have matched.
+    const { text, fixes } = correct("Tell me about Growza");
+    assert.ok(text.includes("Growza"), "the typed word was dropped");
+    assert.ok(text.includes("growaza"), "the correction was not added");
+    assert.deepEqual(fixes, [["growza", "growaza"]]);
+  });
+});
+
+/**
+ * A truncated answer is a visibly broken one.
+ *
+ * `maxTokens` is a hard ceiling on a public endpoint, and the provider enforces
+ * it after the model has already committed to a sentence. Observed live once
+ * the answer-length rule was made evidence-driven: an answer about his
+ * experience ended "he cut API response time by 3". No prompt prevents that,
+ * because the cut happens downstream of the prompt.
+ */
+describe("a cut-off answer is never shown cut off", () => {
+  test("an unterminated final sentence is dropped", () => {
+    const truncated =
+      "He extended a Python document-parsing pipeline at IMG Systems. " +
+      "He cut API response time by 3";
+    assert.equal(
+      cleanAnswer(truncated),
+      "He extended a Python document-parsing pipeline at IMG Systems.",
+    );
+  });
+
+  test("a complete answer is untouched", () => {
+    for (const whole of [
+      "He shipped a document intelligence assistant on Azure.",
+      'He found the bug in `CompositeBackend.ls("/")` at the root.',
+      "He cut API response time 30 percent. He tracked more than 2,000 SKUs.",
+    ]) {
+      const cleaned = cleanAnswer(whole);
+      assert.ok(cleaned.endsWith(".") || cleaned.endsWith("?"), `mangled: ${cleaned}`);
+      assert.ok(cleaned.length > whole.length * 0.6, `over-trimmed: ${cleaned}`);
+    }
+  });
+
+  test("a single unterminated sentence survives rather than emptying", () => {
+    // The alternative is returning nothing, and a short answer beats none.
+    assert.ok(cleanAnswer("He shipped it on Azure").length > 0);
+  });
+});
+
+
+/**
+ * One tokenizer, and it must not split a word from its own full stop.
+ *
+ * There were two near-copies -- one in the build script, one in the retriever --
+ * differing only by a stopword filter, with nothing keeping them in step. BM25
+ * scores a query against tokens produced at index time, so a drift between them
+ * produces terms no query can ever match, silently, with both halves
+ * individually correct.
+ *
+ * Measured before the fix: of 1,342 indexed terms, 169 ended in a full stop and
+ * 90 of those had a clean twin already in the index. "production" and
+ * "production." were two terms with two document frequencies, so a query for
+ * "production" could not match a sentence that ended with it and the IDF of
+ * both was wrong. That had been true since the index was first built.
+ */
+describe("tokenization", () => {
+  const index = JSON.parse(readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"));
+
+  test("no indexed term carries punctuation on its edges", () => {
+    const dirty = Object.keys(index.df).filter((t) => /^[.\-]|[.\-]$/.test(t));
+    assert.deepEqual(dirty, [], `${dirty.length} terms keep edge punctuation: ${dirty.slice(0, 6)}`);
+  });
+
+  test("punctuation inside a token survives, because it is the token", () => {
+    // These are the exact strings people type when they want one specific
+    // thing, and they are what the lexical half exists to catch.
+    for (const term of ["node.js", "ncp-aai", "gpt-4o", "c++", "10.1109"]) {
+      assert.ok(index.df[term] !== undefined, `${term} is not in the index`);
+    }
+  });
+
+  test("a sentence-final word is the same term as the word", () => {
+    assert.deepEqual(normalize("He shipped it to production."), ["he", "shipped", "it", "to", "production"]);
+    assert.deepEqual(normalize("Built on Node.js."), ["built", "on", "node.js"]);
+  });
+
+  test("index and query tokenizers agree except on grammar", () => {
+    // The single property that matters: any query token that is not a stopword
+    // must be a token the index could have produced from the same text.
+    const text = "He cut REST API latency 25% using Node.js and Cosmos DB Gremlin.";
+    const indexed = new Set(indexTokens(text));
+    for (const token of queryTokens(text)) {
+      assert.ok(indexed.has(token), `query produced "${token}", which the index never would`);
+    }
+  });
+});
+
+/**
+ * What the tools do when they fail, which is the part that gets screened.
+ *
+ * Tool calls fail between three and fifteen percent of the time in production,
+ * and the worst kind is the silent one: a call that returns HTTP 200 with an
+ * empty payload, so nothing surfaces as an error anywhere. Every executor here
+ * returns a typed result carrying `say`, the sentence a reader gets, so
+ * "worked" and "returned nothing" are different outcomes and neither is a
+ * broken control.
+ */
+describe("tools fail as answers, not as exceptions", () => {
+  test("an unknown target is refused with what is actually available", () => {
+    const result = openEvidence("his_instagram");
+    assert.equal(result.ok, false);
+    // A refusal that does not say what would have worked is a dead end.
+    assert.match(result.say, /LinkedIn|GitHub|source/i);
+    assert.ok(result.say.length > 40, "a refusal has to be useful");
+  });
+
+  test("every advertised target resolves to a real URL", () => {
+    // The enum the model chooses from and the map the executor reads are the
+    // same object, so this cannot drift. It asserts that anyway, because the
+    // failure mode if it ever does is the agent confidently opening nothing.
+    for (const target of TARGETS.keys()) {
+      const result = openEvidence(target);
+      assert.equal(result.ok, true, `${target} did not resolve`);
+      if (result.ok && result.kind === "open") {
+        assert.match(result.url, /^https:\/\//, `${target} is not an https URL`);
+        assert.ok(result.label.length > 2, `${target} has no label`);
+      }
+    }
+  });
+
+  test("a nonsense mail context falls back rather than throwing", () => {
+    const result = composeIntro("not-a-real-context");
+    assert.equal(result.ok, true);
+    if (result.ok && result.kind === "draft") {
+      assert.match(result.mailto, /^mailto:/);
+      assert.ok(result.body.length > 40);
+      // The copyable text always comes back, because mailto: fails silently on
+      // a machine with no mail client and there is no event for that.
+      assert.ok(result.subject.length > 4);
+    }
+  });
+
+  test("an eval that cannot run is never reported as passing", async () => {
+    const result = await runEval("grounding", async () => {
+      throw new Error("provider unreachable");
+    });
+    assert.equal(result.ok, false);
+    assert.doesNotMatch(result.say, /passed/i);
+    assert.match(result.say, /could not run/i);
+  });
+
+  test("an eval group that does not exist is refused", async () => {
+    const result = await runEval("nonsense", async () => ({ answer: "", route: "answer" }));
+    assert.equal(result.ok, false);
+  });
+
+  test("a failing assertion is reported as failing", async () => {
+    // The demonstration has to be able to fail in front of someone, or it is
+    // theatre. This feeds it an answer that misses the assertion.
+    const result = await runEval("grounding", async () => ({
+      answer: "He worked somewhere on something.",
+      route: "answer",
+    }));
+    assert.equal(result.ok, true);
+    if (result.ok && result.kind === "eval") {
+      assert.equal(result.passed, false);
+      assert.match(result.say, /Failed/);
+    }
+  });
+
+  test("a passing assertion is reported as passing", async () => {
+    const result = await runEval("grounding", async () => ({
+      answer: "He shipped a document intelligence assistant on Azure at the Questrom lab.",
+      route: "answer",
+    }));
+    assert.equal(result.ok, true);
+    if (result.ok && result.kind === "eval") {
+      assert.equal(result.passed, true);
+      assert.match(result.say, /Passed/);
+    }
+  });
+
+  test("no two tools could answer the same request", () => {
+    // The consolidation test, asserted rather than assumed: three tools, three
+    // distinct verbs, and no shared parameter name that would let a model
+    // confuse one for another.
+    const names = toolSchemas().map((t) => t.function.name);
+    assert.deepEqual(names, ["open_evidence", "compose_intro", "run_eval"]);
+    assert.equal(new Set(names).size, names.length);
+    for (const schema of toolSchemas()) {
+      assert.ok(schema.function.description.length > 120, `${schema.function.name} is described too thinly`);
+      // Every parameter is an enum. A free-string parameter is a way for a
+      // model to name something that does not exist.
+      for (const prop of Object.values(schema.function.parameters.properties)) {
+        assert.ok(Array.isArray((prop as { enum?: unknown[] }).enum), "a tool parameter is not enumerated");
+      }
+    }
+  });
 });

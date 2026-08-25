@@ -128,3 +128,25 @@
     height: clamp(13rem, 42vh, 17rem);
   }
 }
+
+/* Score magnitude beside the rank.
+ *
+ * The figure plotted ordinal position only, so a chunk that beat the field and
+ * one that squeaked past the next looked identical. These are the raw BM25 and
+ * fused RRF numbers the retriever already produced, as a share of the leader.
+ * Quiet by default and inheriting the row's tone, because rank is still the
+ * claim and this is the qualifier. */
+.mag {
+  fill: var(--rule);
+  transition: width var(--t-slow) var(--ease-out), x var(--t-slow) var(--ease-out);
+}
+
+.pathOn .mag {
+  fill: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mag {
+    transition: none;
+  }
+}

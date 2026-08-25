@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment } from "react";
 
 /**
  * Inline emphasis for the corpus.
@@ -92,95 +92,19 @@ function render(text: string, keyPrefix: string) {
 }
 
 /**
- * Long sections open on request; short ones never close.
+ * Closed by default, everywhere, until the reader asks for more.
  *
- * The page ran to fifteen screens, and a paragraph capped at its reading measure
- * does not get shorter when the window gets wider, so layout alone could not fix
- * it. Below the threshold a section is left whole, because a control that saves
- * one line costs more attention than the line does.
- *
- * The detail is always in the markup. `hidden` is not used and nothing is
- * fetched on expand: a crawler, a printer and a reader with scripting off all
- * get the complete text, and `<details>` carries the open and closed state to
- * assistive software without any of it being reimplemented here.
+ * The detail is always in the markup regardless of state: `hidden` is not
+ * used and nothing is fetched on expand, so a crawler indexes the closed
+ * content and `<details>` carries the open/closed state to assistive
+ * software without any of it being reimplemented here. Native behaviour also
+ * means there is nothing to wire up for a reader who opens a section
+ * themselves -- the browser already remembers that across a resize; no
+ * effect, no ref, no width check needed.
  */
-const COLLAPSE_OVER_WORDS = 120;
-
-/**
- * Folds on a phone, open on a desktop.
- *
- * Rendered open, always. A crawler, a printer, a reader with scripting off and
- * anyone on a wide screen gets the complete text with no control in the way,
- * which is also why there is no hydration mismatch to manage: the server and
- * the first client render agree, and the narrow case is applied afterwards.
- *
- * The phone is the case that needs this. Measured at 375px the page ran to 15.4
- * screens against 11.7 on a desktop, because the two-column layout collapses and
- * every horizontal saving disappears. Folding the evidence and leaving the lead
- * sentences is what makes that length skimmable rather than shorter.
- */
-function useFoldOnNarrow(
-  ref: React.RefObject<HTMLDetailsElement | null>,
-  always: boolean,
-) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const narrow = window.matchMedia("(max-width: 62rem)");
-    const apply = () => {
-      // Never re-close something the reader opened themselves.
-      if (el.dataset.touched === "yes") return;
-      // `always` sections start closed at every width. Work and Projects are
-      // where a reader is scanning for fit rather than reading prose, so the
-      // lead sentence plus the stack answers their question and the rest is
-      // there when they want it.
-      el.open = always ? false : !narrow.matches;
-    };
-
-    const remember = () => {
-      el.dataset.touched = "yes";
-    };
-
-    apply();
-    narrow.addEventListener("change", apply);
-    el.addEventListener("toggle", remember);
-    return () => {
-      narrow.removeEventListener("change", apply);
-      el.removeEventListener("toggle", remember);
-    };
-  }, [ref, always]);
-}
-
-/**
- * `desktopWorthy` marks a section long enough that the control earns its place
- * on a wide screen too (the 120-word threshold below). Below it, the fold still
- * exists in the markup for narrow screens, but the toggle is hidden above the
- * 62rem breakpoint via `data-desktop-fold`, purely in CSS: no viewport check
- * needed at render time, so there is nothing here for server and client to
- * disagree about.
- */
-function Foldable({
-  children,
-  desktopWorthy,
-  always,
-  label,
-}: {
-  children: React.ReactNode;
-  desktopWorthy: boolean;
-  always: boolean;
-  label: string;
-}) {
-  const ref = useRef<HTMLDetailsElement>(null);
-  useFoldOnNarrow(ref, always);
-
+function Foldable({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <details
-      className="more"
-      data-desktop-fold={desktopWorthy || always ? "yes" : "no"}
-      ref={ref}
-      open
-    >
+    <details className="more">
       <summary>
         <span className="more-open">{label}</span>
         <span className="more-close">Show less</span>
@@ -193,16 +117,9 @@ function Foldable({
 export default function Prose({
   body,
   className,
-  /**
-   * "always" starts the fold closed at every width, so the section opens as a
-   * lead sentence plus a control. Used in Work and Projects, where a reader is
-   * scanning for fit and the frameworks are already visible as the stack row.
-   */
-  fold = "narrow",
 }: {
   body: string;
   className?: string;
-  fold?: "narrow" | "always";
 }) {
   const paras = body.split(/\n{2,}/);
 
@@ -218,32 +135,21 @@ export default function Prose({
     );
   };
 
-  const words = body.split(/\s+/).length;
   const root = className ? `prose ${className}` : "prose";
 
-  // A single paragraph has no seam to fold at, on any screen.
+  // A single paragraph has no seam to fold at.
   if (paras.length < 2) {
     return <div className={root}>{paras.map(render_)}</div>;
   }
 
   // The opening paragraph carries the argument on its own; the rest is the
-  // evidence for it. That is the seam, so that is where it folds. Every
-  // multi-paragraph section folds on a narrow screen, because line width is
-  // fixed there regardless of how much room the window has; the 120-word
-  // threshold only decides whether the control is worth its keep once there
-  // is width to spend elsewhere.
+  // evidence for it. That is the seam, so that is where it folds.
   const [first, ...others] = paras;
 
   return (
     <div className={root}>
       {render_(first, 0)}
-      <Foldable
-        desktopWorthy={words > COLLAPSE_OVER_WORDS}
-        always={fold === "always"}
-        label={fold === "always" ? "Read more" : "Read the detail"}
-      >
-        {others.map((p, i) => render_(p, i + 1))}
-      </Foldable>
+      <Foldable label="Read more">{others.map((p, i) => render_(p, i + 1))}</Foldable>
     </div>
   );
 }

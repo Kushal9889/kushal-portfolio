@@ -30,7 +30,7 @@ const CONTEXTS: Record<string, { context: ReachContext; about: string }> = {
   approach: { context: "approach", about: "how retrieval works here" },
   work: { context: "work", about: "his work at Questrom" },
   research: { context: "research", about: "the paper" },
-  proof: { context: "projects", about: "what else he has running" },
+  proof: { context: "credentials", about: "his certifications" },
 };
 
 export default function ReachDock({

@@ -55,6 +55,25 @@ describe("pages", () => {
     assert.match(html, /engineer the systems/i);
   });
 
+  test("the BM25 tuning table is gone and the vector-database route is retired", async () => {
+    const res = await fetch(BASE);
+    const html = await res.text();
+    assert.doesNotMatch(html, /BM25 k1/);
+    const vec = await fetch(`${BASE}/api/vector?q=test`);
+    assert.equal(vec.status, 404);
+  });
+
+  test("the shipped-defects list stays collapsed by default", async () => {
+    const res = await fetch(BASE);
+    const html = await res.text();
+    const marker = "defects this page shipped";
+    const at = html.indexOf(marker);
+    assert.ok(at > 0, "defects section missing from the page");
+    const tag = html.lastIndexOf("<details", at);
+    assert.ok(tag > 0, "defects list is not inside a <details>");
+    assert.doesNotMatch(html.slice(tag, at), / open(?:[ >]|=)/);
+  });
+
   test("llms.txt serves as plain text with the real facts", async () => {
     const res = await fetch(`${BASE}/llms.txt`);
     assert.equal(res.status, 200);

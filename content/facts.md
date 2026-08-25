@@ -89,6 +89,10 @@ Role: Software Engineering Intern. August 2024 to April 2025. Remote.
 @metric 95% | schema accuracy, up from 75-78% | resume
 @metric 5,000+ | profiles parsed per month
 @metric -25% | REST API latency
+@metric +20% | match accuracy on collaborative filtering, false positives down 18% | resume
+@metric +30% | throughput on the REST microservices | resume
+@metric 12+ hours | saved per week by workflow automation | resume
+@metric 8 sprints | delivered at 95% on-time | resume
 
 @ask What did he over-engineer at IMG, and how did he find out? | IMG Systems
 
@@ -101,7 +105,13 @@ schema accuracy and reducing manual review across a six-person team. Before the 
 schema conformance sat around 75 to 78 percent.
 
 He containerized Python microservices backed by PostgreSQL and Redis with Docker, trimming REST API
-latency 25 percent, and automated CI/CD through GitHub Actions for zero-downtime releases.
+latency 25 percent and lifting throughput 30 percent, and automated CI/CD through GitHub Actions for
+zero-downtime releases.
+
+He also tuned the collaborative filtering that ranks candidates against a role, raising match
+accuracy 20 percent while cutting false positives 18 percent. Automating the recruiter workflow in
+Python and Node.js saved the team more than 12 hours a week, across 8 Agile sprints delivered at 95
+percent on-time.
 
 Honest scope: this was an internship extending existing systems, not a greenfield build. He owned
 the pipeline extension, the schema layer, and the CI/CD setup independently.
@@ -118,13 +128,20 @@ Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
 @metric -30% | API response time | resume
 @metric +22% | engagement, 1,000+ daily users
 @metric 2,000+ | SKUs tracked live
+@metric 90%+ | user satisfaction | resume
+@metric 98% | dashboard figures matching the source inventory | resume
+@metric 3 | features owned end to end, delivered ahead of schedule | resume
 
 **He cut API response time 30 percent using in-memory caching and asynchronous request handling,**
-lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform.
+lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform, who
+reported over 90 percent satisfaction.
 
-He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, and secured REST endpoints
-with JWT and role-based access control across admin, manager, and staff levels. Deployed on AWS EC2
-and S3.
+He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, whose figures matched the
+underlying inventory 98 percent of the time, and secured REST endpoints with JWT and role-based
+access control across admin, manager, and staff levels. Deployed on AWS EC2 and S3.
+
+He owned three features end to end and delivered them ahead of schedule. He was an intern on that
+team and did not manage anyone, which is worth stating plainly because the resume line said "led".
 
 Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
@@ -151,6 +168,11 @@ isolation and a 70 percent reduction in redundant LLM calls.
 Retrieval combines BM25 lexical search with NVIDIA NV-Embed 1024-dimension vectors over pgvector,
 merged through an EnsembleRetriever. The retriever is initialised once at startup as a singleton,
 so there is no per-request re-ingestion cost.
+
+Inference runs on NVIDIA NIM, which is free, with AWS Bedrock and Claude 3 Haiku behind it as a
+paid fallback for when NIM is unavailable. Two providers, the free one first, which is the same
+failover shape the portfolio uses and for the same reason: the cheap path serves almost every
+request and the paid path exists so an outage degrades instead of failing.
 
 Stack: LangGraph, FastAPI, Next.js, TypeScript, pgvector, Neon Postgres, NVIDIA NIM, LangSmith
 
@@ -200,6 +222,9 @@ https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url
 
 AWS Cloud Technical Essentials, Amazon Web Services, completed January 2026.
 https://www.coursera.org/account/accomplishments/verify/4L1ZWS6VK2L8
+
+Generative AI: Prompt Engineering Basics, IBM, completed January 2026.
+https://www.coursera.org/account/accomplishments/verify/4GQE7X5TB7FT
 
 Google Cloud Fundamentals: Core Infrastructure, Google Cloud, 2025.
 https://www.coursera.org/account/accomplishments/verify/T3SB0BFWGHI8
@@ -260,8 +285,12 @@ strategies, pgvector, ChromaDB, Azure AI Search, NV-Embed.
 Evaluation and reliability: LLM evaluation, LLM-as-a-Judge, guardrails, grounding, hallucination
 reduction, PII redaction, LLM observability, tracing.
 
-Backend and MLOps: FastAPI, RESTful APIs, microservices, async Python, Pydantic, Docker, GitHub Actions,
-CI/CD, model deployment, low-latency inference, Server-Sent Events.
+Backend and MLOps: FastAPI, RESTful APIs, microservices, async Python, Pydantic, Docker, Kubernetes,
+GitHub Actions, CI/CD, model deployment, low-latency inference, Server-Sent Events.
+
+On Kubernetes specifically: he has used it and is not proficient in it. It is listed because it is
+real, not because it is a strength, and it is deliberately kept out of his headline and summary so
+that nobody screens him on it. Ask him about Docker and CI/CD instead, which he owned end to end.
 
 Databases: PostgreSQL, MySQL, MongoDB, Redis, Neo4j, Cosmos DB.
 
@@ -331,7 +360,7 @@ it has not been taken because the traffic does not justify it yet.
 
 **The evaluation suite has no LLM judge, deliberately.** He built LLM-as-a-Judge
 evaluation at the Questrom lab, where a large private corpus made grading by
-model the only tractable option. Here the suite is sixteen cases with known
+model the only tractable option. Here the suite is 25 cases with known
 correct behaviour, so assertions are substring and route checks. A judge would
 add cost, latency, and a second thing to trust, to grade questions whose right
 answer is already written down. The technique is not better than the check; it is
@@ -340,18 +369,28 @@ what you reach for when a check is not available.
 
 **Nothing here is independent of anything else, and pretending otherwise would be
 the first dishonest line on the page.** It runs on Netlify functions, answers
-through free-tier inference with failover across four providers, and stores
-nothing: no database, no session, no conversation history on the server. When a
-provider caps, the next one serves. When all four are gone, the retrieved
-paragraph is served unsummarised.
+through free-tier inference with failover across four providers, and holds no
+session and no conversation history on the server. When a provider caps, the
+next one serves. When all four are gone, the retrieved paragraph is served
+unsummarised.
+
+**There is a vector database, and it is deliberately not in the answer path.**
+Neon Postgres with pgvector holds all 53 passages under a real HNSW index on
+`vector_cosine_ops`, rebuilt on every deploy. No question a visitor asks touches
+it. Retrieval serves from an index bundled with the function, because that is
+what the measurement says: scored on the same question in the same request, the
+exhaustive in-memory scan takes 0.5 to 2.9 milliseconds and the database takes
+46 to 198, which is 30 to 380 times longer for the same top result. Both need
+the query embedding first, so that cost is excluded from both sides. The
+database exists so that sentence is a measurement rather than an excuse.
 
 **The site refuses to ship claims it cannot support, and the refusal is
 automated.** A link checker resolves every external URL and fails on a dead one.
 A facts gate fails the build when the page renders a section the corpus lacks,
 when a metric carries no source, when the availability date has passed, or when
 a resume keyword has gone missing from this file. A token linter fails on a
-colour written outside the stylesheet. An audit runs ninety-eight structural
-checks. The evaluation suite runs sixteen. None of it makes the work better; all
+colour written outside the stylesheet. An audit runs 112 structural
+checks. The evaluation suite runs 25, five times each. None of it makes the work better; all
 of it stops the page describing work that is not there.
 
 The page you are reading is the work sample. The agent answering questions runs a LangGraph graph

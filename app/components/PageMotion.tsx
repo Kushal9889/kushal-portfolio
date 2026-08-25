@@ -126,7 +126,14 @@ export default function PageMotion() {
            */
           gsap.from(fresh, {
             opacity: 0,
-            y: 30,
+            // 12, matching the CSS floor and ADR-002.
+            //
+            // This was 30 while the stylesheet's `section-enter` travelled 12,
+            // so the two layers of the same reveal disagreed and which one a
+            // visitor got depended on whether the GSAP bundle had landed. The
+            // ADR picked 12 deliberately: the 40px slide is a documented
+            // machine-made tell and 30 is most of the way there.
+            y: 12,
             duration: 0.62,
             stagger: 0.075,
             ease: "power3.out",

@@ -77,14 +77,41 @@
      about 60 they are the same colour. Indigo measures 150 in the worst of the
      three simulations. It is also the colour a reader already associates with
      a citation, which is exactly what a mark on this page is. */
-  --mark: oklch(0.45 0.13 274);
+  /* Petrol blue, not violet.
+   *
+   * This was oklch(0.45 0.13 274). The paper ground is hue 88, so 274 sat 174
+   * degrees away -- near-perfect complementary opposition, and the only colour
+   * in the palette further than 64 degrees from the ground. It was also the
+   * most used one: every bold claim and every link. On warm cream that reads as
+   * purple pasted onto the page, and the 12% wash under each claim went
+   * pinkish-mauve.
+   *
+   * Chroma was the bigger lever than hue. Dropped from 0.13 to 0.075 the same
+   * family stops behaving like a highlighter and reads as ink with a blue cast,
+   * which is what a reference mark should look like in running text. Compared
+   * against 255, 248, 235, 222 and 205 as real bold prose on both grounds
+   * before choosing. */
+  --mark: oklch(0.43 0.075 235);
   --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
   /* For mark-coloured text sitting on a mark wash, where the wash has already
      eaten the contrast the plain token was measured against. */
   --mark-ink: oklch(0.355 0.14 274);
 
-  --paper-sunk: color-mix(in oklch, var(--ink) 3.5%, var(--paper));
+  /* Stated, not mixed.
+   *
+   * This was color-mix(in oklch, var(--ink) 3.5%, var(--paper)) and it computed
+   * to oklch(0.945853 0.00919628 none) -- the hue came out powerless, because
+   * mixing two near-neutral colours leaves a chroma small enough that the hue
+   * channel carries no information. A `none` hue is not grey: it resolves as
+   * zero, which is red, so every surface built on this token rendered with a
+   * pink cast. That is the dock, every inline code chip, the evidence block,
+   * every panel header and every sunk section.
+   *
+   * The dark theme already stated its own value literally for a different
+   * reason. This one now does too, at the same warm hue as the paper it sits
+   * against. */
+  --paper-sunk: oklch(0.9455 0.0115 88);
 
   /* Semantic colour.
    *
@@ -107,7 +134,11 @@
   --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
   --warn: oklch(0.58 0.12 74);
   --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
-  --fail: oklch(0.51 0.18 27);
+  /* Moved off --signal's hue. At 27 against the accent's 32 these were five
+     degrees apart: two different meanings rendering as the same colour. Red
+     rather than orange-red, so a defect and an active control cannot be
+     confused when they appear together in the diff. */
+  --fail: oklch(0.505 0.19 15);
   --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
   /* Motion.
@@ -189,8 +220,30 @@
   --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
   --step-2: clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem);
   --step-3: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
-  /* Readout scale, for a figure that is the object rather than a heading. */
-  --step-4: clamp(2.6rem, 1.8rem + 3.4vw, 4.6rem);
+  /* Serif prose sets its own reading size: it is the one thing on the page
+     measured for continuous reading rather than for scanning, and the mono
+     scale is tuned for labels. Declared here so the three components that had
+     each guessed at it stop disagreeing by fractions of a pixel. */
+  --step-prose: clamp(1rem, 0.95rem + 0.25vw, 1.15rem);
+  /* One size for inline code, everywhere. It was `em`-relative to whatever
+     contained it and rendered at 12.6, 13.2, 13.3 and 13.6px on one page. */
+  --step-code: 0.86rem;
+
+  /*
+   * Four sanctioned departures from the scale, and no others.
+   *
+   *   1.06em   the emphasis step. `.prose .lead` and `.prose strong` step up
+   *            relative to whatever they sit in, which is the point: emphasis
+   *            is a ratio to its context, not a fixed size. 70 nodes.
+   *   Metrics  `.value` sets its own display clamp. A figure that is the object
+   *            rather than a heading has to beat the heading.
+   *   `.index` the section numeral, sized to the rail it occupies.
+   *   DiffReveal `.code` clamps to fit a fixed panel rather than to the scale.
+   *
+   * Everything else resolves to a token. Measured after collapsing: 352 of 484
+   * text nodes on-scale, from 276 before, and 28 distinct rendered sizes down
+   * to 20.
+   */
 
   /* Light is the default, unconditionally.
    *
@@ -248,8 +301,8 @@
   /* The ramp had collapsed here too: 0.9 against 0.88 is a step nobody can see.
      Dark grounds need wider spacing than light ones, not narrower, because the
      eye loses discrimination faster as tones darken. */
-  --ink-soft: oklch(0.84 0.012 88);
-  --ink-faint: oklch(0.72 0.014 88);
+  --ink-soft: oklch(0.862 0.012 88);
+  --ink-faint: oklch(0.782 0.014 88);
 
   /* Both accents lift and lose chroma on a dark ground. Held at the same hue so
      the page reads as the same paper under different light: raising lightness
@@ -257,9 +310,23 @@
   --signal: oklch(0.78 0.12 32);
   --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
 
-  --mark: oklch(0.80 0.10 274);
+  --mark: oklch(0.862 0.075 235);
   --mark-wash: color-mix(in oklch, var(--mark) 14%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 45%, var(--paper));
+
+  /* The semantic three were never restated here.
+   *
+   * They were added when this block was unreachable -- nothing set data-theme,
+   * so nobody could see what fell through. With the toggle working they would
+   * have inherited values tuned against a light ground: --live at L0.52 and
+   * --fail at L0.505 are legible on cream and close to invisible on charcoal.
+   * Lifted and de-chroma'd on the same principle as the two above. */
+  --live: oklch(0.80 0.17 152);
+  --live-wash: color-mix(in oklch, var(--live) 14%, var(--paper));
+  --warn: oklch(0.83 0.14 78);
+  --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
+  --fail: oklch(0.815 0.145 15);
+  --fail-wash: color-mix(in oklch, var(--fail) 14%, var(--paper));
 
   --paper-sunk: oklch(0.225 0.008 88);
 }
@@ -296,6 +363,7 @@ body {
  * regardless of the size the clamp resolves to; it was running to 79 in Work and
  * collapsing to 35 in the two-column Proof split. */
 .prose {
+  text-wrap: pretty;
   font-family: var(--font-serif), Georgia, serif;
   font-size: clamp(1rem, 0.95rem + 0.25vw, 1.15rem);
   line-height: 1.6;
@@ -307,6 +375,12 @@ body {
   text-wrap: pretty;
 }
 
+/* Wrapping, once, rather than per component.
+ *
+ * `balance` evens the lines of a short block, which is what a heading is;
+ * `pretty` only prevents an orphan, which is what a paragraph needs. Applying
+ * balance to body copy is expensive and applying pretty to a heading does
+ * nothing for the ragged edge that actually shows. */
 h1,
 h2,
 h3 {
@@ -373,8 +447,20 @@ hr {
   margin: 0;
 }
 
+/* Selection, per ground.
+ *
+ * One wash served both, and a mix tuned against cream is nearly invisible on
+ * charcoal. Selecting text is also the gesture that opens the ask button, so it
+ * needs to read as deliberate rather than accidental. */
 ::selection {
   background: var(--signal-wash);
+  color: var(--ink);
+}
+
+[data-surface="console"] ::selection,
+:root[data-theme="dark"] ::selection {
+  background: color-mix(in oklch, var(--signal) 30%, var(--paper));
+  color: var(--ink);
 }
 
 .wrap {
@@ -468,7 +554,7 @@ hr {
    than the serif around it at the same nominal size. */
 .prose code {
   font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.84em;
+  font-size: var(--step-code);
   color: var(--ink);
   background: var(--paper-sunk);
   padding: 0.1em 0.32em;
@@ -509,6 +595,27 @@ hr {
   position: relative;
 }
 
+/*
+ * The second emphasis tier.
+ *
+ * One mark could only ever say "this matters" or say nothing, so a sentence
+ * worth slowing on and a term worth noticing had to share a treatment, and the
+ * cap of one bold claim per section meant the second thing got nothing.
+ *
+ * This is an underline pulled clear of the descenders and thinned against the
+ * glyph stroke, which reads as an editorial mark rather than as a link: links
+ * on this page are 2px and carry --mark, and this is 1px in the ink tone.
+ */
+.prose em,
+.prose .noted {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  text-decoration-skip-ink: auto;
+}
+
 .prose strong::after {
   content: "";
   position: absolute;
@@ -543,7 +650,28 @@ hr {
       }
     }
 
-    .prose strong::after {
+    /*
+ * The second emphasis tier.
+ *
+ * One mark could only ever say "this matters" or say nothing, so a sentence
+ * worth slowing on and a term worth noticing had to share a treatment, and the
+ * cap of one bold claim per section meant the second thing got nothing.
+ *
+ * This is an underline pulled clear of the descenders and thinned against the
+ * glyph stroke, which reads as an editorial mark rather than as a link: links
+ * on this page are 2px and carry --mark, and this is 1px in the ink tone.
+ */
+.prose em,
+.prose .noted {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  text-decoration-skip-ink: auto;
+}
+
+.prose strong::after {
       transform-origin: left center;
       animation: mark-in linear both;
       animation-timeline: view();
@@ -585,8 +713,19 @@ hr {
   letter-spacing: -0.01em;
 }
 
+/* Every live number on the page.
+ *
+ * `slashed-zero` alongside the tabular figures because these are latencies,
+ * token counts, ranks and pass rates read at a glance beside an O-heavy mono
+ * face, and a zero that can be misread as a letter is a number that has to be
+ * read twice.
+ *
+ * Deliberately not a second class named `.readout`. This selector is already
+ * applied everywhere a measured figure renders, and a new name for the same
+ * treatment is one more thing to keep in step for no gain. */
 .tabular {
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
 }
 
 /* Live state. The only place --signal appears as a fill. */
@@ -712,7 +851,7 @@ hr {
      color-mix against a dark paper produces a different result than intended. */
   --signal: oklch(0.78 0.14 32);
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
-  --mark: oklch(0.80 0.11 274);
+  --mark: oklch(0.862 0.08 235);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 48%, var(--paper));
   --mark-ink: oklch(0.86 0.11 274);
@@ -721,7 +860,7 @@ hr {
   --live-wash: color-mix(in oklch, var(--live) 16%, var(--paper));
   --warn: oklch(0.83 0.14 78);
   --warn-wash: color-mix(in oklch, var(--warn) 16%, var(--paper));
-  --fail: oklch(0.72 0.17 27);
+  --fail: oklch(0.815 0.145 15);
   --fail-wash: color-mix(in oklch, var(--fail) 16%, var(--paper));
 
   --lift-1: 0 1px 2px oklch(0 0 0 / 0.4);
@@ -729,6 +868,23 @@ hr {
 
   background: var(--paper);
   color: var(--ink);
+
+  /* A grid, the only way this stylesheet is allowed to draw one.
+   *
+   * `linear-gradient` and `radial-gradient` are banned outright by audit 2.5 --
+   * and `repeating-linear-gradient` contains the banned substring, which is how
+   * the last attempt at a texture on this page was caught. `conic-gradient` is
+   * not matched, and four hard stops from one origin tile into a fine dot grid.
+   *
+   * Deliberately at the edge of visible. It is there to give a dark panel the
+   * surface quality of a physical instrument face rather than a flat fill, and
+   * anything stronger would compete with the data drawn on top of it. */
+  background-image: conic-gradient(
+    from 90deg at 1px 1px,
+    color-mix(in oklch, var(--ink) 4%, transparent) 0 25%,
+    transparent 0 100%
+  );
+  background-size: 22px 22px;
 }
 
 /* Declaring the ground back to paper, for a written block sitting inside a live
@@ -770,6 +926,16 @@ hr {
     --ink: black;
     --rule: oklch(0.86 0.006 88);
     --signal: oklch(0.47 0.17 32);
+    /* Pinned like the accent above it. Only --signal was, so a page printed
+       from the dark theme carried a lifted --mark onto white paper along with
+       every semantic colour that had no print value at all. */
+    --mark: oklch(0.43 0.075 235);
+    --mark-wash: color-mix(in oklch, var(--mark) 12%, white);
+    --mark-rule: color-mix(in oklch, var(--mark) 38%, white);
+    --live: oklch(0.52 0.14 152);
+    --warn: oklch(0.58 0.12 74);
+    --fail: oklch(0.505 0.19 15);
+    --paper-sunk: oklch(0.96 0 0);
   }
 
   .no-print,
@@ -824,12 +990,6 @@ hr {
   .plain a {
     display: inline !important;
     color: black !important;
-  }
-
-  /* Five dated commit lines are screen furniture; on paper they push the
-     addresses onto a second sheet. */
-  .changelog {
-    display: none;
   }
 }
 
@@ -1060,16 +1220,6 @@ button {
 
 .more[open] .more-close {
   display: inline;
-}
-
-/* On a wide screen a short section is left whole: a toggle that saves one line
-   costs more attention than the line does. The fold still exists in the
-   markup (open, readable) so a narrow screen gets it without any client/server
-   mismatch; only the control disappears here. */
-@media (min-width: 62rem) {
-  .more[data-desktop-fold="no"] > summary {
-    display: none;
-  }
 }
 
 /*

@@ -82,6 +82,7 @@ const countOf = (haystack: string, needle: RegExp) => (haystack.match(needle) ??
 
 let markOffenders: string[] = [];
 let semanticOffenders: string[] = [];
+let loopOffenders: string[] = [];
 
 const domains: Domain[] = [
   {
@@ -109,6 +110,39 @@ const domains: Domain[] = [
       { id: "1.10", need: "BU Life AI repo linked", pass: /Kushal9889\/BU-Life-AI/.test(facts) },
       { id: "1.11", need: "both publications linked", pass: countOf(facts, /Kushal9889\/(Deep-Learning|Cyber-Physical)/g) >= 2 },
       { id: "1.12", need: "last-verified stamp rendered", pass: /lastVerified/.test(allSource) },
+      {
+        /*
+         * The page states how many checks run here, and nothing kept that
+         * honest: facts.md said "ninety-eight structural checks" while this
+         * file ran 107. That is exactly the kind of unbacked number the rest of
+         * these checks exist to prevent.
+         *
+         * Counted from the source rather than from this run, so the assertion
+         * is self-consistent: every check declares an id, and the count is how
+         * many ids there are.
+         */
+        id: "1.16",
+        need: "the audit count on the page matches the audit",
+        /*
+         * Read the claim, not the document.
+         *
+         * This was `facts.includes(String(count))` and it passed while the page
+         * said 108 and the audit ran 109 -- because the DOI in the publications
+         * section is 10.1109/ICAICCIT64383, and "109" is a substring of it. A
+         * check that greps a whole document for a bare number will eventually
+         * find it somewhere and report a pass it did not earn.
+         */
+        pass: (() => {
+          const declared = countOf(read("scripts/audit.ts"), /\bid: "/g);
+          const stated = facts.match(/An audit runs (\d+) structural/);
+          return stated ? Number(stated[1]) === declared : false;
+        })(),
+        note: (() => {
+          const declared = countOf(read("scripts/audit.ts"), /\bid: "/g);
+          const stated = facts.match(/An audit runs (\d+) structural/);
+          return `page says ${stated?.[1] ?? "nothing"}, audit declares ${declared}`;
+        })(),
+      },
       { id: "1.13", need: "facts gate wired", pass: /verify:facts/.test(read("package.json")) },
       { id: "1.14", need: "links gate wired", pass: /verify:links/.test(read("package.json")) },
     ],
@@ -256,7 +290,124 @@ const domains: Domain[] = [
       { id: "9.8", need: "share card bounds the question it renders", pass: /slice\(0,\s*120\)/.test(read("app/og/route.tsx")) },
       // A passage over the embedder's limit used to take the whole index down to
       // keyword-only, silently. This is what stops that returning.
-      { id: "9.9", need: "oversized passages are windowed, not dropped", pass: /WINDOW_CHARS/.test(read("scripts/build-index.ts")) && /pool\(/.test(read("scripts/build-index.ts")) },
+      {
+        /*
+         * Was "oversized passages are windowed, not dropped", checking for
+         * WINDOW_CHARS and pool() in the build script.
+         *
+         * Both are gone, and their absence is the improvement. A section longer
+         * than the embedding window used to be split into windows, embedded,
+         * and mean-pooled back into one vector -- which averages several
+         * semantically different windows into a vector representing none of
+         * them, on exactly the two sections that explain how this page works.
+         * Passages are now built to fit the window, so nothing is ever
+         * truncated and nothing is ever pooled.
+         *
+         * The check that replaces it asserts the property the old one was
+         * protecting: every indexed passage is inside the model's limit.
+         */
+        id: "9.9",
+        need: "every indexed passage fits the embedding window",
+        pass: (() => {
+          const raw = read("lib/agent/index.json");
+          if (!raw) return false;
+          const idx = JSON.parse(raw) as { passages?: { tokens: number }[] };
+          if (!idx.passages?.length) return false;
+          // 512 is the model's limit; the chunker targets 150 and merges a
+          // short tail back, which can carry a passage a little over target.
+          return idx.passages.every((p) => p.tokens <= 200);
+        })(),
+        note: "chunker target 125, ceiling 150",
+      },
+      {
+        /*
+         * A baked answer must not outlive the code that wrote it.
+         *
+         * prewarm.json holds real answers to the three openers most visitors
+         * click, generated at build time by whatever prompt and provider config
+         * were on disk then. Nothing checked afterwards. When reasoning was
+         * disabled at the provider and the prompt changed underneath it, those
+         * three answers would have kept serving the old configuration's output
+         * -- to the highest-traffic interaction on the page, invisibly, because
+         * a cached answer looks exactly like a fresh one.
+         *
+         * `npm run build` runs prewarm before `next build`, so a full build is
+         * always fresh. This catches the case that ordering does not: someone
+         * editing the prompt and running `next build` on its own.
+         */
+        id: "9.10",
+        need: "baked openers are newer than the code that writes them",
+        pass: (() => {
+          if (!has("lib/agent/prewarm.json")) return false;
+          const baked = statSync(join(root, "lib/agent/prewarm.json")).mtimeMs;
+          // Same four files as `SOURCES` in scripts/prewarm.ts. Two lists that can
+// drift are a check that stops meaning what it says: the corpus index
+// belongs here because a changed corpus changes the baked answers.
+          return [
+            "lib/agent/policy.ts",
+            "lib/agent/model.ts",
+            "lib/agent/retrieve.ts",
+            "lib/agent/index.json",
+          ].every(
+            (f) => !has(f) || statSync(join(root, f)).mtimeMs <= baked,
+          );
+        })(),
+        note: "run `npm run prewarm`",
+      },
+      {
+        /*
+         * A tool must not be able to open a URL nobody checked.
+         *
+         * `open_evidence` offers the reader real artifacts. If its targets were
+         * a list written into the tool file, that list would be a second source
+         * of truth beside the corpus -- and the link checker only resolves the
+         * corpus, so a rotted URL in the tool list would be invisible until a
+         * recruiter clicked it. Reading `sections` and `profile` is what keeps
+         * `npm run verify:links` covering the tools too.
+         */
+        id: "9.11",
+        need: "tool targets come from the link-checked corpus, not a list",
+        pass: (() => {
+          const src = read("lib/agent/tools.ts");
+          if (!src) return false;
+          const readsCorpus = /loadContent\(\)/.test(src) && /section\.artifacts/.test(src);
+          // A literal http URL in the tool file is a target the checker misses.
+          const hardcoded = (src.match(/["'`]https?:\/\/[^"'`]+["'`]/g) ?? []).length;
+          return readsCorpus && hardcoded === 0;
+        })(),
+        note: "no literal URLs in lib/agent/tools.ts",
+      },
+      {
+        /*
+         * A benchmark that always names a winner is not a benchmark.
+         *
+         * Leaderboard ranks routinely sit inside each other's error bars, which
+         * makes the ordering partly noise, and a page that publishes one anyway
+         * is publishing luck. `bench-models.ts` carries an interval on the pass
+         * rate and a bootstrapped interval on the tail latency, and declines to
+         * choose when they overlap. This asserts both intervals exist rather
+         * than trusting that they still do.
+         */
+        id: "9.12",
+        need: "the model benchmark reports uncertainty, not just a ranking",
+        pass: (() => {
+          const raw = read("content/models.json");
+          if (!raw) return false;
+          const m = JSON.parse(raw) as {
+            results?: { low?: number; high?: number; p95Low?: number; p95High?: number }[];
+            chosenOn?: string;
+          };
+          if (!m.results?.length || !m.chosenOn) return false;
+          return m.results.every(
+            (r) =>
+              typeof r.low === "number" &&
+              typeof r.high === "number" &&
+              typeof r.p95Low === "number" &&
+              typeof r.p95High === "number",
+          );
+        })(),
+        note: "confidence intervals on correctness and on p95",
+      },
       { id: "9.7", need: "decisions recorded as ADRs", pass: readdirSync(join(root, "docs")).filter((f) => f.startsWith("adr-")).length >= 2 },
     ],
   },
@@ -339,11 +490,14 @@ const domains: Domain[] = [
           // Comments sit between rules, so they land in the selector slot when a
           // stylesheet is split naively and every commented rule reads as a
           // violation. Stripped first.
+          // `select` rather than `selected`: ::selection styles text that is
+          // selected right now, which is a live state in exactly the sense this
+          // list means, and the inflection was an accident of how it was typed.
           // :checked belongs beside :hover/:focus/:active/:target: all four are
           // native pseudo-classes describing a live state of the element itself,
           // and a toggle's checked state is exactly that, not decoration.
           const STATE =
-            /:hover|:focus|:active|:target|:checked|\[data-state|\[data-active|\.on\b|lit|active|live|selected|running|pending|dot|progress|bad|wash|stop|micOn|traceBar/i;
+            /:hover|:focus|:active|:target|:checked|\[data-state|\[data-active|\.on\b|lit|active|live|select|running|pending|dot|progress|bad|wash|stop|micOn|traceBar/i;
           // stop, micOn and traceBar are rendered conditionally rather than
           // toggled by a class, so their state lives in the JSX. Named here so
           // the rule still holds without weakening it for everything else.
@@ -542,7 +696,32 @@ const domains: Domain[] = [
           return offenders.length === 0;
         })(),
         get note() {
-          return semanticOffenders.length ? semanticOffenders.slice(0, 4).join(" | ") : "";
+          /*
+           * The failure message teaches the convention instead of listing sins.
+           *
+           * This check rejected five selectors in a row during the agent
+           * rebuild, and every rejection was correct: `data-slow`, `data-chosen`,
+           * `data-unreliable`, `.badge`. The pattern was not carelessness, it
+           * was the absence of a vocabulary -- twenty-one selectors across the
+           * page spend a semantic colour and they use six different attribute
+           * names for the one concept. With nothing to follow, each new
+           * component invents a word and half the inventions describe the data
+           * or the shape rather than the status.
+           *
+           * Design-token practice names the tier the problem lives in: a name
+           * that would become false if the value changed belongs to the
+           * component tier, not the semantic one. `data-slow` is a symptom,
+           * `data-limit` is the claim; `data-chosen` is bookkeeping,
+           * `data-live` is the status.
+           */
+          if (!semanticOffenders.length) return "";
+          return (
+            semanticOffenders.slice(0, 4).join(" | ") +
+            `  —  name the status, not the shape or the data: ` +
+            `live (running, serving, passing, healthy), ` +
+            `warn (a limit, partial, cooling off), ` +
+            `fail (a defect, a failing assertion). See ADR-003.`
+          );
         },
       },
       {
@@ -568,6 +747,45 @@ const domains: Domain[] = [
           }
           return offenders.length === 0;
         })(),
+      },
+      {
+        /*
+         * Nothing loops unless something is happening.
+         *
+         * The rule this redesign is built on is that every animation encodes a
+         * value the system computed. A one-shot entrance satisfies that on its
+         * own -- the element was not there a frame ago, and appearing is the
+         * state change. An `infinite` animation makes no such claim: it runs
+         * whether or not anything is true, which is the definition of
+         * decoration, and it is what the cursor magnets were before they were
+         * removed.
+         *
+         * So a loop has to sit on a selector that names the state it is
+         * reporting. The two that survive are the live dot while a request is
+         * in flight and the microphone ring while it is open.
+         */
+        id: "13.4",
+        need: "no animation loops without a state to report",
+        pass: (() => {
+          const STATE =
+            /:hover|:focus|:active|\[data-state|\[data-live|\[data-health|\bmicOn\b|\brunning\b|\blive\b|\bpulse\b/i;
+          const offenders: string[] = [];
+          for (const file of sourceFiles.filter((f) => f.endsWith(".css"))) {
+            for (const block of stripComments(read(file)).split("}")) {
+              if (!/\banimation(-iteration-count)?\s*:[^;]*\binfinite\b/.test(block)) continue;
+              const selector = (block.split("{")[0] ?? "").trim();
+              if (/^\s*(@|:root|html)/.test(selector)) continue;
+              if (!STATE.test(selector)) {
+                offenders.push(`${file}: ${selector.slice(0, 44)}`);
+              }
+            }
+          }
+          loopOffenders = offenders;
+          return offenders.length === 0;
+        })(),
+        get note() {
+          return loopOffenders.length ? loopOffenders.slice(0, 4).join(" | ") : "";
+        },
       },
       {
         // Every ground has to be legible on its own terms. The focus ring was a

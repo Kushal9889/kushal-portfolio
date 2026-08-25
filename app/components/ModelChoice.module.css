@@ -1,0 +1,118 @@
+.headline {
+  margin: 0 0 var(--s-2);
+  font-size: var(--step-1);
+  color: var(--ink);
+  max-width: var(--measure-tight);
+}
+
+.lede {
+  margin: 0 0 var(--s-4);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  max-width: var(--measure-tight);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1.1fr) 8rem 1fr 5rem;
+  gap: var(--s-3);
+  align-items: center;
+  padding-block-end: var(--s-3);
+  border-block-end: var(--border-hair) solid var(--rule);
+}
+
+.row:last-child {
+  border-block-end: none;
+}
+
+.name {
+  font-size: var(--step--1);
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+/* The model currently serving answers. --live means exactly that on this page:
+ * running, reachable, the thing that is on. Named `liveBadge` rather than
+ * `badge` because audit 13.1 requires the selector to name the meaning it is
+ * spending colour on, and "badge" names a shape. It has rejected five of my
+ * selectors now and been right every time. */
+.liveBadge {
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--live);
+}
+
+.score,
+.time {
+  display: grid;
+  gap: 1px;
+  font-size: var(--step--1);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.range {
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+.bar {
+  display: block;
+  height: 8px;
+  background: var(--paper-sunk);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  width: var(--w);
+  background: var(--ink-faint);
+  border-radius: var(--r-sm);
+}
+
+.row[data-live] .fill {
+  background: var(--live);
+}
+
+/* A model whose assertions fail: even its optimistic bound is under 80% right.
+ * --fail because a failing assertion is exactly what that is, and this is the
+ * one interval the benchmark could separate -- downward. */
+.row[data-failing] .fill {
+  background: var(--fail);
+}
+
+.row[data-failing] .score {
+  color: var(--fail);
+}
+
+.foot {
+  margin: var(--s-4) 0 0;
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+  max-width: var(--measure-tight);
+}
+
+@media (max-width: 46rem) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-2);
+  }
+
+  .bar {
+    grid-column: 1 / -1;
+  }
+}

@@ -80,3 +80,22 @@ a.source:hover {
 .cell[data-sourced] .value {
   color: var(--mark);
 }
+
+/* On a console surface a metrics strip is a readout bank, not three numbers
+   floating in a panel. Cell rules only between cells, so the block reads as one
+   instrument rather than three boxes. */
+[data-surface="console"] .grid {
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  gap: 0;
+  padding-bottom: 0;
+}
+
+[data-surface="console"] .cell {
+  padding: var(--s-3) var(--s-4);
+  border-inline-start: var(--border-hair) solid var(--rule);
+}
+
+[data-surface="console"] .cell:first-child {
+  border-inline-start: none;
+}

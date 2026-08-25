@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import field from "@/lib/agent/field.json";
 import { RETRIEVAL_EVENT } from "./Agent";
+/* The shape comes from the retriever that produces it.
+ *
+ * This file declared its own `FusionRow` and `Trace` copies of `FusionRow` and
+ * `RetrievalTrace`, so the figure and the thing it draws could drift by a field
+ * without either side noticing. `FusionRow` is exported now and there is one
+ * definition. */
+import type { RetrievalTrace, FusionRow } from "@/lib/agent/retrieve";
 import Panel from "./Panel";
 import styles from "./RetrievalField.module.css";
 
@@ -28,22 +35,6 @@ import styles from "./RetrievalField.module.css";
  * effect: move a chunk and the line moves because the retriever moved it.
  */
 
-type Row = {
-  title: string;
-  lexicalScore: number;
-  lexicalRank: number | null;
-  denseRank: number | null;
-  fused: number;
-  selected: boolean;
-};
-
-export type Trace = {
-  k: number;
-  lexicalDecisive: boolean;
-  denseUsed: boolean;
-  rows: Row[];
-};
-
 const N = field.points.length;
 
 /** Column x positions in the 0-100 viewBox. */
@@ -60,17 +51,30 @@ function link(x1: number, y1: number, x2: number, y2: number) {
 }
 
 export default function RetrievalField() {
-  const [live, setLive] = useState<Trace | null>(null);
+  const [live, setLive] = useState<RetrievalTrace | null>(null);
 
   // Listens rather than receiving a prop: the agent is in the hero, this is
   // three sections down, and the page between them is server rendered.
   useEffect(() => {
-    const onRetrieval = (e: Event) => setLive((e as CustomEvent<Trace>).detail);
+    const onRetrieval = (e: Event) => setLive((e as CustomEvent<RetrievalTrace>).detail);
     window.addEventListener(RETRIEVAL_EVENT, onRetrieval);
     return () => window.removeEventListener(RETRIEVAL_EVENT, onRetrieval);
   }, []);
 
   const rows = live?.rows ?? null;
+
+  /*
+   * How decisively a chunk won, not only that it won.
+   *
+   * The figure has always plotted ordinal position, and every question also
+   * produces thirty-six real floats -- the raw BM25 scores and the fused RRF
+   * totals -- that were computed and never drawn. Rank alone cannot tell a
+   * chunk that beat the field from one that squeaked past the next: both are
+   * "1" and "2". Normalised against the leader so the bars are a share of the
+   * best score rather than an absolute nobody can calibrate.
+   */
+  const peakLexical = Math.max(...(rows?.map((r) => r.lexicalScore) ?? [0]), 1e-9);
+  const peakFused = Math.max(...(rows?.map((r) => r.fused) ?? [0]), 1e-9);
 
   // At rest, before anything has been asked: the corpus in its own order, with
   // no ranking claimed. Ordering by title would imply a relationship the page
@@ -153,6 +157,26 @@ export default function RetrievalField() {
               className={denseOff ? styles.muted : undefined}
               d={link(COL.dense, y(r.denseRank), COL.fused, y(r.fusedRank))}
             />
+            {/* Magnitude, drawn back from each axis. Width is the score as a
+                share of the leader; a chunk that barely scored gets a stub. */}
+            {rows && r.lexicalScore > 0 && (
+              <rect
+                className={styles.mag}
+                x={COL.lex - (r.lexicalScore / peakLexical) * 12}
+                y={y(r.lexicalRank) - 1}
+                width={(r.lexicalScore / peakLexical) * 12}
+                height="2"
+              />
+            )}
+            {rows && r.fused > 0 && (
+              <rect
+                className={styles.mag}
+                x={COL.fused}
+                y={y(r.fusedRank) - 1}
+                width={(r.fused / peakFused) * 12}
+                height="2"
+              />
+            )}
             <circle cx={COL.lex} cy={y(r.lexicalRank)} r="0.9" />
             <circle cx={COL.dense} cy={y(r.denseRank)} r="0.9" />
             <circle cx={COL.fused} cy={y(r.fusedRank)} r={r.selected ? 1.5 : 0.9} />
@@ -165,9 +189,7 @@ export default function RetrievalField() {
           <>
             <strong>{ranked.filter((r) => r.selected).length}</strong> of {N} sections selected by
             reciprocal rank fusion at k={live.k}
-            {live.lexicalDecisive
-              ? ". The top keyword hit was decisive, so the embedding round trip was skipped."
-              : ". Lines that cross are the dense retriever overruling keyword rank."}
+            {". Lines that cross are the dense retriever overruling keyword rank."}
           </>
         ) : (
           <>
@@ -180,8 +202,10 @@ export default function RetrievalField() {
             report and the sentence would be describing work that never ran. */}
         {field.stress !== null && (
           <span className={styles.stress}>
-            3D projection of these vectors was cut: Kruskal stress {field.stress}, only 47% of
-            variance in three axes. Rank is exact, so rank is what is drawn.
+            3D projection of these {field.n} vectors was cut: Kruskal stress {field.stress}, and the
+            three plotted axes keep only{" "}
+            {Math.round((field.varianceKept ?? 0) * 100)}% of the variance. Rank is exact, so rank is
+            what is drawn.
           </span>
         )}
         </figcaption>

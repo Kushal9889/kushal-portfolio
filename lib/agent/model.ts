@@ -13,7 +13,19 @@ import { AzureChatOpenAI, ChatOpenAI } from "@langchain/openai";
  */
 type ProviderName = "openrouter" | "nvidia" | "azure" | "openai";
 
-const PROVIDERS: Record<ProviderName, { baseURL?: string; key?: string; model: string }> = {
+/**
+ * Request fields this provider needs that the OpenAI wire format has no name for.
+ *
+ * Spread into the request body through LangChain's `modelKwargs`, which is the
+ * supported escape hatch for exactly this: a vendor extension that the shared
+ * client does not model. Absent for providers that need nothing.
+ */
+type Extra = Record<string, unknown>;
+
+const PROVIDERS: Record<
+  ProviderName,
+  { baseURL?: string; key?: string; model: string; extra?: Extra }
+> = {
   openrouter: {
     baseURL: "https://openrouter.ai/api/v1",
     key: process.env.OPENROUTER_API_KEY,
@@ -22,6 +34,11 @@ const PROVIDERS: Record<ProviderName, { baseURL?: string; key?: string; model: s
     // a mixture-of-experts model with roughly 3B active parameters, which is what
     // keeps time-to-first-token low enough to sit in front of a visitor.
     model: process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b:free",
+    // Both, because OpenRouter routes to more than one upstream for this model
+    // and they do not agree on how reasoning is suppressed. `exclude` is
+    // OpenRouter's own field; `chat_template_kwargs` is what the NVIDIA-hosted
+    // upstream reads. A provider that ignores one is unharmed by it.
+    extra: { chat_template_kwargs: { thinking: false }, reasoning: { exclude: true } },
   },
   nvidia: {
     baseURL: "https://integrate.api.nvidia.com/v1",
@@ -31,6 +48,29 @@ const PROVIDERS: Record<ProviderName, { baseURL?: string; key?: string; model: s
     // fallback answered correctly but dropped the headline metric, so a visitor
     // would have got a quietly worse site on the days the primary was capped.
     model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b",
+    /*
+     * Reasoning off, at the source.
+     *
+     * This model generates a reasoning trace before its answer unless the chat
+     * template is told otherwise, and it shipped for months with that default
+     * untouched. The cost was not only the wait. Reasoning tokens count against
+     * `max_tokens`, so of a 400-token budget roughly 200 went to a scratchpad
+     * nobody reads and the answer took what was left -- which is why the eval
+     * suite recorded five `omission` failures and grounding sat at 1 of 6. The
+     * figure on the "Measured:" line was the first thing squeezed out.
+     *
+     * Measured against this endpoint on the shipped prompt, same question:
+     *
+     *   default                            2680ms   245 completion tokens
+     *   `/no_think` in the system prompt    2378ms   400, capped and truncated
+     *   chat_template_kwargs thinking:false  994ms    79
+     *
+     * The middle row is the documented toggle and it is the wrong one here: it
+     * put 1747 characters of raw scratchpad into `content`, hit the cap and cut
+     * mid-word. That guidance is written for Nemotron 9B v2. This is Nemotron 3,
+     * and the two do not share a chat template.
+     */
+    extra: { chat_template_kwargs: { thinking: false } },
   },
   azure: {
     // Azure keys its deployments by name rather than by model id, so the
@@ -139,26 +179,81 @@ export function activeProvider(): ProviderName | null {
 
 function build(name: ProviderName, streaming: boolean) {
   const provider = PROVIDERS[name];
+  /*
+   * The model id is read per call, not once at import.
+   *
+   * `PROVIDERS` is a module constant, so its `model` field froze whatever the
+   * environment held when the module first loaded. That is invisible in
+   * production, where the environment does not change, and wrong for
+   * `scripts/bench-models.ts`, which has to run the same pipeline against
+   * several models in one process. A benchmark that silently measured one model
+   * five times would have looked exactly like a benchmark.
+   */
+  const model =
+    name === "nvidia"
+      ? (process.env.NVIDIA_MODEL ?? provider.model)
+      : name === "openrouter"
+        ? (process.env.OPENROUTER_MODEL ?? provider.model)
+        : provider.model;
   const shared = {
     streaming,
     temperature: 0.1,
-    // Bounded on purpose. This is a public endpoint, and output tokens are the
-    // half of the bill a stranger controls for free.
-    maxTokens: Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? 400),
+    /*
+     * Bounded to the length that is actually served.
+     *
+     * This is a public endpoint and output tokens are the half of the bill a
+     * stranger controls for free, but the real reason for the number is
+     * latency. Profiled across thirty requests:
+     *
+     *   retrieve   p50    1ms   p95   338ms
+     *   answer     p50 1462ms   p95  5463ms   max 11348ms
+     *   output     p50  143tk   p95   569tk   max   700tk
+     *
+     * Generation costs about 11.9ms per output token here, so the tail is not
+     * the provider being slow, it is the model being allowed to write for
+     * eleven seconds. And `cleanAnswer` then trims the result to roughly 120
+     * words -- so the slowest request on the page was generating four hundred
+     * tokens that were deleted before a reader saw them.
+     *
+     * 260 is that ceiling plus room to finish a sentence: 120 words is about
+     * 170 tokens on this corpus. A cut that lands mid-word is handled where it
+     * has to be, in `cleanAnswer`, which drops an unterminated final sentence
+     * rather than showing one.
+     */
+    maxTokens: Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? 260),
     // One retry only. A visitor is waiting, and a provider that failed twice is
     // better swapped than waited on.
     maxRetries: 1,
+    /*
+     * A hung provider is worse than a failed one.
+     *
+     * There was no timeout here at all, so a free tier that accepts a
+     * connection and then stops responding held the request open until
+     * something upstream gave up. Measured on the hero's own demo: 238,546ms
+     * in the answer node, four minutes, after which the degraded path served
+     * the retrieved chunk correctly -- and the page printed the four minutes as
+     * its headline latency, because the number was real.
+     *
+     * Twenty seconds is well past the 95th percentile of a working request and
+     * well short of a visitor's patience. Past it the client throws, failover
+     * moves to the next provider, and if they all miss the reader gets the
+     * grounded paragraph in seconds rather than minutes.
+     */
+    timeout: Number(process.env.AGENT_TIMEOUT_MS ?? 20_000),
     // Without this the final chunk carries no usage_metadata and the token
     // count on screen stays empty, which is the number a reader most wants
     // when the page is claiming to be cost-aware.
     streamUsage: true,
+    // Vendor fields the shared client has no name for. Undefined for providers
+    // that need none, which LangChain treats as absent rather than as empty.
+    modelKwargs: provider.extra,
   };
 
   if (name === "azure") {
     return new AzureChatOpenAI({
       ...shared,
       azureOpenAIApiKey: provider.key,
-      azureOpenAIApiDeploymentName: provider.model,
+      azureOpenAIApiDeploymentName: model,
       azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_INSTANCE,
       azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION ?? "2024-10-21",
     });
@@ -167,7 +262,7 @@ function build(name: ProviderName, streaming: boolean) {
   return new ChatOpenAI({
     ...shared,
     apiKey: provider.key,
-    model: provider.model,
+    model,
     configuration: provider.baseURL ? { baseURL: provider.baseURL } : undefined,
   });
 }
@@ -242,7 +337,7 @@ export async function* streamWithFailover(
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
-      onProvider?.(name, PROVIDERS[name].model);
+      onProvider?.(name, name === "nvidia" ? (process.env.NVIDIA_MODEL ?? PROVIDERS[name].model) : PROVIDERS[name].model);
       for await (const chunk of stream) {
         const text = typeof chunk.content === "string" ? chunk.content : "";
         if (text) yield text;
@@ -264,26 +359,198 @@ export async function* streamWithFailover(
 }
 
 /**
- * Query embeddings, used only to score the dense half of retrieval. Chunk vectors
- * are precomputed at build time, so this is the single embedding call per
- * question. Returns null when no embedding provider is configured, and retrieval
- * falls back to BM25 alone rather than failing.
+ * Query embeddings, used only to score the dense half of retrieval.
+ *
+ * Chunk vectors are precomputed at build time, so this is the single embedding
+ * call per question. It returns null when there is nothing to embed with, and
+ * retrieval falls back to BM25 alone rather than failing.
+ *
+ * That promise was only half kept. A key that was absent returned null, and a
+ * response that was not ok returned null -- but a network failure threw, and
+ * nothing between here and the request handler caught it, so the whole graph
+ * died. Observed: the endpoint accepted the connection and never sent headers,
+ * undici raised UND_ERR_HEADERS_TIMEOUT after its default five minutes, and the
+ * agent crashed on a question the keyword retriever could have answered on its
+ * own without ever touching the network.
+ *
+ * This is the same defect that once made the hero print a four-minute latency,
+ * in the other half of the request. That one was fixed with a timeout on the
+ * model client and this one was left, because it was written as a function that
+ * "returns null on failure" and read like one.
  */
+const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 4_000);
+
+/**
+ * Query vectors already computed, kept for the life of the process.
+ *
+ * The same handful of questions are asked far more than any others: the three
+ * openers in the hero, whatever a shared `?q=` link carries, and a re-asked
+ * past turn. Every one of those paid the full embedding round trip -- measured
+ * at 236-421ms, which is the whole of the retrieve node -- to compute a vector
+ * that had already been computed minutes earlier.
+ *
+ * Bounded, because this is a public endpoint and the keys are strings a
+ * stranger controls. At 1024 floats a vector this is a few megabytes at the
+ * cap, and eviction is oldest-first, which for a query cache is close enough to
+ * least-recently-used to not be worth the bookkeeping: the openers are re-asked
+ * constantly and so are never the oldest for long.
+ *
+ * Not a persistent cache. A serverless instance that goes cold loses it, which
+ * is correct -- the alternative is a store to operate for a saving measured in
+ * milliseconds.
+ */
+const EMBED_CACHE_MAX = 256;
+const embedCache = new Map<string, number[]>();
+
+/** Same question, different capitalisation or spacing, is the same question. */
+function cacheKey(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+export function embedCacheStats() {
+  return { size: embedCache.size, max: EMBED_CACHE_MAX };
+}
+
 export async function embedQuery(text: string): Promise<number[] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
 
-  const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      input: [text],
-      model: "nvidia/nv-embedqa-e5-v5",
-      input_type: "query",
-    }),
-  });
+  const cached = embedCache.get(cacheKey(text));
+  if (cached) return cached;
 
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.data?.[0]?.embedding ?? null;
+  try {
+    const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        input: [text],
+        model: "nvidia/nv-embedqa-e5-v5",
+        input_type: "query",
+      }),
+      /*
+       * Four seconds, against a call measured at 236-421ms.
+       *
+       * An order of magnitude past the observed worst case, and far short of
+       * anyone's patience. Past it the dense half is simply skipped: BM25 has
+       * already scored every chunk by this point at no network cost, so the
+       * degraded answer is a keyword-ranked one rather than no answer. Losing
+       * the better ranking is a real cost and it is not close to the cost of
+       * losing the request.
+       */
+      signal: AbortSignal.timeout(EMBED_TIMEOUT_MS),
+    });
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    const vector = json.data?.[0]?.embedding ?? null;
+    if (vector) {
+      // Oldest out first. Map preserves insertion order, so the first key is
+      // the oldest one.
+      if (embedCache.size >= EMBED_CACHE_MAX) {
+        embedCache.delete(embedCache.keys().next().value as string);
+      }
+      embedCache.set(cacheKey(text), vector);
+    }
+    return vector;
+  } catch (err) {
+    // Loud in the log, silent to the reader. The question still gets answered.
+    console.warn(`embedQuery failed, retrieval falls back to BM25: ${(err as Error).message}`);
+    return null;
+  }
+}
+
+
+/**
+ * Cross-encoder reranking.
+ *
+ * The retrievers score a query and a passage separately and compare the two
+ * vectors. A cross-encoder reads them together, which is strictly more
+ * information and strictly more expensive: one forward pass per passage instead
+ * of one lookup. It is the standard second stage in a production retrieval
+ * pipeline and the standard reason to skip it is latency.
+ *
+ * Measured on this endpoint at 587ms for five passages, against a p50 of 666ms
+ * for an entire answer. That is the number that decides whether it ships, and
+ * `scripts/bench-retrieval.ts` is what answers it: at the time of writing,
+ * retrieval already scores precision@1 1.00 across the eval set, and nothing
+ * can improve on 1.00. It is implemented, benchmarked, and left off, so the
+ * decision is a measurement rather than an omission.
+ *
+ * Returns null on any failure. The caller keeps the fused order, which is the
+ * order it would have used anyway.
+ */
+export async function rerank(
+  query: string,
+  passages: string[],
+): Promise<{ index: number; score: number }[] | null> {
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key || passages.length === 0) return null;
+
+  try {
+    const res = await fetch("https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "nvidia/rerank-qa-mistral-4b",
+        query: { text: query },
+        passages: passages.map((text) => ({ text })),
+      }),
+      // Tighter than the model call. A reranker that is slow has already lost
+      // the argument for using it, and the fused order is a good fallback.
+      signal: AbortSignal.timeout(Number(process.env.RERANK_TIMEOUT_MS ?? 3_000)),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { rankings?: { index: number; logit: number }[] };
+    return json.rankings?.map((r) => ({ index: r.index, score: r.logit })) ?? null;
+  } catch (err) {
+    console.warn(`rerank failed, keeping fused order: ${(err as Error).message}`);
+    return null;
+  }
+}
+
+
+/**
+ * One model call with tools bound, across the same failover chain.
+ *
+ * Separate from `invokeWithFailover` because the two carry different payloads
+ * and are asked different questions: that one is given the corpus and asked to
+ * summarise it, this one is given no corpus at all and asked which action the
+ * reader wants. Binding tools to the answering path instead would put roughly
+ * four hundred tokens of schema into every ordinary request to serve a case
+ * that arises in a small fraction of them.
+ *
+ * Measured on this endpoint: 440-726ms, correct tool and correct arguments on
+ * every action phrasing tried, and no tool call at all on an ordinary question.
+ *
+ * Returns the calls rather than executing them. Execution is the caller's, and
+ * there is no second turn -- nothing is fed back to the model for another
+ * opinion, so the retry loop that dominates production tool-use failures has
+ * nowhere to happen.
+ */
+export async function chooseTool(
+  messages: { role: string; content: string }[],
+  tools: unknown[],
+): Promise<{ calls: { name: string; args: Record<string, unknown> }[]; provider: ProviderName } | null> {
+  const providers = availableProviders();
+  if (providers.length === 0) return null;
+
+  for (const name of providers) {
+    try {
+      const bound = build(name, false).bindTools(tools as never);
+      const res = await bound.invoke(messages);
+      return {
+        calls: (res.tool_calls ?? []).map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })),
+        provider: name,
+      };
+    } catch (err) {
+      benchProvider(name, err);
+      console.warn(`provider ${name} tool call failed, trying next:`, (err as Error).message);
+    }
+  }
+  // Every provider is down. The caller degrades to prose rather than erroring.
+  return null;
 }

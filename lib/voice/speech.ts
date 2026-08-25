@@ -127,25 +127,6 @@ function bestVoice(): SpeechSynthesisVoice | null {
  */
 const ABBREVIATIONS = /\b(?:Mr|Mrs|Ms|Dr|Prof|Inc|Ltd|vs|etc|e\.g|i\.e|No|St|approx)\.$/i;
 
-export function sentences(text: string): { ready: string[]; rest: string } {
-  const ready: string[] = [];
-  let start = 0;
-
-  for (let i = 0; i < text.length; i++) {
-    if (!".!?".includes(text[i])) continue;
-    if (!/\s/.test(text[i + 1] ?? " ")) continue;
-
-    const candidate = text.slice(start, i + 1);
-    if (ABBREVIATIONS.test(candidate.trimEnd())) continue;
-    if (/\d\.$/.test(candidate.trimEnd())) continue;
-    if (candidate.trim().length < 10) continue;
-
-    ready.push(candidate.trim());
-    start = i + 1;
-  }
-
-  return { ready, rest: text.slice(start) };
-}
 
 /**
  * Speaks one chunk, using whichever voice can start now.

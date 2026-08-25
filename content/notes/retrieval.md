@@ -39,7 +39,7 @@ retriever came back grounded in the achievements section. When a question wraps
 a quoted span of real length, the span is the query and the wrapper is grammar.
 
 The projection drawn beside this is classical multidimensional scaling on the
-full cosine distance matrix, not UMAP or t-SNE. At sixteen chunks every pairwise
+full cosine distance matrix, not UMAP or t-SNE. At eighteen chunks every pairwise
 distance is already known exactly, so there is nothing to estimate, and both
 neighbour-embedding methods are documented to render clusters that do not exist
 at that size. Whatever the projection cannot preserve is published as a Kruskal

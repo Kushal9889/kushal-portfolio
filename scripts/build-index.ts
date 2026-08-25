@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadContent } from "../lib/content";
+import { chunkSection, sentences, estimateTokens, BREAK_BELOW, type Passage } from "../lib/agent/chunk";
+import { indexTokens } from "../lib/agent/tokenize";
 
 /**
  * Builds the retrieval index at compile time.
@@ -13,13 +15,9 @@ import { loadContent } from "../lib/content";
  * anything back.
  */
 
-function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9+#.\-\s]/g, " ")
-    .split(/\s+/)
-    .filter((t) => t.length > 1);
-}
+// The index and the query are tokenised by the same function, in one place.
+// They were two near-copies that nothing kept in step.
+const tokenize = indexTokens;
 
 /**
  * The embedding model accepts 512 tokens and nothing was enforcing it.
@@ -75,8 +73,38 @@ function pool(vectors: number[][]): number[] {
   return mean.map((v) => v / norm);
 }
 
+/**
+ * Batched embeddings for an arbitrary list of strings.
+ *
+ * Used twice per build and for different units: once per sentence, to find the
+ * points where meaning changes, and once per passage, to index. Both go through
+ * the same model, because a query is scored against passage vectors and the two
+ * sides have to live in the same space.
+ */
+async function embedAll(texts: string[], inputType: "query" | "passage"): Promise<number[][] | null> {
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key) return null;
+  const out: number[][] = [];
+  for (let i = 0; i < texts.length; i += 8) {
+    const batch = texts.slice(i, i + 8);
+    const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({ input: batch, model: "nvidia/nv-embedqa-e5-v5", input_type: inputType }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error(`build-index: embedding failed (${res.status}) ${detail.slice(0, 200)}`);
+      return null;
+    }
+    const json = await res.json();
+    for (const d of json.data as { embedding: number[] }[]) out.push(d.embedding);
+  }
+  return out;
+}
+
 /** Query-time embeddings come from the same model, so both sides must match. */
-async function embedPassages(texts: string[]): Promise<number[][] | null> {
+async function embedPassagesLegacy(texts: string[]): Promise<number[][] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) {
     console.warn(
@@ -131,33 +159,21 @@ async function embedPassages(texts: string[]): Promise<number[][] | null> {
 async function main() {
   const { sections } = loadContent();
 
-  // The heading is part of the searchable text. Titles carry the strongest terms
-  // in this corpus ("Growaza", "BU Life AI"), and losing them to the chunk
-  // boundary would make the most precise queries the least well served.
-  const chunks = sections.map((s) => ({
+  /*
+   * The parent unit: everything a section knows, as the model will see it.
+   *
+   * Role and stack are folded in because they carry the rarest terms in the
+   * corpus. Metrics and artifacts are folded in because they are already
+   * structured, already checked by the facts gate, and passing them as prose
+   * and hoping the model notices is throwing away metadata we own -- "-30%" and
+   * "#4925" are the rarest strings here.
+   */
+  const parents = sections.map((s) => ({
     title: s.title,
-    /*
-     * Everything the section knows, not only its prose.
-     *
-     * Role and stack were folded back in because they carry the rarest terms in
-     * the corpus, which is what the keyword half scores on. Metrics and
-     * artifacts were not, and that was a measurable hole: retrieval puts the
-     * Growaza section at rank 1 for "tell me about Growaza" -- recall@k is 1.00
-     * across the eval set -- and the answer still came back without the 30
-     * percent, because the figure existed only inside a sentence the model had
-     * to notice and chose to summarise away.
-     *
-     * These are already structured, already the canonical values the page
-     * renders, and already checked by the facts gate. Passing them as prose and
-     * hoping the model spots them is throwing away metadata we own. Stated
-     * plainly, they are also better keyword terms: "-30%" and "#4925" are the
-     * rarest strings in the corpus.
-     */
     body: [
       s.role && `Role: ${s.role}`,
       s.stack.length && `Stack: ${s.stack.join(", ")}`,
-      s.metrics.length &&
-        `Measured: ${s.metrics.map((m) => `${m.value} ${m.label}`).join("; ")}`,
+      s.metrics.length && `Measured: ${s.metrics.map((m) => `${m.value} ${m.label}`).join("; ")}`,
       s.artifacts.length &&
         `Links: ${s.artifacts.map((a) => `${a.kind} (${a.state}) ${a.label} ${a.url}`).join("; ")}`,
       s.body,
@@ -165,9 +181,87 @@ async function main() {
       .filter(Boolean)
       .join("\n"),
     source: s.source,
+    meta: {
+      fromNotes: s.source !== "facts",
+      dated: Boolean(s.roleParts.dates),
+      current: /present|current/i.test(s.roleParts.dates),
+      year: Math.max(0, ...(s.roleParts.dates.match(/\b(20\d{2})\b/g) ?? []).map(Number)),
+      metrics: s.metrics.length,
+      artifacts: s.artifacts.length,
+    },
   }));
 
-  const docs = chunks.map((c) => tokenize(`${c.title} ${c.title} ${c.body}`));
+  /*
+   * Sentence embeddings, used only to find where meaning changes.
+   *
+   * These are not indexed and never reach the request path. They exist so the
+   * split happens at a topic boundary rather than at a character count, which
+   * is the whole difference between semantic chunking and a text splitter.
+   */
+  const sentenceIndex: { parent: number; text: string }[] = [];
+  for (const [i, p] of parents.entries()) {
+    for (const text of sentences(p.body)) sentenceIndex.push({ parent: i, text });
+  }
+  console.log(`build-index: ${sentenceIndex.length} sentences across ${parents.length} sections`);
+
+  const sentenceVectors = await embedAll(
+    sentenceIndex.map((s) => s.text),
+    "passage",
+  );
+
+  if (sentenceVectors) {
+    /*
+     * The distribution the break threshold is read from.
+     *
+     * Printed on every build so BREAK_BELOW stays a measurement rather than a
+     * number somebody once liked. If the corpus changes shape this is where it
+     * shows.
+     */
+    const sims: number[] = [];
+    for (let i = 1; i < sentenceIndex.length; i++) {
+      if (sentenceIndex[i].parent !== sentenceIndex[i - 1].parent) continue;
+      const a = sentenceVectors[i - 1];
+      const b = sentenceVectors[i];
+      let dot = 0;
+      let na = 0;
+      let nb = 0;
+      for (let d = 0; d < a.length; d++) {
+        dot += a[d] * b[d];
+        na += a[d] * a[d];
+        nb += b[d] * b[d];
+      }
+      sims.push(dot / (Math.sqrt(na) * Math.sqrt(nb) || 1));
+    }
+    sims.sort((x, y) => x - y);
+    const at = (q: number) => sims[Math.floor(sims.length * q)]?.toFixed(3) ?? "-";
+    console.log(
+      `build-index: adjacent-sentence similarity  p10 ${at(0.1)}  p25 ${at(0.25)} ` +
+        `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${BREAK_BELOW})`,
+    );
+  }
+
+  // Split each section, giving the chunker the sentence vectors for that
+  // section only. A boundary is never allowed to cross a heading.
+  const passages: Passage[] = [];
+  let cursor = 0;
+  for (const [i, p] of parents.entries()) {
+    const count = sentences(p.body).length;
+    const vectors = sentenceVectors ? sentenceVectors.slice(cursor, cursor + count) : undefined;
+    cursor += count;
+    passages.push(...chunkSection(p.title, p.body, vectors));
+  }
+
+  const sizes = passages.map((p) => p.tokens).sort((a, b) => a - b);
+  console.log(
+    `build-index: ${passages.length} passages  tokens min ${sizes[0]} ` +
+      `p50 ${sizes[Math.floor(sizes.length / 2)]} max ${sizes[sizes.length - 1]}`,
+  );
+
+  // BM25 is built over passages, not sections. The heading is repeated into
+  // each passage's searchable text because titles carry the strongest terms in
+  // this corpus and a passage three paragraphs into a section would otherwise
+  // lose the name of the thing it is about.
+  const docs = passages.map((p) => tokenize(`${p.parent} ${p.parent} ${p.text}`));
 
   const tf = docs.map((tokens) => {
     const counts: Record<string, number> = {};
@@ -183,16 +277,24 @@ async function main() {
   const lengths = docs.map((d) => d.length);
   const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 
-  const vectors = await embedPassages(chunks.map((c) => `${c.title}\n${c.body}`));
+  // Every passage now fits the model's window by construction, so there is no
+  // windowing and no mean-pooling. That pooling was averaging three
+  // semantically different windows into one vector that represented none of
+  // them, on exactly the sections that explain how this page works.
+  const vectors = await embedAll(
+    passages.map((p) => `${p.parent}\n${p.text}`),
+    "passage",
+  );
 
-  const out = { chunks, tf, lengths, df, avgLength, vectors };
+  const out = { passages, parents, tf, lengths, df, avgLength, vectors };
   const path = join(process.cwd(), "lib", "agent", "index.json");
+
   writeFileSync(path, JSON.stringify(out));
 
   const size = (JSON.stringify(out).length / 1024).toFixed(0);
   console.log(
-    `build-index: ${chunks.length} chunks, ${Object.keys(df).length} terms, ` +
-      `${vectors ? `${vectors[0].length}-dim vectors` : "lexical only"}, ${size}KB`,
+    `build-index: ${passages.length} passages from ${parents.length} sections, ` +
+      `${Object.keys(df).length} terms, ${vectors ? `${vectors[0].length}-dim` : "lexical only"}, ${size}KB`,
   );
 }
 

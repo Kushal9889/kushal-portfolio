@@ -39,7 +39,25 @@ const AFTER = [
   { text: "results.extend(default_result.entries or [])", tone: "plain" },
 ] as const;
 
-export default function DiffReveal() {
+/**
+ * The merge credit, passed in rather than typed here.
+ *
+ * The duration, the pull request number and its URL were hardcoded in this file
+ * while the same three values sat in `content/facts.md` as an `@metric` and an
+ * `@artifact`, rendered by the section directly above this one. Two copies of a
+ * fact is a fact that can drift, which is the failure hard rule 1 exists to
+ * stop; this component is `"use client"` so it cannot read the corpus itself,
+ * and the page hands it down.
+ */
+export default function DiffReveal({
+  hours,
+  prUrl,
+  prLabel,
+}: {
+  hours: string;
+  prUrl: string;
+  prLabel: string;
+}) {
   const [step, setStep] = useState(0);
 
   /**
@@ -192,13 +210,9 @@ export default function DiffReveal() {
         </pre>
 
         <p className={styles.credit}>
-          Written and merged by a LangChain maintainer 57 hours after the report.{" "}
-          <a
-            href="https://github.com/langchain-ai/deepagents/pull/4925"
-            target="_blank"
-            rel="noreferrer"
-          >
-            PR #4925
+          Written and merged by a LangChain maintainer {hours} after the report.{" "}
+          <a href={prUrl} target="_blank" rel="noreferrer">
+            {prLabel}
           </a>
         </p>
       </div>

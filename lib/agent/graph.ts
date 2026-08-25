@@ -1,6 +1,8 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
-import { invokeWithFailover, activeProvider } from "./model";
+import { invokeWithFailover, activeProvider, chooseTool } from "./model";
+import { toolSchemas, openEvidence, composeIntro, runEval, type ToolResult } from "./tools";
 import { retrieve, type Chunk, type RetrievalTrace } from "./retrieve";
+import { analyze } from "./query";
 import {
   classify,
   systemPrompt,
@@ -44,6 +46,8 @@ const State = Annotation.Root({
     default: () => [],
   }),
   reply: Annotation<string>,
+  /** The question as the model receives it. See `asked` in query.ts. */
+  asked: Annotation<string>,
   /** Token usage reported by the provider. Absent when no model was called. */
   usage: Annotation<{ in: number; out: number } | null>({
     reducer: (_, next) => next,
@@ -61,6 +65,11 @@ const State = Annotation.Root({
    * number the page publishes.
    */
   trace: Annotation<RetrievalTrace | null>({
+    reducer: (_, next) => next,
+    default: () => null,
+  }),
+  /** What the agent did, when the question was an instruction rather than a question. */
+  action: Annotation<ToolResult | null>({
     reducer: (_, next) => next,
     default: () => null,
   }),
@@ -92,8 +101,9 @@ const route = timed("route", async (state) => ({
 }));
 
 const retrieveNode = timed("retrieve", async (state) => {
-  const { chunks, trace } = await retrieve(state.question);
-  return { chunks, trace };
+  const { query, weight, asked, floor } = analyze(state.question);
+  const { chunks, trace } = await retrieve(query, 4, weight, floor);
+  return { chunks, trace, asked };
 });
 
 const answer = timed("answer", async (state) => {
@@ -113,11 +123,15 @@ const answer = timed("answer", async (state) => {
   try {
     const { text, usage, provider } = await invokeWithFailover([
       { role: "system", content: systemPrompt(context) },
-      { role: "user", content: state.question },
+      { role: "user", content: state.asked || state.question },
     ]);
     // Stripped here rather than inside the provider adapter: the adapter's job
     // is transport, and reasoning leakage is a property of the answer.
-    const reply = cleanAnswer(state.intent === "handoff" ? handoffAnswer(text) : text);
+    // A limit is only welcome when the question asked for one.
+    const reply = cleanAnswer(
+      state.intent === "handoff" ? handoffAnswer(text) : text,
+      analyze(state.question).intent === "limitation",
+    );
 
     // Nothing survived the clean, so the reply was scratchpad end to end. The
     // retrieved section is a worse answer and a far better outcome than a model
@@ -130,6 +144,52 @@ const answer = timed("answer", async (state) => {
   }
 });
 
+/**
+ * The tool path, on the non-streaming graph.
+ *
+ * The same shape as the streaming one and for the same reason: one model call,
+ * no corpus, no second turn. It exists here so the eval suite can assert that
+ * "pull up his LinkedIn" is executed rather than answered, and so the two paths
+ * cannot drift into behaving differently -- which is the failure the streaming
+ * path has already had twice, once on the handoff line and once on degradation.
+ */
+const act = timed("act", async (state) => {
+  const chosen = await chooseTool(
+    [
+      {
+        role: "system",
+        content:
+          `You act on behalf of a visitor reading a portfolio. ` +
+          `Call exactly one tool for what they asked. Never call more than one.`,
+      },
+      { role: "user", content: state.question },
+    ],
+    toolSchemas(),
+  );
+
+  const call = chosen?.calls[0];
+  let result: ToolResult;
+
+  if (!call) {
+    result = {
+      ok: false,
+      say: `I can open his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, or either publication. I can also draft an email to him, or run one of this site's own eval cases.`,
+    };
+  } else if (call.name === "open_evidence") {
+    result = openEvidence(String(call.args.target ?? ""));
+  } else if (call.name === "compose_intro") {
+    result = composeIntro(String(call.args.about ?? "general"));
+  } else if (call.name === "run_eval") {
+    // Not recursive: the suite is what calls this graph, and a case running
+    // itself would be a loop with a model call in it.
+    result = { ok: false, say: `The suite runs on every deploy; the result is published on this page.` };
+  } else {
+    result = { ok: false, say: `That is not something this page can do.` };
+  }
+
+  return { reply: result.say, action: result, provider: chosen?.provider ?? null };
+});
+
 const deflect = timed("deflect", async (state) => ({
   reply:
     state.intent === "authorisation" ? AUTHORISATION_ANSWER : deflection(state.question),
@@ -140,14 +200,22 @@ export const graph = new StateGraph(State)
   .addNode("retrieve", retrieveNode)
   .addNode("answer", answer)
   .addNode("deflect", deflect)
+  .addNode("act", act)
   .addEdge(START, "route")
-  .addConditionalEdges("route", (s: S) => (s.intent === "deflect" || s.intent === "authorisation" ? "deflect" : "retrieve"), {
-    deflect: "deflect",
-    retrieve: "retrieve",
-  })
+  .addConditionalEdges(
+    "route",
+    (s: S) =>
+      s.intent === "deflect" || s.intent === "authorisation"
+        ? "deflect"
+        : s.intent === "act"
+          ? "act"
+          : "retrieve",
+    { deflect: "deflect", retrieve: "retrieve", act: "act" },
+  )
   .addEdge("retrieve", "answer")
   .addEdge("answer", END)
   .addEdge("deflect", END)
+  .addEdge("act", END)
   .compile();
 
 export async function ask(question: string) {
@@ -160,6 +228,7 @@ export async function ask(question: string) {
     total: Math.round(performance.now() - started),
     sources: result.chunks.map((c) => c.title),
     usage: result.usage,
+    action: result.action,
     trace: result.trace,
     provider: result.provider,
   };

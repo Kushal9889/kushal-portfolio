@@ -82,6 +82,42 @@ def main() -> int:
 
             page.screenshot(path=f"{OUT}/{name}{tag}-{scheme}.png")
 
+            # A colour token whose hue came out powerless.
+            #
+            # color-mix() between two near-neutral colours can leave a chroma so
+            # small that the hue channel carries nothing, and the result
+            # serialises with `none`. That is not grey: it resolves as zero,
+            # which is red. --paper-sunk did exactly this and put a pink cast on
+            # the dock, every code chip, the evidence block and every panel
+            # header, without a single hardcoded colour anywhere to find.
+            bad_hue = page.evaluate("""() => {
+              const probe = document.createElement('div');
+              document.body.appendChild(probe);
+              const names = [...document.styleSheets].flatMap(sheet => {
+                try { return [...sheet.cssRules]; } catch { return []; }
+              }).flatMap(rule => rule.style ? [...rule.style] : [])
+                .filter(prop => prop.startsWith('--'));
+              const out = [];
+              for (const n of [...new Set(names)]) {
+                probe.style.background = '';
+                probe.style.background = `var(${n})`;
+                const v = getComputedStyle(probe).backgroundColor;
+                if (/\bnone\b/.test(v)) out.push(`${n} -> ${v}`);
+              }
+              probe.remove();
+              return { checked: [...new Set(names)].length, bad: out };
+            }""")
+            # A check that enumerates nothing passes vacuously, which is worse
+            # than no check at all.
+            if name == "desktop":
+                print(f"  {bad_hue['checked']} colour tokens resolved, "
+                      f"{len(bad_hue['bad'])} with a powerless hue")
+            bad_hue = bad_hue["bad"]
+            if bad_hue:
+                print(f"\n  !! {len(bad_hue)} token(s) resolve with a powerless hue at {name}:")
+                for t in bad_hue:
+                    print(f"     {t}")
+
             # Text that does not fit the box it was given.
             #
             # Two of these shipped: a role title at 41.6px inside a 240px rail,
@@ -128,7 +164,11 @@ def main() -> int:
 
                 for y in (args.at or []):
                     page.evaluate(f"window.scrollTo(0, {y})")
-                    page.wait_for_timeout(700)
+                    # Long enough for the scroll reveal to finish. At 700ms the
+                    # panels were still at opacity 0 with a 12px offset, so every
+                    # below-fold capture showed a washed-out page that looked
+                    # like a rendering bug and was not one.
+                    page.wait_for_timeout(1800)
                     page.screenshot(path=f"{OUT}/{name}{tag}-{scheme}-y{y}.png")
 
             page.close()

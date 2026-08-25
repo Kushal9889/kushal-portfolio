@@ -12,16 +12,16 @@ import Measured from "./components/Measured";
 import Reach from "./components/Reach";
 import ReachDock from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
-import AskAbout from "./components/AskAbout";
 import PageMotion from "./components/PageMotion";
 import AskSeeds from "./components/AskSeeds";
 import Topology from "./components/Topology";
+import OverlapGraph from "./components/OverlapGraph";
+import ModelChoice from "./components/ModelChoice";
 import Defects from "./components/Defects";
+import WorkStack from "./components/WorkStack";
 import EvalMatrix from "./components/EvalMatrix";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
-import changelog from "@/lib/changelog.json";
-import { GitHubMark, LinkedInMark, MailMark } from "./components/Mark";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import styles from "./page.module.css";
 
@@ -63,29 +63,58 @@ function Section({
 }
 
 /**
- * A role, led by the job title.
+ * Title, employer, dates -- the part of a role a recruiter scans for first.
  *
- * The title is what a recruiter scans for, so it is set largest; the employer
- * and dates sit under it as context. Rendering the company first put the least
- * scannable line in the most prominent position.
+ * The title leads. It is set largest; the employer and dates sit under it as
+ * context. Rendering the company first put the least scannable line in the
+ * most prominent position.
  */
-function Role({ section: s, past = false }: { section: Section; past?: boolean }) {
+function roleIdentity(s: Section) {
   const { title, dates, location } = s.roleParts;
   return (
-    // Two-year-old work is context, not evidence, and rendering it identically
-    // to the current role spends the same amount of the reader's attention on
-    // both. The content is unchanged; only its weight is.
-    <article className={styles.role} data-past={past || undefined}>
-      <div className={styles.roleHead}>
-        <h3 className={styles.roleName}>{title}</h3>
-        <p className={styles.roleMeta}>
-          <span className={styles.company}>{s.title}</span>
-          <span className="label">
-            {dates}
-            {location ? ` · ${location}` : ""}
-          </span>
-        </p>
-      </div>
+    <>
+      <h3 className={styles.roleName}>{title}</h3>
+      <p className={styles.roleMeta}>
+        <span className={styles.company}>{s.title}</span>
+        <span className="label">
+          {dates}
+          {location ? ` · ${location}` : ""}
+        </span>
+      </p>
+    </>
+  );
+}
+
+/**
+ * The identity, rendered into the rail column on a desktop-width screen --
+ * one sibling per role, deliberately not nested inside that role's own
+ * content. See the comment on .roleRail in page.module.css for why the
+ * identity has to live in a column shared by every role rather than inside
+ * each role's own box: it is what lets every role's title stay visible and
+ * stack as the reader scrolls, instead of swapping out for the next one.
+ * Hidden below 62rem -- RoleContent carries its own copy of this for that
+ * width instead, because there the reason to keep it separate (a shared tall
+ * containing block for sticky positioning) does not apply.
+ */
+function RoleHead({ section: s, past = false }: { section: Section; past?: boolean }) {
+  return (
+    <div className={styles.roleHead} data-role-head data-past={past || undefined}>
+      {roleIdentity(s)}
+    </div>
+  );
+}
+
+/**
+ * A role's evidence: metrics, follow-ups, stack, and the description.
+ *
+ * Two-year-old work is context, not evidence, and rendering it identically to
+ * the current role spends the same amount of the reader's attention on both.
+ * The content is unchanged; only its weight is.
+ */
+function RoleContent({ section: s, past = false }: { section: Section; past?: boolean }) {
+  return (
+    <article className={styles.roleContent} data-past={past || undefined}>
+      <div className={styles.roleHeadMobile}>{roleIdentity(s)}</div>
       <Metrics items={s.metrics} />
       {s.asks.length > 0 && <AskSeeds items={s.asks} />}
       {s.stack.length > 0 && (
@@ -95,7 +124,7 @@ function Role({ section: s, past = false }: { section: Section; past?: boolean }
           ))}
         </ul>
       )}
-      <Prose body={s.body} className={styles.roleBody} fold="always" />
+      <Prose body={s.body} className={styles.roleBody} />
     </article>
   );
 }
@@ -124,6 +153,13 @@ export default function Page() {
     label: merged?.label ?? "",
   };
   const featured = certs.find((c) => c.featured);
+
+  // Computed once, read by both RoleHead and RoleContent, so the rail and the
+  // content column render from the same object rather than each parsing the
+  // corpus a second time.
+  const questrom = section("Boston University, Questrom Computational Lab");
+  const img = section("IMG Systems");
+  const growaza = section("Growaza");
 
   return (
     <>
@@ -161,17 +197,18 @@ export default function Page() {
 
       <main id="main">
         <Section id="opensource" index="01" title="A bug in LangChain" data-lead="artifact">
-          <DiffReveal />
+          {/* The duration and the pull request come from the corpus, not from
+              inside the component: the same three values are rendered by the
+              metrics strip and the artifact rows on this very section. */}
+          <DiffReveal
+            hours={os.metrics.find((m) => /hour/i.test(m.value))?.value ?? ""}
+            prUrl={merged?.url ?? ""}
+            prLabel={merged?.label.replace(/^.*#/, "PR #") ?? ""}
+          />
           <Metrics items={section("Open source, LangChain deepagents").metrics} />
           <Prose body={section("Open source, LangChain deepagents").body} />
           <Artifacts items={section("Open source, LangChain deepagents").artifacts} />
           <AskSeeds items={section("Open source, LangChain deepagents").asks} />
-          <AskAbout
-            email={profile.email}
-            site={profile.site.replace("https://", "")}
-            context="opensource"
-            label="Email him about this bug"
-          />
         </Section>
 
         {/* The strongest signal in 2026 hiring is evidence that the thing was
@@ -182,13 +219,11 @@ export default function Page() {
           {/* The suite as sixteen objects rather than one ratio. Six of them are
               attempts to break the agent, which the score cannot say. */}
           <EvalMatrix />
+          {/* Which model answers, and the measurement that says the choice was
+              not a guess. Beside the eval matrix because both are published
+              results from a build-time run rather than something happening now. */}
+          <ModelChoice />
           <Defects />
-          <AskAbout
-            email={profile.email}
-            site={profile.site.replace("https://", "")}
-            context="measured"
-            label="Email him about the eval suite"
-          />
         </Section>
 
         {/* What he is and what he is not, before the evidence. A reader who has
@@ -204,6 +239,10 @@ export default function Page() {
               only evidence was a drawing in a comment. */}
           <Topology />
           <RetrievalField />
+          {/* Built on every deploy by scripts/build-graph.ts and imported by
+              nothing until now. It is the only figure here that shows the work
+              as connected rather than as a list. */}
+          <OverlapGraph />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           {/* Condensed mode keeps only the first paragraph of a prose block,
@@ -212,24 +251,26 @@ export default function Page() {
           <div data-keep="all">
             <Prose body={section("What he does not do").body} />
           </div>
-          <AskAbout
-            email={profile.email}
-            site={profile.site.replace("https://", "")}
-            context="approach"
-            label="Email him about the retrieval design"
-          />
         </Section>
 
         <Section id="work" index="04" title="Work">
-          <Role section={section("Boston University, Questrom Computational Lab")} />
-          <Role section={section("IMG Systems")} past />
-          <Role section={section("Growaza")} past />
-          <AskAbout
-            email={profile.email}
-            site={profile.site.replace("https://", "")}
-            context="work"
-            label="Email him about this work"
-          />
+          <WorkStack />
+          {/* Rail and content are two columns of one grid, not three
+              self-contained role cards, so every role's identity can share
+              one tall containing block and stack rather than take turns --
+              see .roleRail in page.module.css. */}
+          <div className={styles.roles}>
+            <div className={styles.roleRail}>
+              <RoleHead section={questrom} />
+              <RoleHead section={img} past />
+              <RoleHead section={growaza} past />
+            </div>
+            <div className={styles.roleContentCol}>
+              <RoleContent section={questrom} />
+              <RoleContent section={img} past />
+              <RoleContent section={growaza} past />
+            </div>
+          </div>
         </Section>
 
         {/* Research took this section from BU Life AI.
@@ -244,12 +285,6 @@ export default function Page() {
           {/* Both papers as rows a reader can open, rather than as two links
               inside a paragraph. The DOI resolves; the link checker proves it. */}
           <Artifacts2 items={section("Publications").artifacts} />
-          <AskAbout
-            email={profile.email}
-            site={profile.site.replace("https://", "")}
-            context="research"
-            label="Email him about the paper"
-          />
         </Section>
 
 
@@ -260,7 +295,17 @@ export default function Page() {
           <div className={styles.alsoBuilt}>
             <h3 className={styles.subhead}>Also running</h3>
             <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-            <Prose body={section("BU Life AI").body} fold="always" />
+            {/* Its three metrics and eight-item stack were parsed out of the
+                body by the corpus loader and rendered nowhere, so the section
+                shipped as prose with the numbers stripped out of it. Demoted is
+                not the same as gutted. */}
+            <Metrics items={section("BU Life AI").metrics} />
+            <Prose body={section("BU Life AI").body} />
+            <ul className={styles.stack}>
+              {section("BU Life AI").stack.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
           </div>
           <div className={styles.split}>
             <div>
@@ -303,21 +348,6 @@ export default function Page() {
       <footer className={styles.footer}>
         <div className="wrap">
           <Prose body={section("This site").body} className={styles.footerNote} />
-          {/* Generated from git at build time. A portfolio is a claim about the
-              present tense and nothing on it says whether the present tense is
-              this month or last year. */}
-          {changelog.entries.length > 0 && (
-            <ol className={styles.changelog}>
-              {changelog.entries.map((e) => (
-                <li key={`${e.date}-${e.subject}`}>
-                  <time dateTime={e.date} className="tabular">
-                    {e.date}
-                  </time>
-                  <span>{e.subject}</span>
-                </li>
-              ))}
-            </ol>
-          )}
           <p className="label">Last verified {profile.lastVerified}</p>
         </div>
       </footer>

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
+import { isAcceptance, type Offer } from "@/lib/agent/offers";
+import type { ToolResult } from "@/lib/agent/tools";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import styles from "./Agent.module.css";
@@ -29,6 +31,10 @@ type Result = {
   policy?: string;
   /** Everything the retriever considered, not only what it chose. */
   trace?: RetrievalTrace | null;
+  /** What to do next, computed from the sections this answer was grounded in. */
+  offers?: Offer[];
+  /** Something the agent did rather than said. */
+  action?: ToolResult;
 };
 
 type Turn = { question: string; result: Result | null };
@@ -126,6 +132,15 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
   const [canVoice, setCanVoice] = useState(false);
   const mic = useRef<{ cancel: () => void } | null>(null);
   const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
+  /**
+   * The openable thing most recently offered.
+   *
+   * Held in a ref rather than in state because `submit` reads it during the
+   * event that opens the window. A browser only allows `window.open` inside a
+   * user gesture, so the read and the open both have to happen synchronously in
+   * the submit handler -- one await in between and the popup is blocked.
+   */
+  const pendingOpen = useRef<Extract<Offer, { kind: "open" }> | null>(null);
 
   // Capability is read after mount: it differs per browser, and rendering a
   // control on the server that will not work on the client is worse than not
@@ -196,6 +211,14 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
    * Only scrolls when the agent is actually outside the viewport. Asking from
    * the input while already looking at it should not move the page under the
    * reader's hands.
+   *
+   * Called again from finish(), not only from submit(). lib/motion.ts's
+   * ResizeObserver refreshes ScrollTrigger on nearly every streamed token,
+   * because the pinned DiffReveal section needs current measurements as the
+   * agent grows -- and that refresh storm can fight the one scroll this
+   * function starts at submit(), landing the reader somewhere other than the
+   * answer once the stream settles. This call is a no-op when the first one
+   * already worked; it only fires the scroll it already decided was needed.
    */
   function revealAgent() {
     const root = rootRef.current;
@@ -207,10 +230,68 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
 
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+
+    /*
+     * A smooth scroll has no completion event, and it has been measured doing
+     * nothing at all rather than animating -- no error, no partial movement,
+     * the agent stays offscreen. Comparing scrollY before and after is not
+     * enough to detect that: the ResizeObserver in lib/motion.ts moves scrollY
+     * on its own as the page's height changes under a growing answer, so
+     * scrollY can drift for reasons that have nothing to do with whether the
+     * agent actually came into view. Re-running the same offscreen check this
+     * function opened with is what the reader actually experiences, so that is
+     * what gets checked: if the agent is still offscreen once the smooth
+     * attempt should have finished, an instant scroll finishes the job.
+     */
+    if (!calm) {
+      setTimeout(() => {
+        const stillOffscreen =
+          root.getBoundingClientRect().top < 0 ||
+          root.getBoundingClientRect().top > window.innerHeight * 0.6;
+        if (stillOffscreen) {
+          root.scrollIntoView({ behavior: "auto", block: "center" });
+        }
+      }, 700);
+    }
   }
 
   async function submit(question: string) {
     if (!question.trim() || pending) return;
+
+    /*
+     * "yes", answered where it was asked.
+     *
+     * The agent offers to open something and the reader replies in the shortest
+     * way a person replies. That reply has no retrievable terms in it, so
+     * sending it to the retriever returns whatever is generically closest and
+     * the answer addresses a question nobody asked -- which is exactly how an
+     * assistant stops feeling like it is listening.
+     *
+     * So it is resolved against the offer that is on screen, with no model call
+     * and no round trip: the thing opens in the same tick as the keystroke,
+     * which is also the only way the browser will allow it.
+     */
+    const accepting = pendingOpen.current;
+    if (accepting && isAcceptance(question)) {
+      window.open(accepting.url, "_blank", "noopener,noreferrer");
+      track("contact", `offer-${accepting.what}`);
+      pendingOpen.current = null;
+      setTurns((t) => [
+        ...t,
+        {
+          question,
+          result: {
+            answer: `Opened ${accepting.what} in a new tab.`,
+            route: "tool",
+            timings: {},
+            total: 0,
+            sources: [],
+          },
+        },
+      ]);
+      return;
+    }
+    pendingOpen.current = null;
 
     trackOnce("agent_opened");
     track("agent_asked", question);
@@ -242,6 +323,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     let route = "answer";
     let sources: string[] = [];
     let trace: RetrievalTrace | null = null;
+    let offers: Offer[] = [];
+    let action: ToolResult | undefined;
     const timings: Record<string, number> = {};
     const startedAt = performance.now();
 
@@ -258,6 +341,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                   total: Math.round(performance.now() - startedAt),
                   sources,
                   trace,
+                  offers,
+                  action,
                   ...extra,
                 },
               }
@@ -271,6 +356,11 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
       stream.current = null;
       setPending(false);
       if (voiceOn && answer) speak(answer);
+      // Double rAF: one frame for this render to land, a second so the
+      // ResizeObserver in lib/motion.ts has already queued and run its own
+      // ScrollTrigger.refresh() for the final token before this runs after it,
+      // not before it.
+      requestAnimationFrame(() => requestAnimationFrame(revealAgent));
     };
 
     source.onmessage = (event) => {
@@ -290,6 +380,30 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           );
         }
         timings.retrieve = data.ms;
+      } else if (data.type === "action") {
+        action = data.result as ToolResult;
+        /*
+         * Attempted, then offered.
+         *
+         * A browser only allows `window.open` inside a user gesture, and this
+         * arrives over an event stream well after the keystroke that started
+         * it, so the popup blocker is the expected outcome rather than the
+         * exception. The attempt costs nothing when it is blocked -- `open`
+         * returns null and nothing happens -- and the control below is rendered
+         * either way, so the reader is never left with a sentence claiming
+         * something opened when nothing did.
+         */
+        if (action.ok && action.kind === "open") {
+          const opened = window.open(action.url, "_blank", "noopener,noreferrer");
+          if (opened) track("contact", `tool-${action.label}`);
+        }
+        settle();
+      } else if (data.type === "offers") {
+        offers = data.offers ?? [];
+        // Remembered so a bare "yes" in the input resolves to the same thing
+        // the chip below the answer would have opened.
+        pendingOpen.current = offers.find((o: Offer) => o.kind === "open") ?? null;
+        settle();
       } else if (data.type === "token") {
         answer += data.text;
         settle();
@@ -424,6 +538,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     <div className={styles.agent} id="agent" ref={rootRef} data-surface="console">
       {selection && (
         <button
+          data-surface="console"
           className={styles.selectAsk}
           style={{ left: selection.x, top: selection.y }}
           onClick={(event) => {
@@ -638,7 +753,18 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
               <>
                 {/* Answer first, complete on its own. Evidence and trace are
                     below it, so a reader who only wants the answer is done. */}
-                <p className={styles.answer}>{turn.result.answer}</p>
+                <p className={styles.answer}>
+                  {turn.result.answer}
+                  {/* The cursor is the only thing that told a reader the box was
+                      thinking before the first token; once text started arriving
+                      it fell silent for however long the rest of the answer took,
+                      which reads as done, not as still writing. Reuses the same
+                      --signal pulse .live-dot already marks work in flight with,
+                      rather than a new colour or a new motion. */}
+                  {latest && pending && (
+                    <span className={`${styles.cursor} live-dot`} data-state="running" aria-hidden="true" />
+                  )}
+                </p>
 
                 {/* Each retrieved section is its own element rather than one
                     joined string, so they can arrive one after another as the
@@ -681,6 +807,113 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                       );
                     })()}
                   </p>
+                )}
+
+                {/* What the agent did, as something the reader can still do.
+                    The attempt above is blocked by every popup blocker,
+                    because it happens after a network round trip rather than
+                    inside the click that caused it. So the action is always
+                    also a control: one press, no ambiguity about whether
+                    anything happened. */}
+                {latest && turn.result.action?.ok && turn.result.action.kind === "open" && (
+                  <a
+                    className={styles.actionBtn}
+                    href={turn.result.action.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => track("contact", `tool-${(turn.result!.action as { label: string }).label}`)}
+                  >
+                    Open {turn.result.action.label}
+                  </a>
+                )}
+
+                {latest && turn.result.action?.ok && turn.result.action.kind === "draft" && (
+                  <div className={styles.draft}>
+                    <a
+                      className={styles.actionBtn}
+                      href={turn.result.action.mailto}
+                      onClick={() => track("contact", "tool-mailto")}
+                    >
+                      Open the draft in your mail app
+                    </a>
+                    {/* mailto: does nothing on a machine with no mail client
+                        and nothing in webmail, and there is no event for that
+                        failure. So the same text is here to copy. */}
+                    <button
+                      className={styles.actionGhost}
+                      data-copied={copied || undefined}
+                      onClick={async () => {
+                        const draft = turn.result!.action as { subject: string; body: string };
+                        try {
+                          await navigator.clipboard.writeText(`${draft.subject}\n\n${draft.body}`);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2400);
+                        } catch {
+                          // Clipboard blocked; the text is visible below either way.
+                        }
+                      }}
+                    >
+                      {copied ? "Copied" : "Copy it instead"}
+                    </button>
+                    <pre className={styles.draftText}>
+                      {turn.result.action.subject}
+                      {"\n\n"}
+                      {turn.result.action.body}
+                    </pre>
+                  </div>
+                )}
+
+                {latest && turn.result.action?.ok && turn.result.action.kind === "eval" && (
+                  <p
+                    className={styles.evalResult}
+                    data-outcome={turn.result.action.passed ? "pass" : "fail"}
+                  >
+                    <span className={styles.evalCase}>{turn.result.action.question}</span>
+                    <span className={styles.evalAsserts}>{turn.result.action.asserts}</span>
+                  </p>
+                )}
+
+                {/* What to do next, offered where the answer ends.
+                    Computed from the sections this answer was grounded in, not
+                    generated: an `open` is a URL the build's link checker
+                    resolved, an `ask` is a question written beside the section
+                    that answers it. Neither can point somewhere that is not
+                    there, which is the failure that makes suggested follow-ups
+                    worse than none. */}
+                {latest && (turn.result.offers?.length ?? 0) > 0 && (
+                  <ul className={styles.offers}>
+                    {turn.result.offers!.map((o, n) =>
+                      o.kind === "open" ? (
+                        <li key={o.url}>
+                          <a
+                            className={styles.offer}
+                            data-kind="open"
+                            href={o.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ "--n": n } as React.CSSProperties}
+                            onClick={() => {
+                              pendingOpen.current = null;
+                              track("contact", `offer-${o.what}`);
+                            }}
+                          >
+                            {o.label}
+                          </a>
+                        </li>
+                      ) : (
+                        <li key={o.question}>
+                          <button
+                            className={styles.offer}
+                            data-kind="ask"
+                            style={{ "--n": n } as React.CSSProperties}
+                            onClick={() => submit(o.question)}
+                          >
+                            {o.label}
+                          </button>
+                        </li>
+                      ),
+                    )}
+                  </ul>
                 )}
 
                 {Object.keys(turn.result.timings).length > 0 && (
@@ -769,14 +1002,33 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                             <dd>{turn.result.provider}</dd>
                             <dd className={styles.usage}>
                               <code>{turn.result.model}</code>
-                              {(turn.result.failover ?? [])
-                                .filter((f) => f.coolingOffFor > 0)
-                                .map((f) => (
-                                  <span key={f.name}>
-                                    {" · "}
-                                    {f.name} benched {Math.ceil(f.coolingOffFor / 60)}m
-                                  </span>
-                                ))}
+                            </dd>
+                          </div>
+                        )}
+
+                        {/* The whole roster, not only the benched half.
+                            failoverState() returns every configured provider
+                            and this filtered to the ones cooling off, so a
+                            reader saw failover exactly when it had already
+                            gone wrong and never saw the four-provider chain
+                            standing behind a normal answer. */}
+                        {(turn.result.failover ?? []).length > 0 && (
+                          <div className={styles.traceRow}>
+                            <dt>providers</dt>
+                            <dd>{turn.result.failover!.length} configured</dd>
+                            <dd className={styles.providers}>
+                              {turn.result.failover!.map((f) => (
+                                <span
+                                  key={f.name}
+                                  className={styles.provider}
+                                  data-health={f.coolingOffFor > 0 ? "benched" : "ready"}
+                                >
+                                  {f.name}
+                                  {f.coolingOffFor > 0
+                                    ? ` · benched ${Math.ceil(f.coolingOffFor / 60)}m`
+                                    : ""}
+                                </span>
+                              ))}
                             </dd>
                           </div>
                         )}

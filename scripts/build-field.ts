@@ -28,14 +28,44 @@ import { join } from "node:path";
  * and a decoration.
  */
 
-type Index = { chunks: { title: string; source: string }[]; vectors: number[][] | null };
+type Index = {
+  passages: { parent: string }[];
+  parents: { title: string; source: string }[];
+  vectors: number[][] | null;
+};
 
 const ROOT = process.cwd();
 const index = JSON.parse(
   readFileSync(join(ROOT, "lib/agent/index.json"), "utf8"),
 ) as Index;
 
-const { vectors, chunks } = index;
+const { passages, parents, vectors: passageVectors } = index;
+
+/*
+ * One vector per section, not per passage.
+ *
+ * index.json holds a vector per passage (62 at last count, retrieval's
+ * granularity), but the live retrieval trace this figure has to match
+ * reports one row per section (lib/agent/retrieve.ts:435, idx.parents.map),
+ * eighteen of them. Projecting at passage granularity would draw a
+ * different point count at rest than the figure redraws to once a question
+ * is asked. Mean-pooling each section's passage vectors is the same
+ * reduction the rest of the pipeline already applies to go from passage to
+ * section, and it is deterministic, so the committed coordinates do not
+ * depend on which passage happened to embed most centrally.
+ */
+const chunks = parents;
+const vectors = passageVectors
+  ? parents.map((parent) => {
+      const members = passages
+        .map((p, i) => (p.parent === parent.title ? passageVectors[i] : null))
+        .filter((v): v is number[] => v !== null);
+      const dims = members[0]?.length ?? 0;
+      const mean = new Array(dims).fill(0);
+      for (const v of members) for (let d = 0; d < dims; d++) mean[d] += v[d] / members.length;
+      return mean;
+    })
+  : null;
 
 /**
  * No vectors means no projection, and that is a supported state rather than a
@@ -113,6 +143,8 @@ function classicalMDS(D: number[][], dims = 3) {
 
   const coords: number[][] = Array.from({ length: n }, () => new Array(dims).fill(0));
   const eigenvalues: number[] = [];
+  // Taken before deflation, which mutates `work` in place.
+  const trace = B.reduce((sum, row, i) => sum + row[i], 0);
   const work = B.map((r) => [...r]);
 
   for (let d = 0; d < dims; d++) {
@@ -145,10 +177,20 @@ function classicalMDS(D: number[][], dims = 3) {
     }
   }
 
-  return { coords, eigenvalues };
+  /*
+   * Total variance, so the share the projection keeps can be computed rather
+   * than asserted.
+   *
+   * The page has claimed "only 47% of variance in three axes" as a hardcoded
+   * string while the eigenvalues sat unread beside it, and the top three alone
+   * cannot produce that ratio -- the denominator is the total. For classical
+   * MDS the trace of the double-centred Gram matrix is exactly that total, so
+   * it is taken before deflation touches the working copy.
+   */
+  return { coords, eigenvalues, trace };
 }
 
-const { coords, eigenvalues } = classicalMDS(D, 3);
+const { coords, eigenvalues, trace } = classicalMDS(D, 3);
 
 /**
  * Kruskal stress-1: sqrt( sum (d_true - d_proj)^2 / sum d_true^2 ).
@@ -214,6 +256,10 @@ const out = {
   dims: vectors[0].length,
   stress: +stress.toFixed(4),
   eigenvalues: eigenvalues.map((v) => +v.toFixed(4)),
+  trace: +trace.toFixed(4),
+  // The share of total variance the three plotted axes actually keep. Rendered
+  // beside the figure instead of a number typed into a component.
+  varianceKept: +(eigenvalues.reduce((a, b) => a + Math.max(b, 0), 0) / trace).toFixed(4),
   points,
   neighbours,
 };

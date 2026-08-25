@@ -68,3 +68,27 @@
     padding: var(--s-4);
   }
 }
+
+/* Panels that mount after first paint.
+ *
+ * @starting-style gives an element a state to animate *from* on insertion,
+ * which is the only way to do an entrance without shipping a class-toggle
+ * effect to add and remove. Progressive: a browser without it simply shows the
+ * panel, which is the correct fallback for something that must never be hidden
+ * waiting on a script. */
+@supports (transition-behavior: allow-discrete) {
+  @media (prefers-reduced-motion: no-preference) {
+    .panel {
+      transition:
+        opacity var(--t-mid) var(--ease-out),
+        translate var(--t-mid) var(--ease-out);
+    }
+
+    @starting-style {
+      .panel {
+        opacity: 0;
+        translate: 0 12px;
+      }
+    }
+  }
+}

@@ -25,6 +25,18 @@ export const maxDuration = 30;
 const QUESTION = "What has he shipped on Azure?";
 const TTL_MS = 60_000;
 
+/**
+ * Past this, the request did not succeed slowly -- it failed and took its time.
+ *
+ * The client now times out at twenty seconds and fails over, so nothing should
+ * reach this. It stayed in because the failure it guards against was real and
+ * silent: a provider accepted the connection and stopped responding, the graph
+ * degraded correctly to the retrieved paragraph, and the hero published the
+ * 238,993ms it had honestly measured as its headline latency. A number being
+ * true is not sufficient reason to lead with it.
+ */
+const IMPLAUSIBLE_MS = 30_000;
+
 type Demo = {
   /** The question, returned rather than duplicated in the hero. */
   question: string;
@@ -60,6 +72,10 @@ export async function GET() {
       usage: usage ?? null,
       provider: provider ?? null,
     };
+    // Not cached and not served. The hero renders its unreachable copy, which
+    // is what actually happened, rather than a four-minute figure.
+    if (demo.total > IMPLAUSIBLE_MS) return new Response(null, { status: 503 });
+
     cached = { at: Date.now(), demo };
     return Response.json(demo, { headers: { "cache-control": "public, max-age=30" } });
   } catch {

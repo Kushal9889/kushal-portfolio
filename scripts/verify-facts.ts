@@ -145,9 +145,9 @@ try {
  * no longer contains, and it fails silently: the agent gives a fluent answer
  * sourced from a section nobody can find.
  */
-if (index.chunks.length !== sections.length) {
+if (index.parents.length !== sections.length) {
   problems.push(
-    `index has ${index.chunks.length} chunks but the corpus has ${sections.length} sections; run \`npm run build:index\``,
+    `index has ${index.parents.length} chunks but the corpus has ${sections.length} sections; run \`npm run build:index\``,
   );
 }
 
@@ -199,7 +199,7 @@ if (missing.length) {
 const allMetrics = sections.flatMap((s) => s.metrics);
 const sourced = allMetrics.filter((m) => m.source).length;
 console.log(
-  `${keywords.length} resume keywords checked, ${allMetrics.length} metrics (${sourced} sourced), index ${index.chunks.length} chunks`,
+  `${keywords.length} resume keywords checked, ${allMetrics.length} metrics (${sourced} sourced), index ${index.parents.length} chunks`,
 );
 
 if (problems.length) {

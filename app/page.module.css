@@ -50,17 +50,25 @@
   margin-bottom: 0.75rem;
 }
 
-.role {
+/* The rail copy of a role's identity. Hidden below 62rem, where .roleContent
+   carries its own copy instead -- see roleHeadMobile below and the comment
+   on .roleRail in the desktop media query. */
+.roleHead {
+  display: none;
+  margin-bottom: 1.25rem;
+}
+
+.roleContent {
   padding-block: clamp(1.5rem, 4vh, 2.5rem);
   border-top: 1px solid var(--rule);
 }
 
-.role:first-of-type {
+.roleContent:first-of-type {
   border-top: none;
   padding-top: 0;
 }
 
-.roleHead {
+.roleHeadMobile {
   margin-bottom: 1.25rem;
 }
 
@@ -177,53 +185,77 @@
     grid-column: 2;
   }
 
+  /* Shared with .roleHead below, so both rails land on the same line when
+     stuck and a role's stacked offset is additive to one number, not two. */
+  .grid {
+    --role-stack-base: clamp(1.5rem, 6vh, 3rem);
+  }
+
   .head {
     grid-column: 1;
     grid-row: 1 / -1;
     position: sticky;
-    top: clamp(1.5rem, 6vh, 3rem);
+    top: var(--role-stack-base);
     align-self: start;
     margin-bottom: 0;
   }
 
   /*
-   * A role, read in two passes.
+   * Rail and content, as two columns of one grid -- not three self-contained
+   * role cards.
    *
-   * Title, dates, numbers and stack are what a recruiter scans; the paragraph is
-   * what they read if the scan lands. Stacked, each role ran to 1090px and the
-   * scan and the read were the same vertical journey. Beside each other, the
-   * role is as tall as its longer half rather than the sum of both.
+   * A sticky element can only stay stuck within its own containing block, and
+   * a per-role grid (the earlier version of this) gives each role's identity
+   * a containing block scoped to that one role's height. It stuck correctly
+   * while scrolling through its own role, then let go the moment the reader
+   * scrolled into the next one -- measured live: the identity block vanished
+   * partway down IMG Systems and left blank space in the rail where AI
+   * Engineer had been, because AI Engineer's own containing block had already
+   * ended.
+   *
+   * Every role's identity is meant to stay visible once reached, piling up as
+   * the reader scrolls through Work, not swapping out for the next one. That
+   * needs one containing block shared by every role, tall enough to hold all
+   * three, and .roleRail below is what supplies it: with only two children in
+   * this grid (.roleRail, .roleContentCol), the row auto-sizes to the taller
+   * one, which is always .roleContentCol -- so the rail's own box stretches to
+   * match it (the grid default is align-items: stretch, left alone here on
+   * purpose) and its three .roleHead children, normal flow inside that tall
+   * box, can each stick anywhere within the whole thing.
    */
-  .role {
+  .roles {
     display: grid;
     grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
     column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
-    align-items: start;
   }
 
-  /*
-   * Only the identity goes in the rail.
-   *
-   * The metric row is a grid of its own, and at rail width it had nowhere to put
-   * three figures except on top of each other, so the left column ended up
-   * taller than the paragraph it was meant to sit beside and the section grew.
-   * Numbers belong next to the prose that explains them anyway.
-   */
-  .role > * {
-    grid-column: 2;
-  }
-
-  .roleHead,
-  .stack {
+  .roleRail {
     grid-column: 1;
   }
 
+  .roleContentCol {
+    grid-column: 2;
+  }
+
   .roleHead {
-    grid-row: 1;
+    display: block;
+    position: sticky;
+    /*
+     * --role-stack-offset is a per-role cumulative height set by
+     * WorkStack.tsx: the first role gets 0, the second gets the first role's
+     * rendered height, and so on, so each role's line sits directly under
+     * the one before it rather than on top of it. The fallback of 0px covers
+     * the instant before that script has measured anything, which is also
+     * exactly right for the first role.
+     */
+    top: calc(var(--role-stack-base) + var(--role-stack-offset, 0px));
+  }
+
+  .roleHeadMobile {
+    display: none;
   }
 
   .stack {
-    grid-row: 2;
     margin-bottom: 0;
   }
 }
@@ -287,8 +319,12 @@
 }
 
 /* Pre-2025 roles. Context rather than evidence, so they occupy less of the
-   reader's attention without losing anything a screener searches for. */
-.role[data-past] .roleName {
+   reader's attention without losing anything a screener searches for.
+   Two selectors each below because the identity now renders twice -- once
+   into .roleHead for the desktop rail, once into .roleHeadMobile inside
+   .roleContent for narrow screens -- and data-past is set on both. */
+.roleHead[data-past] .roleName,
+.roleContent[data-past] .roleName {
   font-size: var(--step-0);
 }
 
@@ -297,35 +333,10 @@
    quiet, and left two of his three jobs looking like disabled UI. De-emphasis
    is a typographic decision: the heading steps down a size, the body steps back
    one tone, and everything stays at full opacity so nothing reads as broken. */
-.role[data-past] .roleBody,
-.role[data-past] .roleMeta {
+.roleContent[data-past] .roleBody,
+.roleHead[data-past] .roleMeta,
+.roleContent[data-past] .roleMeta {
   color: var(--ink-soft);
-}
-
-/* Five dated lines, from git. Set at the smallest step on the page: this is a
-   footnote about recency, not a feature. */
-.changelog {
-  list-style: none;
-  margin: 1.2rem 0 0.8rem;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-  max-width: var(--measure);
-}
-
-.changelog li {
-  display: grid;
-  grid-template-columns: 6.5rem 1fr;
-  gap: 0.8rem;
-  font-size: var(--step--1);
-  color: var(--ink-faint);
-}
-
-@media (max-width: 40rem) {
-  .changelog li {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-  }
 }
 
 /* Role prose. Referenced from page.tsx and never defined, so a role body

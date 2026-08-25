@@ -63,12 +63,6 @@
 
 /* The merged state is the one that carries the argument, so it is the one that
    is filled rather than outlined. Weight, not hue. */
-.state[data-state="merged"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-
 .link:hover .label,
 .link:focus-visible .label {
   text-decoration: underline;
@@ -97,6 +91,8 @@
    API on every run, which makes them the most literally checkable strings on
    the page. Merged gets the accent; closed stays quiet, because a closed issue
    is context and a merged fix is the evidence. */
+/* Declared twice; the filled-ink version above this was dead and has been
+   removed. A merged pull request is a checkable claim, so it takes --mark. */
 .state[data-state="merged"] {
   /* --mark-ink rather than --mark: the wash this sits on has already spent the
      contrast the plain token was measured against, and it landed at Lc 68.4. */

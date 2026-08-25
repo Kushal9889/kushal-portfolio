@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:index && npm run build:graph && npm run build:field && npm run build:topology && npm run build:changelog && npm run prewarm && next build",
+    "build": "npm run build:index && npm run build:graph && npm run build:field && npm run build:topology && npm run prewarm && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -30,13 +30,16 @@
     "build:field": "tsx scripts/build-field.ts",
     "build:topology": "tsx scripts/build-topology.ts",
     "build:readme": "tsx scripts/build-profile-readme.ts",
-    "build:changelog": "tsx scripts/build-changelog.ts",
-    "lint:vars": "tsx scripts/lint-vars.ts"
+    "lint:vars": "tsx scripts/lint-vars.ts",
+    "bench:retrieval": "tsx scripts/bench-retrieval.ts",
+    "sync:vectors": "tsx scripts/sync-vectors.ts",
+    "bench:models": "tsx scripts/bench-models.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",
     "@langchain/langgraph": "^1.4.9",
     "@langchain/openai": "^1.5.6",
+    "@neondatabase/serverless": "^1.1.0",
     "gsap": "^3.15.0",
     "kokoro-js": "^1.2.1",
     "next": "16.1.6",

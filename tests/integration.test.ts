@@ -207,3 +207,78 @@ test("a question the corpus answers broadly still gets several sections", async 
   const { chunks } = await retrieve("What did he do at Growaza?");
   assert.equal(chunks[0].title, "Growaza");
 });
+
+/**
+ * The embedding call can fail, and the request must not fail with it.
+ *
+ * `embedQuery` was documented as returning null on failure so retrieval could
+ * fall back to BM25, and it did that for a missing key and for a non-ok
+ * response. A network-level failure threw instead, and nothing between there
+ * and the request handler caught it, so the whole graph died on a question the
+ * keyword retriever could have answered without touching the network.
+ *
+ * Observed while running the eval suite: the endpoint accepted the connection
+ * and never sent headers, undici raised UND_ERR_HEADERS_TIMEOUT after its own
+ * default, and the run aborted. Same shape as the hang that once made the hero
+ * print a four-minute latency; that one got a timeout and this one did not.
+ */
+describe("retrieval survives a failing embedding endpoint", () => {
+  const real = globalThis.fetch;
+
+  async function withEmbeddingFetch(
+    impl: (init: RequestInit | undefined) => Promise<Response>,
+    run: () => Promise<unknown>,
+  ) {
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(typeof input === "string" ? input : (input as Request)?.url ?? input);
+      if (!url.includes("/embeddings")) return real(input, init);
+      return impl(init);
+    }) as typeof fetch;
+    try {
+      return await run();
+    } finally {
+      globalThis.fetch = real;
+    }
+  }
+
+  test("a thrown network error degrades to keyword ranking", async () => {
+    const out = (await withEmbeddingFetch(
+      async () => {
+        throw new TypeError("fetch failed");
+      },
+      () => retrieve("What did he do at IMG Systems?"),
+    )) as Awaited<ReturnType<typeof retrieve>>;
+
+    assert.equal(out.trace.denseUsed, false, "dense half should be skipped, not retried");
+    assert.ok(out.chunks.length > 0, "the question still has to be answered");
+    assert.equal(out.chunks[0].title, "IMG Systems", "keyword ranking still finds the right section");
+  });
+
+  test("a hung endpoint is abandoned rather than waited on", async () => {
+    // A real server always has something holding the event loop open;
+    // AbortSignal.timeout uses an unref'd timer, so a bare test process exits
+    // before it can fire and the assertion below would never run.
+    const keepAlive = setInterval(() => {}, 1000);
+    const started = Date.now();
+    try {
+      const out = (await withEmbeddingFetch(
+        // What undici does: never resolve, reject when the caller aborts. A
+        // caller that passes no signal hangs here forever, which is the bug.
+        (init) =>
+          new Promise((_resolve, reject) => {
+            const signal = init?.signal;
+            assert.ok(signal, "embedQuery must pass an abort signal");
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          }),
+        () => retrieve("What did he do at IMG Systems?"),
+      )) as Awaited<ReturnType<typeof retrieve>>;
+
+      const waited = Date.now() - started;
+      assert.ok(waited < 8000, `waited ${waited}ms for an embedding that never arrived`);
+      assert.equal(out.trace.denseUsed, false);
+      assert.ok(out.chunks.length > 0);
+    } finally {
+      clearInterval(keepAlive);
+    }
+  });
+});
